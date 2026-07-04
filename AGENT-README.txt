@@ -143,10 +143,14 @@ on WPF - so each head's XAML carries a SkiaSharp xmlns and a per-framework
 control name.
 
 You can hide all of that behind ONE control name that is identical in
-every head's XAML - <drawing:DrawingCanvas/> - by adding a single tiny
+every head's XAML - <drawing:DrawingCanvas/> - by adding a single small
 source file to your app and letting conditional compilation pick the
-correct base control per head. The file (taken verbatim from the
-PainDiagram sample; put it in whatever namespace you like):
+correct base control per head. The same file also carries a
+DrawCanvasHelper with two tiny converters, so the hosting page's
+code-behind can wire the canvas without ever NAMING a SkiaSharp type -
+which keeps `using SkiaSharp;` out of the code-behind entirely. The file
+(taken verbatim from the PainDiagram sample; put it in whatever namespace
+you like):
 
   namespace CodeBrix.Imaging.Drawing;
 
@@ -170,6 +174,22 @@ PainDiagram sample; put it in whatever namespace you like):
   public class DrawingCanvas : SkiaSharp.Views.WPF.SKElement { }
   #endif
 
+  public static class DrawCanvasHelper
+  {
+      public static SkiaSharp.SKSize GetViewSize(this DrawingCanvas canvas) =>
+          (canvas == null)
+          ? default
+          : new SkiaSharp.SKSize((float)canvas.ActualWidth, (float)canvas.ActualHeight);
+
+  #if (HAS_CODEBRIXPLATFORM || HAS_WINUI)
+      public static SkiaSharp.SKPoint GetPointFromPosition(Windows.Foundation.Point point) =>
+          new ((float)point.X, (float)point.Y);
+  #else
+      public static SkiaSharp.SKPoint GetPointFromPosition(System.Windows.Point point) =>
+          new ((float)point.X, (float)point.Y);
+  #endif
+  }
+
 How to use it:
   1. Add this one file to your app as a LINKED source file - exactly like a
      shared view-model file. Link it into each ASSEMBLY that has to compile
@@ -192,26 +212,50 @@ How to use it:
          SkiaSharp.Views.WPF)
      For example, in the appropriate .csproj:
        <DefineConstants>$(DefineConstants);HAS_CODEBRIXPLATFORM</DefineConstants>
-  3. Reference it in XAML with the namespace the file declares. The xmlns
-     form differs by XAML dialect, but the element tag is identical:
+  3. Reference it in XAML with the namespace the file declares, and give it
+     just an x:Name - NO event attributes. The xmlns form differs by XAML
+     dialect, but the element tag is identical:
        WinUI dialect: xmlns:drawing="using:CodeBrix.Imaging.Drawing"
        WPF dialect:   xmlns:drawing="clr-namespace:CodeBrix.Imaging.Drawing"
-       <drawing:DrawingCanvas x:Name="DrawCanvas"
-           PaintSurface="DrawCanvas_OnPaintSurface" ... />
+       <drawing:DrawingCanvas x:Name="DrawCanvas" />
+  4. Wire the canvas in the page's code-behind constructor (after
+     InitializeComponent) with lambdas. Because the lambda's event-args and
+     the helper's return values are never NAMED, the code-behind needs no
+     `using SkiaSharp;` and no `using SkiaSharp.Views.*`. WinUI dialect
+     (native WPF is the same shape with MouseDown/Move/Up + CaptureMouse):
+       DrawCanvas.PaintSurface += (_, e) => ViewModel?.Session?.Render(e.Surface, e.Info);
+       DrawCanvas.PointerPressed += (_, e) =>
+       {
+           var session = ViewModel?.Session;
+           if (session == null) { return; }
+           var p = e.GetCurrentPoint(DrawCanvas);
+           if (!p.Properties.IsLeftButtonPressed) { return; }
+           if (session.PointerPressed(DrawCanvasHelper.GetPointFromPosition(p.Position),
+                                      DrawCanvas.GetViewSize()))
+           {
+               DrawCanvas.CapturePointer(e.Pointer);
+               e.Handled = true;
+           }
+       };
+       // ...PointerMoved / PointerReleased / PointerCaptureLost / SizeChanged likewise...
+     The redraw side stays wired as before through the session's
+     RedrawRequested event (in PainDiagram, via the VM's ICanvasInvalidator).
 
-Because DrawingCanvas merely DERIVES from the platform control, every
-member the code-behind already used (Invalidate/InvalidateVisual,
-CapturePointer/CaptureMouse, ActualWidth/Height, ...) is inherited
-unchanged - the existing paint and pointer handlers keep working as they
-are, and no code-behind edits are needed.
+Why this keeps the code-behind SkiaSharp-free: DrawingCanvas DERIVES from
+the platform control, so every member (Invalidate/InvalidateVisual,
+CapturePointer/CaptureMouse, ActualWidth/Height, ...) is inherited. The
+lambda's `e` is inferred (SKPaintSurfaceEventArgs / a pointer-args type),
+so it is never spelled out; and DrawCanvasHelper.GetPointFromPosition /
+GetViewSize return the SKPoint/SKSize that session.PointerPressed/Moved
+want, so the code-behind never names a SkiaSharp type. (The pointer input
+is fed as SKPoint/SKSize to the SkiaSharp overloads here; you may instead
+use the PointF/SizeF overloads and skip the helper entirely.)
 
-Scope of the trick: it removes SkiaSharp from your XAML markup and gives
-every head one identical control name. It does NOT remove SkiaSharp from
-the code-behind's paint handler, which still receives an
-SKPaintSurfaceEventArgs and calls session.Render(e.Surface, e.Info) -
-that surface IS the one genuine SkiaSharp touchpoint (see the section
-above). Forward pointer input with the PointF/SizeF overloads of
-PointerPressed/PointerMoved to keep the pointer handlers SkiaSharp-free.
+Scope of the trick: the one genuine SkiaSharp touchpoint - the drawing
+surface handed to session.Render(e.Surface, e.Info) - still exists, but it
+now lives inside an inferred-type lambda in this reusable file, not spread
+across your pages. Net result: clean one-line XAML, and code-behinds (and
+view-models) with no `using SkiaSharp;` at all.
 
 CORE API REFERENCE
 ========================================================================
@@ -598,20 +642,28 @@ How the pieces connect, end to end:
    fires and none of the bridges get wired (symptom: drawing input is
    captured but nothing ever repaints).
 
-5. Canvas wiring per head (the part to copy into a new app):
-   - Skia heads + native WinUI use SkiaSharp.Views.Windows.SKXamlCanvas
-     (from CodeBrix.Platform.SkiaSharp.Views.MitLicenseForever 4.148.0
-     on Skia heads; SkiaSharp.Views.WinUI 4.148.0 on native WinUI):
-       PaintSurface="..."  -> vm.Session.Render(e.Surface, e.Info)
+5. Canvas wiring per head (the part to copy into a new app): every head
+   hosts the shared <drawing:DrawingCanvas/> control - see "KEEPING
+   SKIASHARP OUT OF THE HOSTING APP'S XAML (the DrawingCanvas trick)"
+   above. That one linked file compiles to SkiaSharp.Views.Windows.
+   SKXamlCanvas on the Skia heads + native WinUI (from CodeBrix.Platform.
+   SkiaSharp.Views.MitLicenseForever 4.148.0 and SkiaSharp.Views.WinUI
+   4.148.0 respectively) and to SkiaSharp.Views.WPF.SKElement on native
+   WPF (4.148.0). The XAML is just <drawing:DrawingCanvas x:Name=
+   "DrawCanvas" />; the page's constructor wires it after
+   InitializeComponent with lambdas, so no code-behind carries a
+   using SkiaSharp;:
+   - WinUI dialect (Skia heads + native WinUI):
+       PaintSurface        -> Session.Render(e.Surface, e.Info)
        PointerPressed      -> if left button && Session.PointerPressed(
-                                pos, new SKSize(ActualWidth, ActualHeight))
-                              then canvas.CapturePointer(e.Pointer)
+                                DrawCanvasHelper.GetPointFromPosition(pos),
+                                DrawCanvas.GetViewSize())
+                              then DrawCanvas.CapturePointer(e.Pointer)
        PointerMoved        -> Session.PointerMoved(...) when IsPointerActive
        PointerReleased     -> Session.PointerReleased() + release capture
        PointerCaptureLost  -> Session.PointerCanceled()
-       SizeChanged         -> canvas.Invalidate()
-   - Native WPF uses SkiaSharp.Views.WPF.SKElement (4.148.0; args type
-     lives in SkiaSharp.Views.Desktop) with MouseDown/MouseMove/MouseUp/
+       SizeChanged         -> DrawCanvas.Invalidate()
+   - Native WPF: the same shape with MouseDown/MouseMove/MouseUp/
      LostMouseCapture + CaptureMouse()/ReleaseMouseCapture(), and
      InvalidateVisual() for redraw (marshalled via Dispatcher when
      needed). NOTE: the WPF project must target

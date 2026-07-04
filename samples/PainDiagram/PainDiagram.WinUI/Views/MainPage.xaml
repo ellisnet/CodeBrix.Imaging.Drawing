@@ -32,14 +32,7 @@
         </StackPanel>
 
         <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1">
-            <drawing:DrawingCanvas
-                x:Name="DrawCanvas"
-                PaintSurface="DrawCanvas_OnPaintSurface"
-                PointerPressed="DrawCanvas_OnPointerPressed"
-                PointerMoved="DrawCanvas_OnPointerMoved"
-                PointerReleased="DrawCanvas_OnPointerReleased"
-                PointerCaptureLost="DrawCanvas_OnPointerCaptureLost"
-                SizeChanged="DrawCanvas_OnSizeChanged" />
+            <drawing:DrawingCanvas x:Name="DrawCanvas" />
         </Border>
 
         <Grid Grid.Row="3" Margin="0,8,0,0">

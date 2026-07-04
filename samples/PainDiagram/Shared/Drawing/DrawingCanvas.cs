@@ -19,3 +19,19 @@ public class DrawingCanvas : SkiaSharp.Views.Windows.SKXamlCanvas { }
 #else
 public class DrawingCanvas : SkiaSharp.Views.WPF.SKElement { }
 #endif
+
+public static class DrawCanvasHelper
+{
+    public static SkiaSharp.SKSize GetViewSize(this DrawingCanvas canvas) =>
+        (canvas == null)
+        ? default
+        : new SkiaSharp.SKSize((float)canvas.ActualWidth, (float)canvas.ActualHeight);
+
+#if (HAS_CODEBRIXPLATFORM || HAS_WINUI)
+    public static SkiaSharp.SKPoint GetPointFromPosition(Windows.Foundation.Point point) =>
+        new ((float)point.X, (float)point.Y);
+#else
+    public static SkiaSharp.SKPoint GetPointFromPosition(System.Windows.Point point) =>
+        new ((float)point.X, (float)point.Y);
+#endif
+}

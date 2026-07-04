@@ -1,6 +1,5 @@
+using CodeBrix.Imaging.Drawing;
 using PainDiagram.ViewModels;
-using SkiaSharp;
-using SkiaSharp.Views.Desktop;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,11 +9,14 @@ namespace PainDiagram.Views;
 
 public partial class MainWindow : Window
 {
+    //I tend to like to declare/define private methods above the constructor, in C# classes
+    private MainViewModel ViewModel => DataContext as MainViewModel;
+
     public MainWindow()
     {
         //Doing this before InitializeComponent() - in case InitializeComponent()
         //  is the thing that sets the data context.
-        DataContextChanged += (sender, args) =>
+        DataContextChanged += (_, _) =>
         {
             if (DataContext is IFileSaveBridge fileSave)
             {
@@ -28,11 +30,47 @@ public partial class MainWindow : Window
         };
 
         InitializeComponent();
+
+        #region | Add event handling for our DrawCanvas element |
+
+        DrawCanvas.PaintSurface += (_, e) => ViewModel?.Session?.Render(e.Surface, e.Info);
+
+        DrawCanvas.MouseDown += (_, e) =>
+        {
+            var session = ViewModel?.Session;
+            if (session == null || e.ChangedButton != MouseButton.Left) { return; }
+
+            if (session.PointerPressed(DrawCanvasHelper.GetPointFromPosition(e.GetPosition(DrawCanvas)), DrawCanvas.GetViewSize()))
+            {
+                DrawCanvas.CaptureMouse();
+                e.Handled = true;
+            }
+        };
+
+        DrawCanvas.MouseMove += (_, e) =>
+        {
+            var session = ViewModel?.Session;
+            if (session is not { IsPointerActive: true }) { return; }
+
+            session.PointerMoved(DrawCanvasHelper.GetPointFromPosition(e.GetPosition(DrawCanvas)), DrawCanvas.GetViewSize());
+            e.Handled = true;
+        };
+
+        DrawCanvas.MouseUp += (_, e) =>
+        {
+            var session = ViewModel?.Session;
+            if (e.ChangedButton != MouseButton.Left || session is not { IsPointerActive: true }) { return; }
+
+            session.PointerReleased();
+            DrawCanvas.ReleaseMouseCapture();
+            e.Handled = true;
+        };
+
+        //If capture is lost mid-stroke (e.g. the window deactivates), discard the stroke
+        DrawCanvas.LostMouseCapture += (_, _) => ViewModel?.Session?.PointerCanceled();
+
+        #endregion
     }
-
-    private MainViewModel ViewModel => DataContext as MainViewModel;
-
-    private SKSize CanvasViewSize => new SKSize((float)DrawCanvas.ActualWidth, (float)DrawCanvas.ActualHeight);
 
     private void InvalidateDrawCanvas()
     {
@@ -44,50 +82,6 @@ public partial class MainWindow : Window
         {
             DrawCanvas.Dispatcher.BeginInvoke(DrawCanvas.InvalidateVisual);
         }
-    }
-
-    private static SKPoint ToSKPoint(Point point) => new SKPoint((float)point.X, (float)point.Y);
-
-    private void DrawCanvas_OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
-    {
-        ViewModel?.Session?.Render(e.Surface, e.Info);
-    }
-
-    private void DrawCanvas_OnMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        var session = ViewModel?.Session;
-        if (session == null || e.ChangedButton != MouseButton.Left) { return; }
-
-        if (session.PointerPressed(ToSKPoint(e.GetPosition(DrawCanvas)), CanvasViewSize))
-        {
-            DrawCanvas.CaptureMouse();
-            e.Handled = true;
-        }
-    }
-
-    private void DrawCanvas_OnMouseMove(object sender, MouseEventArgs e)
-    {
-        var session = ViewModel?.Session;
-        if (session == null || !session.IsPointerActive) { return; }
-
-        session.PointerMoved(ToSKPoint(e.GetPosition(DrawCanvas)), CanvasViewSize);
-        e.Handled = true;
-    }
-
-    private void DrawCanvas_OnMouseUp(object sender, MouseButtonEventArgs e)
-    {
-        var session = ViewModel?.Session;
-        if (session == null || e.ChangedButton != MouseButton.Left || !session.IsPointerActive) { return; }
-
-        session.PointerReleased();
-        DrawCanvas.ReleaseMouseCapture();
-        e.Handled = true;
-    }
-
-    private void DrawCanvas_OnLostMouseCapture(object sender, MouseEventArgs e)
-    {
-        //If capture is lost mid-stroke (e.g. the window deactivates), discard the stroke
-        ViewModel?.Session?.PointerCanceled();
     }
 
     private Task<string> PickSavePngPathAsync(string suggestedFileName)
