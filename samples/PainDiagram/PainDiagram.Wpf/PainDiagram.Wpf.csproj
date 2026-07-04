@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- SkiaSharp.Views.WPF ships net10.0-windows10.0.19041 assets, so the TFM must
+         carry (at least) that Windows platform version -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_").Replace(".Wpf", ""))</RootNamespace>
+    <!-- Lets the project compile (not run) on Linux/macOS build hosts -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\Helpers\HostHelper.cs" Link="Helpers\HostHelper.cs" />
+    <Compile Include="..\Shared\ViewModels\MainViewModel.cs" Link="ViewModels\MainViewModel.cs" />
+  </ItemGroup>
+
+  <!-- The body-map image the view model loads; the logical name must match
+       MainViewModel.BodyMapResourceName -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\Shared\Assets\body_map_master.png" Link="Assets\body_map_master.png">
+      <LogicalName>PainDiagram.Assets.body_map_master.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\CodeBrix.Imaging.Drawing\CodeBrix.Imaging.Drawing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeBrix.Platform.WPF.ApacheLicenseForever" Version="1.0.183.475" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="4.148.0" />
+  </ItemGroup>
+
+</Project>

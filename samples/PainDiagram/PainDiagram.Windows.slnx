@@ -1,0 +1,35 @@
+<Solution>
+  <!-- PainDiagram.Windows.slnx
+       The Windows-only solution: everything in PainDiagram.slnx PLUS the
+       native (non-Skia) WinUI 3 and WPF heads, which require Windows-host-only
+       build tooling. Open this one on a Windows machine. -->
+  <!-- PainDiagram.WinUI only declares Platforms x86/x64/ARM64 (no Any CPU),
+       so the solution platforms are restricted to match - otherwise VS offers
+       "Any CPU" and fails to map it to the WinUI project. -->
+  <Configurations>
+    <Platform Name="x86" />
+    <Platform Name="x64" />
+    <Platform Name="ARM64" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/CodeBrixPlatform/">
+    <Project Path="CodeBrixPlatform/PainDiagram.UI/PainDiagram.UI.shproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.Core/PainDiagram.Core.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.Win32Skia/PainDiagram.Win32Skia.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.WinWpfSkia/PainDiagram.WinWpfSkia.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxX11/PainDiagram.LinuxX11.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxWayland/PainDiagram.LinuxWayland.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxFrameBuffer/PainDiagram.LinuxFrameBuffer.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.MacOS/PainDiagram.MacOS.csproj" />
+  </Folder>
+  <Project Path="../../src/CodeBrix.Imaging.Drawing/CodeBrix.Imaging.Drawing.csproj" />
+  <Project Path="PainDiagram.WinUI/PainDiagram.WinUI.csproj">
+    <Platform Solution="*|x86" Project="x86" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Deploy Solution="Debug|x64" />
+  </Project>
+  <Project Path="PainDiagram.Wpf/PainDiagram.Wpf.csproj" />
+</Solution>

@@ -1,0 +1,31 @@
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+
+CodeBrix.Imaging.Drawing is a library that provides stroke-based drawing,
+painting and highlighting functionality for SkiaSharp canvases and images.
+CodeBrix.Imaging.Drawing does not incorporate any third-party source code
+into its own assemblies. In particular, the library's drawing-primitives
+functionality (lines, arrows, circles, ellipses, rectangles, and
+polylines/polygons) is original code that renders through the library's
+SkiaSharp NuGet package dependency (BSD-3-Clause licensed, and consumed as
+a package - its source code is not incorporated into this repository); no
+third-party drawing or geometry source code was copied or adapted for it. Portions of its source code were adapted from the
+NuraPad application and the CodeBrix.Prism libraries — earlier projects
+authored by Jeremy Ellis — and all of that code, along with the body-map
+diagram image used by the PainDiagram sample application, is the original
+intellectual property of Jeremy Ellis. Portions of the PainDiagram sample
+application (application scaffolding and native file-dialog helpers) were
+adapted from the JustBetweenUs and WikipediaPublisher reference
+applications, which are also authored by Jeremy Ellis.
+
+Jeremy Ellis and contributors license the CodeBrix.Imaging.Drawing project
+to you under the terms set forth in the LICENSE file, which is located at
+the root of this repository.
+
+If you have any questions about any third-party code or services referenced
+here, or if you believe that any third-party code has been included in
+CodeBrix.Imaging.Drawing in error, please open a new issue at:
+https://github.com/ellisnet/CodeBrix.Imaging.Drawing/issues
+
+================================================================================
+
+END OF THIRD-PARTY SOFTWARE NOTICES AND INFORMATION

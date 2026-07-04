@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PainDiagram.WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "PainDiagram.WinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

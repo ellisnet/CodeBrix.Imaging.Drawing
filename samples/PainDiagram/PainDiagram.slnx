@@ -1,0 +1,20 @@
+<Solution>
+  <!-- PainDiagram.slnx
+       The cross-platform solution: everything that builds with the plain .NET SDK
+       on Linux, macOS and Windows. The native (non-Skia) WinUI 3 and WPF heads
+       live in PainDiagram.Windows.slnx. -->
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/CodeBrixPlatform/">
+    <Project Path="CodeBrixPlatform/PainDiagram.UI/PainDiagram.UI.shproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.Core/PainDiagram.Core.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.Win32Skia/PainDiagram.Win32Skia.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.WinWpfSkia/PainDiagram.WinWpfSkia.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxX11/PainDiagram.LinuxX11.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxWayland/PainDiagram.LinuxWayland.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.LinuxFrameBuffer/PainDiagram.LinuxFrameBuffer.csproj" />
+    <Project Path="CodeBrixPlatform/PainDiagram.MacOS/PainDiagram.MacOS.csproj" />
+  </Folder>
+  <Project Path="../../src/CodeBrix.Imaging.Drawing/CodeBrix.Imaging.Drawing.csproj" />
+</Solution>
