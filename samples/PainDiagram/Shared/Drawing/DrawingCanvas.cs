@@ -7,7 +7,7 @@ namespace CodeBrix.Imaging.Drawing;
 /// base control for that head via conditional compilation:
 /// <list type="bullet">
 ///   <item>CodeBrix.Platform Skia heads (which should have HAS_CODEBRIXPLATFORM defined on
-///   their shared assembly; and native WinUI 3 (which should have HAS_WINUI defined):
+///   their shared assembly); and native WinUI 3 (which should have HAS_WINUI defined):
 ///   SkiaSharp.Views.Windows.SKXamlCanvas.</item>
 ///   <item>native WPF (neither symbol): SkiaSharp.Views.WPF.SKElement.</item>
 /// </list>

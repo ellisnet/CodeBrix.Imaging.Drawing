@@ -132,6 +132,87 @@ SkiaSharp.Views canvas). Two mechanisms:
        SKColor sk = session.BackgroundFillColor.ToSKColor();
        Size    s  = someSkSizeI.ToImagingSize();
 
+KEEPING SKIASHARP OUT OF THE HOSTING APP'S XAML (the DrawingCanvas trick)
+========================================================================
+
+The section above keeps SkiaSharp out of your model and view-model code.
+A XAML host still normally names a SkiaSharp view control in its markup -
+SkiaSharp.Views.Windows.SKXamlCanvas on WinUI-dialect XAML (CodeBrix.
+Platform Skia heads and native WinUI 3) and SkiaSharp.Views.WPF.SKElement
+on WPF - so each head's XAML carries a SkiaSharp xmlns and a per-framework
+control name.
+
+You can hide all of that behind ONE control name that is identical in
+every head's XAML - <drawing:DrawingCanvas/> - by adding a single tiny
+source file to your app and letting conditional compilation pick the
+correct base control per head. The file (taken verbatim from the
+PainDiagram sample; put it in whatever namespace you like):
+
+  namespace CodeBrix.Imaging.Drawing;
+
+  /// <summary>
+  /// SkiaSharp-based drawing surface, abstracted so a single control name -
+  /// <c>&lt;drawing:DrawingCanvas /&gt;</c> - can be used in the XAML of every head. This one
+  /// linked source file is compiled into each head's assembly and resolves to the correct
+  /// base control for that head via conditional compilation:
+  /// <list type="bullet">
+  ///   <item>CodeBrix.Platform Skia heads (which should have HAS_CODEBRIXPLATFORM defined on
+  ///   their shared assembly); and native WinUI 3 (which should have HAS_WINUI defined):
+  ///   SkiaSharp.Views.Windows.SKXamlCanvas.</item>
+  ///   <item>native WPF (neither symbol): SkiaSharp.Views.WPF.SKElement.</item>
+  /// </list>
+  /// It is a plain subclass that carries no extra behavior - the hosting page's code-behind
+  /// wires PaintSurface and the pointer/mouse events to the DrawingSession exactly as before.
+  /// </summary>
+  #if (HAS_CODEBRIXPLATFORM || HAS_WINUI)
+  public class DrawingCanvas : SkiaSharp.Views.Windows.SKXamlCanvas { }
+  #else
+  public class DrawingCanvas : SkiaSharp.Views.WPF.SKElement { }
+  #endif
+
+How to use it:
+  1. Add this one file to your app as a LINKED source file - exactly like a
+     shared view-model file. Link it into each ASSEMBLY that has to compile
+     it: your shared CodeBrix.Platform library (the Skia head executables
+     then inherit it through their reference to that library), and each
+     native head project. In PainDiagram that is three assemblies -
+     PainDiagram.Core, PainDiagram.WinUI, and PainDiagram.Wpf.
+  2. Define the right compile symbol so the correct branch is selected.
+     Define each symbol ONCE, on the assembly that actually compiles the
+     file - never repeat it across executables that share that code:
+       * HAS_CODEBRIXPLATFORM - for CodeBrix.Platform Skia apps, define it on
+         the ONE shared library that holds the linked file and references
+         CodeBrix.Platform.SkiaSharp.Views.MitLicenseForever (in PainDiagram,
+         PainDiagram.Core). Do NOT define it on the individual Skia head
+         executables - they inherit it through their reference to that
+         shared library.
+       * HAS_WINUI            - on the native WinUI 3 head (references
+         SkiaSharp.Views.WinUI)
+       * neither symbol       - on the native WPF head (references
+         SkiaSharp.Views.WPF)
+     For example, in the appropriate .csproj:
+       <DefineConstants>$(DefineConstants);HAS_CODEBRIXPLATFORM</DefineConstants>
+  3. Reference it in XAML with the namespace the file declares. The xmlns
+     form differs by XAML dialect, but the element tag is identical:
+       WinUI dialect: xmlns:drawing="using:CodeBrix.Imaging.Drawing"
+       WPF dialect:   xmlns:drawing="clr-namespace:CodeBrix.Imaging.Drawing"
+       <drawing:DrawingCanvas x:Name="DrawCanvas"
+           PaintSurface="DrawCanvas_OnPaintSurface" ... />
+
+Because DrawingCanvas merely DERIVES from the platform control, every
+member the code-behind already used (Invalidate/InvalidateVisual,
+CapturePointer/CaptureMouse, ActualWidth/Height, ...) is inherited
+unchanged - the existing paint and pointer handlers keep working as they
+are, and no code-behind edits are needed.
+
+Scope of the trick: it removes SkiaSharp from your XAML markup and gives
+every head one identical control name. It does NOT remove SkiaSharp from
+the code-behind's paint handler, which still receives an
+SKPaintSurfaceEventArgs and calls session.Render(e.Surface, e.Info) -
+that surface IS the one genuine SkiaSharp touchpoint (see the section
+above). Forward pointer input with the PointF/SizeF overloads of
+PointerPressed/PointerMoved to keep the pointer handlers SkiaSharp-free.
+
 CORE API REFERENCE
 ========================================================================
 
