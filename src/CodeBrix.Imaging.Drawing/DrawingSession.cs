@@ -5,7 +5,6 @@ using System.IO;
 using CodeBrix.Imaging.Drawing.Models;
 using CodeBrix.Imaging.Drawing.Rendering;
 using CodeBrix.Imaging.Drawing.Shapes;
-using CodeBrix.Imaging.PixelFormats;
 using SkiaSharp;
 
 namespace CodeBrix.Imaging.Drawing;
@@ -37,10 +36,14 @@ public sealed class DrawingSession : IDisposable
     /// The size of the calibrated drawing space that all of the session's strokes are
     /// expressed in.
     /// </summary>
-    public SKSizeI CalibrationSize => _renderer.CalibrationSize;
+    public Size CalibrationSize => _renderer.CalibrationSize;
+
+    /// <summary>Gets <see cref="CalibrationSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
+    /// <returns>The calibration size as a SkiaSharp size.</returns>
+    public SKSizeI GetCalibrationSizeAsSkia() => _renderer.GetCalibrationSizeAsSkia();
 
     /// <summary>
-    /// The layers of the drawing, bottom-most first, as configured via <see cref="AddLayer"/>.
+    /// The layers of the drawing, bottom-most first, as configured via <see cref="AddLayer(string, Color)"/>.
     /// </summary>
     public IReadOnlyList<DrawingLayer> Layers
     {
@@ -102,20 +105,36 @@ public sealed class DrawingSession : IDisposable
     /// The color that the drawing rectangle is filled with before the background image and
     /// layers are drawn.
     /// </summary>
-    public SKColor BackgroundFillColor
+    public Color BackgroundFillColor
     {
         get => _renderer.BackgroundFillColor;
         set => _renderer.BackgroundFillColor = value;
     }
 
+    /// <summary>Sets <see cref="BackgroundFillColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <param name="color">The background fill color.</param>
+    public void SetBackgroundFillColor(SKColor color) => _renderer.SetBackgroundFillColor(color);
+
+    /// <summary>Gets <see cref="BackgroundFillColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The background fill color as a SkiaSharp color.</returns>
+    public SKColor GetBackgroundFillColorAsSkia() => _renderer.GetBackgroundFillColorAsSkia();
+
     /// <summary>
     /// The color that the whole canvas is cleared to at the start of every render.
     /// </summary>
-    public SKColor SurfaceClearColor
+    public Color SurfaceClearColor
     {
         get => _renderer.SurfaceClearColor;
         set => _renderer.SurfaceClearColor = value;
     }
+
+    /// <summary>Sets <see cref="SurfaceClearColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <param name="color">The surface clear color.</param>
+    public void SetSurfaceClearColor(SKColor color) => _renderer.SetSurfaceClearColor(color);
+
+    /// <summary>Gets <see cref="SurfaceClearColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The surface clear color as a SkiaSharp color.</returns>
+    public SKColor GetSurfaceClearColorAsSkia() => _renderer.GetSurfaceClearColorAsSkia();
 
     /// <summary>
     /// Indicates whether any layer currently holds at least one completed element (stroke or shape).
@@ -232,6 +251,26 @@ public sealed class DrawingSession : IDisposable
     }
 
     /// <summary>
+    /// Creates a drawing session for annotating an image, with an explicitly stated
+    /// calibrated drawing space: the encoded image (PNG, JPEG, etc.) becomes the session's
+    /// background, and <paramref name="calibrationSize"/> becomes the calibration size.
+    /// Match its aspect ratio to the image's to avoid stretching the image.
+    /// </summary>
+    /// <param name="encodedImage">The encoded image bytes to annotate.</param>
+    /// <param name="calibrationSize">The calibrated drawing space; both dimensions must be positive.</param>
+    /// <param name="options">
+    /// Other initial settings; when omitted, defaults are used. Its
+    /// <see cref="DrawingSessionOptions.CalibrationSize"/> is replaced by
+    /// <paramref name="calibrationSize"/>.
+    /// </param>
+    /// <returns>A new session with the image as its background.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="encodedImage"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the bytes cannot be decoded as an image.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.</exception>
+    public static DrawingSession CreateForImage(byte[] encodedImage, Size calibrationSize, DrawingSessionOptions options = null)
+        => CreateForImage(encodedImage, SkiaInterop.ToSK(calibrationSize), options);
+
+    /// <summary>
     /// Creates a drawing session for annotating an image: the encoded image (PNG, JPEG,
     /// etc.) becomes the session's background, and the calibrated drawing space is set
     /// according to the explicitly chosen <paramref name="sizing"/> behavior.
@@ -277,6 +316,26 @@ public sealed class DrawingSession : IDisposable
         session._renderer.BackgroundImage = image;
         return session;
     }
+
+    /// <summary>
+    /// Creates a drawing session for annotating an already-decoded image, with an
+    /// explicitly stated calibrated drawing space: the bitmap becomes the session's
+    /// background (the caller keeps ownership and disposes it), and
+    /// <paramref name="calibrationSize"/> becomes the calibration size. Match its aspect
+    /// ratio to the image's to avoid stretching the image.
+    /// </summary>
+    /// <param name="image">The bitmap to annotate; not disposed by the session.</param>
+    /// <param name="calibrationSize">The calibrated drawing space; both dimensions must be positive.</param>
+    /// <param name="options">
+    /// Other initial settings; when omitted, defaults are used. Its
+    /// <see cref="DrawingSessionOptions.CalibrationSize"/> is replaced by
+    /// <paramref name="calibrationSize"/>.
+    /// </param>
+    /// <returns>A new session with the image as its background.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="image"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.</exception>
+    public static DrawingSession CreateForImage(SKBitmap image, Size calibrationSize, DrawingSessionOptions options = null)
+        => CreateForImage(image, SkiaInterop.ToSK(calibrationSize), options);
 
     /// <summary>
     /// Creates a drawing session for annotating an already-decoded image: the bitmap
@@ -333,7 +392,7 @@ public sealed class DrawingSession : IDisposable
         switch (sizing)
         {
             case CalibrationSizing.FromOptions:
-                return (options ?? new DrawingSessionOptions()).CalibrationSize;
+                return (options ?? new DrawingSessionOptions()).GetCalibrationSizeAsSkia();
 
             case CalibrationSizing.DeriveFromBackgroundImage:
                 return DeriveCalibrationSize(imageSize);
@@ -347,7 +406,7 @@ public sealed class DrawingSession : IDisposable
     {
         var effective = new DrawingSessionOptions
         {
-            CalibrationSize = calibrationSize,
+            CalibrationSize = SkiaInterop.ToImaging(calibrationSize),
         };
         if (options != null)
         {
@@ -407,6 +466,18 @@ public sealed class DrawingSession : IDisposable
 
         return layer;
     }
+
+    /// <summary>
+    /// Adds a new drawing layer on top of any existing layers. The first layer added
+    /// becomes the <see cref="ActiveLayer"/>.
+    /// </summary>
+    /// <param name="name">The display name of the layer; must be unique within the session.</param>
+    /// <param name="color">The color that the layer's strokes are drawn with.</param>
+    /// <returns>The newly created layer.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is null/whitespace, or a layer with that name already exists.
+    /// </exception>
+    public DrawingLayer AddLayer(string name, Color color) => AddLayer(name, SkiaInterop.ToSK(color));
 
     /// <summary>
     /// Finds a layer by its (case-sensitive) name.
@@ -512,7 +583,7 @@ public sealed class DrawingSession : IDisposable
         if (layer == null || _renderer.LastCanvasSize.IsEmpty) { return false; }
 
         SKPointI? calibrated = CanvasCalibration.ViewPointToCalibrated(
-            viewPoint, viewSize, _renderer.LastCanvasSize, CalibrationSize);
+            viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia());
         if (!calibrated.HasValue) { return false; }
 
         //A new press while a stroke is somehow still active commits the earlier stroke first
@@ -526,6 +597,16 @@ public sealed class DrawingSession : IDisposable
         RaiseRedrawRequested();
         return true;
     }
+
+    /// <summary>
+    /// Begins a new stroke at the given pointer position. Call from the hosting view's
+    /// pointer-pressed (or mouse-down) handler. A press outside the drawing area is ignored.
+    /// </summary>
+    /// <param name="viewPoint">The pointer position, in the hosting control's logical coordinates.</param>
+    /// <param name="viewSize">The logical size of the hosting control.</param>
+    /// <returns><c>true</c> when a stroke was started (the view should capture the pointer).</returns>
+    public bool PointerPressed(PointF viewPoint, SizeF viewSize)
+        => PointerPressed(SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize));
 
     /// <summary>
     /// Extends the in-progress stroke to the given pointer position. Call from the hosting
@@ -542,7 +623,7 @@ public sealed class DrawingSession : IDisposable
         if (_activeStroke == null) { return false; }
 
         SKPointI? calibrated = CanvasCalibration.ViewPointToCalibrated(
-            viewPoint, viewSize, _renderer.LastCanvasSize, CalibrationSize, clampToDrawingArea: true);
+            viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia(), clampToDrawingArea: true);
         if (!calibrated.HasValue) { return false; }
 
         bool added = _activeStroke.AddPoint(calibrated.Value.X, calibrated.Value.Y,
@@ -551,6 +632,18 @@ public sealed class DrawingSession : IDisposable
         if (added) { RaiseRedrawRequested(); }
         return added;
     }
+
+    /// <summary>
+    /// Extends the in-progress stroke to the given pointer position. Call from the hosting
+    /// view's pointer-moved (or mouse-move) handler; calls made while no stroke is in
+    /// progress are ignored, so the handler does not need to track button state itself.
+    /// Positions outside the drawing area are clamped to its edge.
+    /// </summary>
+    /// <param name="viewPoint">The pointer position, in the hosting control's logical coordinates.</param>
+    /// <param name="viewSize">The logical size of the hosting control.</param>
+    /// <returns><c>true</c> when the stroke was extended with a new point.</returns>
+    public bool PointerMoved(PointF viewPoint, SizeF viewSize)
+        => PointerMoved(SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize));
 
     /// <summary>
     /// Completes the in-progress stroke and commits it to the active layer. Call from the
@@ -611,7 +704,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
     public DrawingShape DrawLine(float x1, float y1, float x2, float y2,
         float thickness = Stroke.DefaultWidth, Color? color = null)
-        => CommitShape(new LineShape(x1, y1, x2, y2, thickness, ToNullableSKColor(color)));
+        => CommitShape(new LineShape(x1, y1, x2, y2, thickness, color));
 
     /// <summary>
     /// Draws an arrow pointing from (<paramref name="x1"/>, <paramref name="y1"/>) to
@@ -629,7 +722,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
     public DrawingShape DrawArrow(float x1, float y1, float x2, float y2,
         float thickness = Stroke.DefaultWidth, Color? color = null, float? headLength = null)
-        => CommitShape(new ArrowShape(x1, y1, x2, y2, thickness, ToNullableSKColor(color), headLength));
+        => CommitShape(new ArrowShape(x1, y1, x2, y2, thickness, color, headLength));
 
     /// <summary>
     /// Draws a circle of radius <paramref name="radius"/> centered at
@@ -646,7 +739,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
     public DrawingShape DrawCircle(float centerX, float centerY, float radius,
         float thickness = Stroke.DefaultWidth, Color? color = null, bool filled = false)
-        => CommitShape(new CircleShape(centerX, centerY, radius, thickness, ToNullableSKColor(color), filled));
+        => CommitShape(new CircleShape(centerX, centerY, radius, thickness, color, filled));
 
     /// <summary>
     /// Draws an axis-aligned ellipse centered at (<paramref name="centerX"/>,
@@ -664,7 +757,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
     public DrawingShape DrawEllipse(float centerX, float centerY, float radiusX, float radiusY,
         float thickness = Stroke.DefaultWidth, Color? color = null, bool filled = false)
-        => CommitShape(new EllipseShape(centerX, centerY, radiusX, radiusY, thickness, ToNullableSKColor(color), filled));
+        => CommitShape(new EllipseShape(centerX, centerY, radiusX, radiusY, thickness, color, filled));
 
     /// <summary>
     /// Draws an axis-aligned rectangle with its top-left corner at (<paramref name="x"/>,
@@ -683,7 +776,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
     public DrawingShape DrawRectangle(float x, float y, float width, float height,
         float thickness = Stroke.DefaultWidth, Color? color = null, bool filled = false, float cornerRadius = 0f)
-        => CommitShape(new RectangleShape(x, y, width, height, thickness, ToNullableSKColor(color), filled, cornerRadius));
+        => CommitShape(new RectangleShape(x, y, width, height, thickness, color, filled, cornerRadius));
 
     /// <summary>
     /// Draws a connected series of line segments through the given points on the active
@@ -704,12 +797,12 @@ public sealed class DrawingSession : IDisposable
     {
         if (points == null) { throw new ArgumentNullException(nameof(points)); }
 
-        var skPoints = new SKPoint[points.Count];
+        var polylinePoints = new PointF[points.Count];
         for (int i = 0; i < points.Count; i++)
         {
-            skPoints[i] = new SKPoint(points[i].X, points[i].Y);
+            polylinePoints[i] = new PointF(points[i].X, points[i].Y);
         }
-        return CommitShape(new PolylineShape(skPoints, thickness, ToNullableSKColor(color), closed, filled));
+        return CommitShape(new PolylineShape(polylinePoints, thickness, color, closed, filled));
     }
 
     /// <summary>
@@ -741,13 +834,6 @@ public sealed class DrawingSession : IDisposable
         RaiseDrawingChanged();
         RaiseRedrawRequested();
         return shape;
-    }
-
-    private static SKColor? ToNullableSKColor(Color? color)
-    {
-        if (!color.HasValue) { return null; }
-        Rgba32 rgba = color.Value.ToPixel<Rgba32>();
-        return new SKColor(rgba.R, rgba.G, rgba.B, rgba.A);
     }
 
     #endregion
@@ -788,7 +874,7 @@ public sealed class DrawingSession : IDisposable
     public void Render(SKCanvas canvas, SKImageInfo info, bool clearCanvas = true)
     {
         ThrowIfDisposed();
-        _renderer.Render(canvas, info, Layers, _activeStroke, _activeStrokeLayer?.Color, clearCanvas);
+        _renderer.Render(canvas, info, Layers, _activeStroke, _activeStrokeLayer?.GetColorAsSkia(), clearCanvas);
     }
 
     /// <summary>
@@ -797,16 +883,20 @@ public sealed class DrawingSession : IDisposable
     /// original resolution), otherwise the <see cref="CalibrationSize"/>. Both match the
     /// drawing space's aspect ratio, so a default-size export is never distorted.
     /// </summary>
-    public SKSizeI DefaultExportSize
+    public Size DefaultExportSize
     {
         get
         {
             SKBitmap background = _renderer.BackgroundImage;
             return background != null
-                ? new SKSizeI(background.Width, background.Height)
+                ? new Size(background.Width, background.Height)
                 : CalibrationSize;
         }
     }
+
+    /// <summary>Gets <see cref="DefaultExportSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
+    /// <returns>The default export size as a SkiaSharp size.</returns>
+    public SKSizeI GetDefaultExportSizeAsSkia() => SkiaInterop.ToSK(DefaultExportSize);
 
     /// <summary>
     /// Renders the completed drawing to a new image at the <see cref="DefaultExportSize"/>.
@@ -848,6 +938,18 @@ public sealed class DrawingSession : IDisposable
     }
 
     /// <summary>
+    /// Renders the completed drawing to a new image - for saving to a file.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">
+    /// When <c>true</c> (the default), the background fill and image render behind the
+    /// layers; when <c>false</c>, the layers render over transparency.
+    /// </param>
+    /// <returns>A new <see cref="SKImage"/> that the caller must dispose.</returns>
+    public SKImage ExportImage(Size outputSize, bool includeBackground = true)
+        => ExportImage(SkiaInterop.ToSK(outputSize), includeBackground);
+
+    /// <summary>
     /// Renders the completed drawing to PNG-encoded image bytes.
     /// </summary>
     /// <param name="outputSize">The pixel size of the image to produce.</param>
@@ -859,6 +961,15 @@ public sealed class DrawingSession : IDisposable
         using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
         return data.ToArray();
     }
+
+    /// <summary>
+    /// Renders the completed drawing to PNG-encoded image bytes.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>The PNG-encoded image bytes.</returns>
+    public byte[] ExportPng(Size outputSize, bool includeBackground = true)
+        => ExportPng(SkiaInterop.ToSK(outputSize), includeBackground);
 
     /// <summary>
     /// Renders the completed drawing to JPEG-encoded image bytes. JPEG has no alpha
@@ -877,6 +988,17 @@ public sealed class DrawingSession : IDisposable
     }
 
     /// <summary>
+    /// Renders the completed drawing to JPEG-encoded image bytes. JPEG has no alpha
+    /// channel, so the background is always included and transparent areas render black
+    /// unless an opaque <see cref="BackgroundFillColor"/> is set.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="quality">The JPEG quality, 1-100; defaults to 90.</param>
+    /// <returns>The JPEG-encoded image bytes.</returns>
+    public byte[] ExportJpeg(Size outputSize, int quality = 90)
+        => ExportJpeg(SkiaInterop.ToSK(outputSize), quality);
+
+    /// <summary>
     /// Renders the completed drawing to a stream in PNG format.
     /// </summary>
     /// <param name="destination">The stream to write the PNG image to.</param>
@@ -889,6 +1011,16 @@ public sealed class DrawingSession : IDisposable
         byte[] bytes = ExportPng(outputSize, includeBackground);
         destination.Write(bytes, 0, bytes.Length);
     }
+
+    /// <summary>
+    /// Renders the completed drawing to a stream in PNG format.
+    /// </summary>
+    /// <param name="destination">The stream to write the PNG image to.</param>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> is null.</exception>
+    public void ExportPng(Stream destination, Size outputSize, bool includeBackground = true)
+        => ExportPng(destination, SkiaInterop.ToSK(outputSize), includeBackground);
 
     #endregion
 

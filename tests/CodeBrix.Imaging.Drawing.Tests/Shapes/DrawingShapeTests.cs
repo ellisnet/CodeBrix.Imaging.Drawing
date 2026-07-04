@@ -17,7 +17,7 @@ public class DrawingShapeTests
     {
         using var renderer = new DrawingRenderer(Square1000)
         {
-            BackgroundFillColor = SKColors.White,
+            BackgroundFillColor = Color.White,
             LayerOpacity = 255, //opaque, so pixel assertions are exact
         };
         var layer = new DrawingLayer("Shapes", layerColor);
@@ -74,7 +74,7 @@ public class DrawingShapeTests
     public void Shape_specific_color_overrides_layer_color()
     {
         //Arrange - a blue circle on a red layer
-        var circle = new CircleShape(500, 500, 400, color: SKColors.Blue, isFilled: true);
+        var circle = new CircleShape(500, 500, 400, color: Color.Blue, isFilled: true);
 
         //Act
         using SKBitmap bitmap = RenderShape(circle, SKColors.Red);
@@ -133,7 +133,7 @@ public class DrawingShapeTests
     {
         //Arrange - a triangle
         var triangle = new PolylineShape(
-            new[] { new SKPoint(500, 200), new SKPoint(800, 800), new SKPoint(200, 800) },
+            new[] { new PointF(500, 200), new PointF(800, 800), new PointF(200, 800) },
             strokeThickness: 40, isClosed: true);
 
         //Act
@@ -148,7 +148,7 @@ public class DrawingShapeTests
     public void Polyline_requires_at_least_two_points()
     {
         //Arrange
-        Action act = () => _ = new PolylineShape(new[] { new SKPoint(1, 1) });
+        Action act = () => _ = new PolylineShape(new[] { new PointF(1, 1) });
 
         //Act + Assert
         act.Should().Throw<ArgumentException>();
@@ -182,7 +182,7 @@ public class DrawingShapeTests
         //Arrange - a stroke first, then a shape on the same layer
         using var renderer = new DrawingRenderer(Square1000)
         {
-            BackgroundFillColor = SKColors.White,
+            BackgroundFillColor = Color.White,
             LayerOpacity = 255,
         };
         var layer = new DrawingLayer("Mixed", SKColors.Red);
@@ -202,5 +202,44 @@ public class DrawingShapeTests
         bitmap.GetPixel(50, 100).Red.Should().Be((byte)255);  //stroke, outside the circle
         bitmap.GetPixel(100, 40).Red.Should().Be((byte)255);  //circle rim (y=200 calibrated)
         bitmap.Dispose();
+    }
+
+    [Fact]
+    public void Shape_color_exposes_both_imaging_and_skia_forms()
+    {
+        //Arrange - constructed with a CodeBrix.Imaging color
+        var circle = new CircleShape(500, 500, 400, color: Color.Blue);
+
+        //Act + Assert - readable as either type
+        circle.Color.Should().Be(Color.Blue);
+        circle.GetColorAsSkia().Should().Be(SKColors.Blue);
+    }
+
+    [Fact]
+    public void Shape_without_color_reports_null_in_both_forms()
+    {
+        //Arrange
+        var circle = new CircleShape(500, 500, 400);
+
+        //Act + Assert
+        circle.Color.Should().BeNull();
+        circle.GetColorAsSkia().Should().BeNull();
+    }
+
+    [Fact]
+    public void Polyline_points_round_trip_through_both_getters()
+    {
+        //Arrange
+        var polyline = new PolylineShape(new[] { new PointF(10, 20), new PointF(30, 40) });
+
+        //Act
+        PointF[] imaging = polyline.GetPoints();
+        SKPoint[] skia = polyline.GetPointsAsSkia();
+
+        //Assert
+        imaging[0].Should().Be(new PointF(10, 20));
+        imaging[1].Should().Be(new PointF(30, 40));
+        skia[0].Should().Be(new SKPoint(10, 20));
+        skia[1].Should().Be(new SKPoint(30, 40));
     }
 }

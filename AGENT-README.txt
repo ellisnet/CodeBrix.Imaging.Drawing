@@ -84,7 +84,53 @@ KEY NAMESPACE
 
 Because CodeBrix.Imaging.Drawing nests under the CodeBrix.Imaging
 namespace, the CodeBrix.Imaging `Color` type resolves as just `Color`
-inside consuming code that uses these namespaces.
+inside consuming code that uses these namespaces. (Add an explicit
+`using CodeBrix.Imaging;` when your own code lives in an unrelated
+namespace, so that `Color`, `Size`, `PointF`, etc. resolve.)
+
+SKIASHARP-FREE BY DEFAULT (AND SKIASHARP-FRIENDLY WHEN YOU WANT IT)
+========================================================================
+
+The goal of this library's public surface is that a consumer never has
+to write a `using SkiaSharp;` line - EXCEPT where it hands SkiaSharp the
+actual drawing surface (the `SKCanvas`/`SKSurface`/`SKImageInfo` passed
+to `Render`, and the `Draw(SKCanvas, SKColor)` override when authoring a
+custom shape). Everywhere else, colors, sizes, points and rectangles are
+expressed with the CodeBrix.Imaging value types, which map one-to-one to
+their SkiaSharp counterparts:
+
+  CodeBrix.Imaging     SkiaSharp        used for
+  ------------------   --------------   ------------------------------
+  Color                SKColor          layer/shape/fill/clear colors
+  Size                 SKSizeI          calibration + export sizes
+  SizeF                SKSize           view sizes (pointer input)
+  Point                SKPointI         calibrated integer points
+  PointF               SKPoint          view points (pointer input)
+  RectangleF           SKRect           drawing rectangles
+
+This is the DEFAULT and NORMAL way to use the library - every example in
+this document uses the CodeBrix.Imaging types.
+
+The ability to work in SkiaSharp types is deliberately PRESERVED, though,
+for callers who already hold them (for example values that came from a
+SkiaSharp.Views canvas). Two mechanisms:
+
+  1. Method overloads and helpers. Methods that took a SkiaSharp type
+     still do (for example `AddLayer(string, SKColor)` and
+     `ExportPng(SKSizeI, ...)` remain), alongside the CodeBrix.Imaging
+     overload. Properties cannot be overloaded by type, so each property
+     that is a CodeBrix.Imaging type also has a `Set…(SKColor/SKSizeI)`
+     helper (or a fluent one on DrawingSessionOptions) for writing and a
+     `Get…AsSkia()` method for reading. For example:
+       session.BackgroundFillColor = Color.White;      // default path
+       session.SetBackgroundFillColor(SKColors.White); // Skia path
+       SKColor c = session.GetBackgroundFillColorAsSkia();
+
+  2. Bridge extension methods (namespace CodeBrix.Imaging.Drawing.
+     Extensions) convert between the two worlds in one call, both
+     directions - see "Bridge extensions" below:
+       SKColor sk = session.BackgroundFillColor.ToSKColor();
+       Size    s  = someSkSizeI.ToImagingSize();
 
 CORE API REFERENCE
 ========================================================================
@@ -97,24 +143,28 @@ Construction:
   var session = new DrawingSession();                    // defaults
   var session = new DrawingSession(new DrawingSessionOptions
   {
-      CalibrationSize = new SKSizeI(1000, 1000), // logical stroke space - ANY
+      CalibrationSize = new Size(1000, 1000),    // logical stroke space - ANY
                                                  //   width x height; match it to the
                                                  //   background's aspect ratio
       LayerOpacity = 100,                        // highlighter alpha (255 = opaque)
       ActiveStrokeOpacity = 200,                 // in-progress stroke alpha
-      BackgroundFillColor = SKColors.White,      // behind the image
-      SurfaceClearColor = SKColors.Transparent,  // whole-canvas clear
+      BackgroundFillColor = Color.White,         // behind the image
+      SurfaceClearColor = Color.Transparent,     // whole-canvas clear
       StrokeWidth = 15f,                         // calibrated units
   });
+  // A caller holding SkiaSharp values can use the fluent Skia setters instead:
+  //   new DrawingSessionOptions().SetCalibrationSize(new SKSizeI(1000, 1000))
+  //       .SetBackgroundFillColor(SKColors.White)
 
 Image-annotation factories (photos of any aspect ratio):
-  DrawingSession CreateForImage(byte[] encodedImage, SKSizeI calibrationSize, DrawingSessionOptions options = null)
+  DrawingSession CreateForImage(byte[] encodedImage, Size calibrationSize, DrawingSessionOptions options = null)
   DrawingSession CreateForImage(byte[] encodedImage, CalibrationSizing sizing, DrawingSessionOptions options = null)
-  DrawingSession CreateForImage(SKBitmap image, SKSizeI calibrationSize, DrawingSessionOptions options = null)
+  DrawingSession CreateForImage(SKBitmap image, Size calibrationSize, DrawingSessionOptions options = null)
   DrawingSession CreateForImage(SKBitmap image, CalibrationSizing sizing, DrawingSessionOptions options = null)
+  // (SKSizeI overloads of the two size-taking factories also exist.)
   // Decodes/uses the image as the session's background. The calibration size
   // is ALWAYS an explicit caller choice - there is no automatic behavior:
-  //   * pass an SKSizeI to state the drawing space inline (match its aspect
+  //   * pass a Size to state the drawing space inline (match its aspect
   //     ratio to the image's to avoid stretching), or
   //   * pass CalibrationSizing.DeriveFromBackgroundImage to compute it from
   //     the image's aspect ratio (longest side = CalibrationLongSide = 1000)
@@ -127,7 +177,8 @@ Image-annotation factories (photos of any aspect ratio):
   // (CodeBrix.Imaging: image.Mutate(x => x.AutoOrient())).
 
 Layers:
-  DrawingLayer AddLayer(string name, SKColor color)  // first added becomes ActiveLayer
+  DrawingLayer AddLayer(string name, Color color)    // first added becomes ActiveLayer
+                                                     //   (SKColor overload also exists)
   DrawingLayer GetLayer(string name)
   bool RemoveLayer(DrawingLayer layer)
   IReadOnlyList<DrawingLayer> Layers { get; }
@@ -135,17 +186,20 @@ Layers:
 
 Background:
   void SetBackgroundImage(byte[] encodedImage)  // decodes; session owns the bitmap
-  SKBitmap BackgroundImage { get; set; }        // caller-owned alternative
-  SKColor BackgroundFillColor { get; set; }
-  SKColor SurfaceClearColor { get; set; }
+  SKBitmap BackgroundImage { get; set; }        // caller-owned alternative (image type)
+  Color BackgroundFillColor { get; set; }       // + SetBackgroundFillColor(SKColor)
+                                                //   + GetBackgroundFillColorAsSkia()
+  Color SurfaceClearColor { get; set; }         // + SetSurfaceClearColor(SKColor)
+                                                //   + GetSurfaceClearColorAsSkia()
+  Size CalibrationSize { get; }                 // + GetCalibrationSizeAsSkia()
   // Leave both colors transparent and the image null to highlight over
   // externally drawn content (e.g. a live video frame the host draws
   // before calling Render).
 
 Pointer input (forward from the hosting view; viewPoint/viewSize are in
 the control's logical coordinates - the session handles DPI scaling):
-  bool PointerPressed(SKPoint viewPoint, SKSize viewSize)
-  bool PointerMoved(SKPoint viewPoint, SKSize viewSize)
+  bool PointerPressed(PointF viewPoint, SizeF viewSize)   // SKPoint/SKSize overload also exists
+  bool PointerMoved(PointF viewPoint, SizeF viewSize)     // SKPoint/SKSize overload also exists
   bool PointerReleased()
   void PointerCanceled()
   bool IsPointerActive { get; }
@@ -213,27 +267,32 @@ Clearing and undo:
   bool UndoLastStroke()        // most recent element (stroke OR shape), any layer
 
 Export:
-  SKSizeI DefaultExportSize { get; }  // background image's pixel size when set
+  Size DefaultExportSize { get; }     // background image's pixel size when set
                                       //   (photo exports at original resolution),
                                       //   otherwise CalibrationSize - both match
-                                      //   the drawing aspect, never distorted
+                                      //   the drawing aspect, never distorted;
+                                      //   + GetDefaultExportSizeAsSkia()
   SKImage ExportImage(bool includeBackground = true)              // DefaultExportSize
   byte[] ExportPng(bool includeBackground = true)                 // DefaultExportSize
   byte[] ExportJpeg(int quality = 90)                             // DefaultExportSize
-  SKImage ExportImage(SKSizeI outputSize, bool includeBackground = true)
-  byte[] ExportPng(SKSizeI outputSize, bool includeBackground = true)
-  void ExportPng(Stream destination, SKSizeI outputSize, bool includeBackground = true)
-  byte[] ExportJpeg(SKSizeI outputSize, int quality = 90)
-  // Exports are complete from-scratch renders (no display caches), so
-  // export quality is independent of the on-screen canvas size. JPEG has
-  // no alpha channel - set an opaque BackgroundFillColor for JPEG export.
+  SKImage ExportImage(Size outputSize, bool includeBackground = true)
+  byte[] ExportPng(Size outputSize, bool includeBackground = true)
+  void ExportPng(Stream destination, Size outputSize, bool includeBackground = true)
+  byte[] ExportJpeg(Size outputSize, int quality = 90)
+  // Every size-taking export method also has an SKSizeI overload. Exports
+  // are complete from-scratch renders (no display caches), so export
+  // quality is independent of the on-screen canvas size. JPEG has no alpha
+  // channel - set an opaque BackgroundFillColor for JPEG export. ExportImage
+  // returns a SkiaSharp SKImage; for a CodeBrix.Imaging Image<Rgba32>
+  // instead, use the ExportImagingImage extension (see Bridge extensions).
 
 DrawingLayer (Models)
 ------------------------------------------------------------------------
 A named, colored, ordered collection of DrawingElement values (freehand
 strokes and geometric shapes, interleaved in the order added):
   string Name { get; }               // unique, case-sensitive, trimmed
-  SKColor Color { get; set; }        // changing forces full layer re-render
+  Color Color { get; set; }          // changing forces full layer re-render;
+                                     //   + SetColor(SKColor) + GetColorAsSkia()
   int ElementCount { get; }          // strokes + shapes
   bool AddStroke(Stroke stroke)      // programmatic stroke injection
   bool AddShape(DrawingShape shape)  // programmatic shape injection
@@ -262,9 +321,12 @@ families are Stroke (freehand) and DrawingShape (geometric).
 DrawingShape and the shape catalog (Shapes)
 ------------------------------------------------------------------------
 All shape coordinates, radii, and thicknesses are calibrated drawing
-units. Every shape has StrokeThickness and an optional Color (null =
-owning layer's color; these ctors take SKColor? - the session's Draw*
-methods accept CodeBrix.Imaging Color and convert):
+units. Every shape has StrokeThickness and an optional Color (a
+CodeBrix.Imaging Color?; null = owning layer's color). Read the color
+back as SkiaSharp with GetColorAsSkia() (returns SKColor?). The
+constructors take Color? (not SKColor?) - a caller holding an SKColor
+converts it with skColor.ToImagingColor(); the session's Draw* methods
+also take Color?:
 
   LineShape(x1, y1, x2, y2, strokeThickness = 15, color = null)
   ArrowShape(x1, y1, x2, y2, strokeThickness = 15, color = null,
@@ -276,9 +338,10 @@ methods accept CodeBrix.Imaging Color and convert):
       color = null, isFilled = false)
   RectangleShape(x, y, width, height, strokeThickness = 15, color = null,
       isFilled = false, cornerRadius = 0)
-  PolylineShape(IReadOnlyList<SKPoint> points, strokeThickness = 15,
+  PolylineShape(IReadOnlyList<PointF> points, strokeThickness = 15,
       color = null, isClosed = false, isFilled = false)
-      // >= 2 points; isFilled implies closed; GetPoints() snapshots
+      // >= 2 points; isFilled implies closed; GetPoints() snapshots as
+      //   PointF[], GetPointsAsSkia() as SKPoint[]
 
 Custom shapes: derive from DrawingShape and override
   public override void Draw(SKCanvas canvas, SKColor color)
@@ -293,16 +356,18 @@ DrawingRenderer (Rendering; IDisposable)
 ------------------------------------------------------------------------
 Standalone renderer used by DrawingSession - usable directly when an
 application manages its own layer collections:
-  new DrawingRenderer(SKSizeI calibrationSize)
-  void Render(SKCanvas canvas, SKImageInfo info,
+  new DrawingRenderer(Size calibrationSize)          // SKSizeI overload also exists
+  void Render(SKCanvas canvas, SKImageInfo info,     // canvas = the Skia surface
       IReadOnlyList<DrawingLayer> layers,
       Stroke activeStroke = null, SKColor? activeStrokeColor = null,
       bool clearCanvas = true)
-  SKImage RenderToImage(SKSizeI outputSize,
+  SKImage RenderToImage(Size outputSize,             // SKSizeI overload also exists
       IReadOnlyList<DrawingLayer> layers, bool includeBackground = true)
-  SKBitmap BackgroundImage; SKColor BackgroundFillColor / SurfaceClearColor;
+  SKBitmap BackgroundImage;                          // image type (stays SkiaSharp)
+  Color BackgroundFillColor / SurfaceClearColor;     // + Set…(SKColor)/Get…AsSkia()
+  Size CalibrationSize;                              // + GetCalibrationSizeAsSkia()
   byte LayerOpacity / ActiveStrokeOpacity;
-  SKRect LastDrawingRect; SKSizeI LastCanvasSize
+  RectangleF LastDrawingRect; Size LastCanvasSize    // + GetLast…AsSkia() each
 Caching internals (all automatic): the background image is rescaled
 once per canvas size (high-quality Mitchell resampling); each layer has
 an incremental cache bitmap (only elements added since the previous
@@ -317,12 +382,14 @@ was the cause of a 17x drawing-lag bug (66 ms -> 4 ms per frame).
 
 CanvasCalibration (Rendering; static)
 ------------------------------------------------------------------------
-Pure coordinate math - useful for custom hit testing or overlays:
-  SKRect GetDrawingRect(SKSizeI canvasSize, SKSizeI calibrationSize)
-  SKPointI? ViewPointToCalibrated(SKPoint viewPoint, SKSize viewSize,
-      SKSizeI canvasSize, SKSizeI calibrationSize, bool clampToDrawingArea = false)
-  SKPoint CalibratedToCanvas(SKPointI calibratedPoint, SKSizeI calibrationSize, SKRect drawingRect)
-  float ScaleStrokeWidth(float calibratedWidth, SKSizeI calibrationSize, SKRect drawingRect)
+Pure coordinate math - useful for custom hit testing or overlays. Each
+helper has a CodeBrix.Imaging-typed form and a SkiaSharp-typed form:
+  RectangleF GetDrawingRect(Size canvasSize, Size calibrationSize)
+  Point? ViewPointToCalibrated(PointF viewPoint, SizeF viewSize,
+      Size canvasSize, Size calibrationSize, bool clampToDrawingArea = false)
+  PointF CalibratedToCanvas(Point calibratedPoint, Size calibrationSize, RectangleF drawingRect)
+  float ScaleStrokeWidth(float calibratedWidth, Size calibrationSize, RectangleF drawingRect)
+  // The SkiaSharp forms (SKRect/SKPointI/SKSizeI/SKPoint/SKSize) also exist.
 The drawing rectangle is the centered aspect-fit rectangle with the
 calibration space's aspect ratio - match CalibrationSize to the
 background image's aspect ratio for edge-to-edge alignment.
@@ -332,11 +399,19 @@ Bridge extensions (Extensions)
 To CodeBrix.Imaging images (for further processing pipelines):
   Image<Rgba32> skImage.ToImagingImage()
   Image<Rgba32> skBitmap.ToImagingImage()
-  Image<Rgba32> session.ExportImagingImage(SKSizeI outputSize, bool includeBackground = true)
-  // All returned images must be disposed by the caller.
-Between color types:
+  Image<Rgba32> session.ExportImagingImage(Size outputSize, bool includeBackground = true)
+  // (An SKSizeI overload also exists.) Returned images are caller-disposed.
+Between color types (ColorBridgeExtensions):
   SKColor imagingColor.ToSKColor()
   Color   skColor.ToImagingColor()
+Between geometry types (GeometryBridgeExtensions) - both directions:
+  Size <-> SKSizeI    (ToSKSizeI / ToImagingSize)
+  SizeF <-> SKSize     (ToSKSize / ToImagingSizeF)
+  Point <-> SKPointI   (ToSKPointI / ToImagingPoint)
+  PointF <-> SKPoint   (ToSKPoint / ToImagingPointF)
+  RectangleF <-> SKRect (ToSKRect / ToImagingRectangleF)
+  // These are the general-purpose way to move any returned CodeBrix.Imaging
+  // value into SkiaSharp (or vice versa) in a single call.
 
 Error model
 ------------------------------------------------------------------------

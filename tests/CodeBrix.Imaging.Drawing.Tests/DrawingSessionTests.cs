@@ -270,7 +270,7 @@ public class DrawingSessionTests
     {
         //Arrange
         using DrawingSession session = CreateRenderedSession();
-        session.BackgroundFillColor = SKColors.White;
+        session.SetBackgroundFillColor(SKColors.White);
         session.PointerPressed(new SKPoint(100, 100), ViewSize);
         session.PointerReleased();
 
@@ -333,21 +333,36 @@ public class DrawingSessionTests
         //Arrange + Act
         using var session = new DrawingSession(new DrawingSessionOptions
         {
-            CalibrationSize = new SKSizeI(2000, 1000),
+            CalibrationSize = new Size(2000, 1000),
             LayerOpacity = 128,
             ActiveStrokeOpacity = 255,
-            BackgroundFillColor = SKColors.White,
-            SurfaceClearColor = SKColors.Black,
+            BackgroundFillColor = Color.White,
+            SurfaceClearColor = Color.Black,
             StrokeWidth = 42f,
         });
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(2000, 1000));
+        session.CalibrationSize.Should().Be(new Size(2000, 1000));
         session.LayerOpacity.Should().Be((byte)128);
         session.ActiveStrokeOpacity.Should().Be((byte)255);
-        session.BackgroundFillColor.Should().Be(SKColors.White);
-        session.SurfaceClearColor.Should().Be(SKColors.Black);
+        session.BackgroundFillColor.Should().Be(Color.White);
+        session.SurfaceClearColor.Should().Be(Color.Black);
         session.StrokeWidth.Should().Be(42f);
+    }
+
+    [Fact]
+    public void Options_accept_skia_values_via_fluent_setters()
+    {
+        //Arrange + Act - a caller working in SkiaSharp types
+        using var session = new DrawingSession(new DrawingSessionOptions()
+            .SetCalibrationSize(new SKSizeI(1600, 900))
+            .SetBackgroundFillColor(SKColors.White)
+            .SetSurfaceClearColor(SKColors.Black));
+
+        //Assert - readable back as SkiaSharp values, too
+        session.GetCalibrationSizeAsSkia().Should().Be(new SKSizeI(1600, 900));
+        session.GetBackgroundFillColorAsSkia().Should().Be(SKColors.White);
+        session.GetSurfaceClearColorAsSkia().Should().Be(SKColors.Black);
     }
 
     [Fact]

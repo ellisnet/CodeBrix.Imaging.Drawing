@@ -24,7 +24,7 @@ public class DrawingSessionImageFactoryTests
             EncodePng(200, 100, SKColors.Gray), CalibrationSizing.DeriveFromBackgroundImage);
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(1000, 500));
+        session.CalibrationSize.Should().Be(new Size(1000, 500));
     }
 
     [Fact]
@@ -35,21 +35,21 @@ public class DrawingSessionImageFactoryTests
             EncodePng(100, 200, SKColors.Gray), CalibrationSizing.DeriveFromBackgroundImage);
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(500, 1000));
+        session.CalibrationSize.Should().Be(new Size(500, 1000));
     }
 
     [Fact]
     public void CreateForImage_from_options_respects_options_calibration_size()
     {
         //Arrange
-        var options = new DrawingSessionOptions { CalibrationSize = new SKSizeI(123, 456) };
+        var options = new DrawingSessionOptions { CalibrationSize = new Size(123, 456) };
 
         //Act - FromOptions must never silently replace the caller's calibration size
         using DrawingSession session = DrawingSession.CreateForImage(
             EncodePng(200, 100, SKColors.Gray), CalibrationSizing.FromOptions, options);
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(123, 456));
+        session.CalibrationSize.Should().Be(new Size(123, 456));
     }
 
     [Fact]
@@ -66,12 +66,23 @@ public class DrawingSessionImageFactoryTests
     [Fact]
     public void CreateForImage_accepts_explicit_calibration_size()
     {
-        //Arrange + Act
+        //Arrange + Act - the CodeBrix.Imaging Size overload
+        using DrawingSession session = DrawingSession.CreateForImage(
+            EncodePng(200, 100, SKColors.Gray), new Size(2000, 1000));
+
+        //Assert
+        session.CalibrationSize.Should().Be(new Size(2000, 1000));
+    }
+
+    [Fact]
+    public void CreateForImage_accepts_explicit_skia_calibration_size()
+    {
+        //Arrange + Act - the SkiaSharp SKSizeI overload is still supported
         using DrawingSession session = DrawingSession.CreateForImage(
             EncodePng(200, 100, SKColors.Gray), new SKSizeI(2000, 1000));
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(2000, 1000));
+        session.GetCalibrationSizeAsSkia().Should().Be(new SKSizeI(2000, 1000));
     }
 
     [Fact]
@@ -79,7 +90,7 @@ public class DrawingSessionImageFactoryTests
     {
         //Arrange
         Action act = () => DrawingSession.CreateForImage(
-            EncodePng(10, 10, SKColors.Gray), new SKSizeI(0, 100));
+            EncodePng(10, 10, SKColors.Gray), new Size(0, 100));
 
         //Act + Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
@@ -115,7 +126,7 @@ public class DrawingSessionImageFactoryTests
         //Arrange
         var options = new DrawingSessionOptions
         {
-            CalibrationSize = new SKSizeI(123, 456), //not used when deriving
+            CalibrationSize = new Size(123, 456), //not used when deriving
             LayerOpacity = 200,
             StrokeWidth = 33f,
         };
@@ -125,7 +136,7 @@ public class DrawingSessionImageFactoryTests
             EncodePng(200, 100, SKColors.Gray), CalibrationSizing.DeriveFromBackgroundImage, options);
 
         //Assert
-        session.CalibrationSize.Should().Be(new SKSizeI(1000, 500));
+        session.CalibrationSize.Should().Be(new Size(1000, 500));
         session.LayerOpacity.Should().Be((byte)200);
         session.StrokeWidth.Should().Be(33f);
     }
@@ -160,7 +171,7 @@ public class DrawingSessionImageFactoryTests
 
         //Act
         DrawingSession session = DrawingSession.CreateForImage(bitmap, CalibrationSizing.DeriveFromBackgroundImage);
-        session.CalibrationSize.Should().Be(new SKSizeI(1000, 500));
+        session.CalibrationSize.Should().Be(new Size(1000, 500));
         session.Dispose();
 
         //Assert - the caller's bitmap is still usable after the session is disposed
@@ -175,7 +186,7 @@ public class DrawingSessionImageFactoryTests
             EncodePng(320, 240, SKColors.Gray), CalibrationSizing.DeriveFromBackgroundImage);
 
         //Act + Assert
-        session.DefaultExportSize.Should().Be(new SKSizeI(320, 240));
+        session.DefaultExportSize.Should().Be(new Size(320, 240));
     }
 
     [Fact]
@@ -184,11 +195,11 @@ public class DrawingSessionImageFactoryTests
         //Arrange
         using var session = new DrawingSession(new DrawingSessionOptions
         {
-            CalibrationSize = new SKSizeI(800, 600),
+            CalibrationSize = new Size(800, 600),
         });
 
         //Act + Assert
-        session.DefaultExportSize.Should().Be(new SKSizeI(800, 600));
+        session.DefaultExportSize.Should().Be(new Size(800, 600));
     }
 
     [Fact]
@@ -197,7 +208,7 @@ public class DrawingSessionImageFactoryTests
         //Arrange
         using DrawingSession session = DrawingSession.CreateForImage(
             EncodePng(320, 240, SKColors.Gray), CalibrationSizing.DeriveFromBackgroundImage);
-        session.AddLayer("Damage", SKColors.Red);
+        session.AddLayer("Damage", Color.Red);
 
         //Act
         byte[] png = session.ExportPng();
@@ -214,16 +225,16 @@ public class DrawingSessionImageFactoryTests
         //Arrange - the "annotate an emailed photo" flow, end to end
         using DrawingSession session = DrawingSession.CreateForImage(
             EncodePng(400, 200, SKColors.LightGray), CalibrationSizing.DeriveFromBackgroundImage);
-        session.AddLayer("Damage", SKColors.Red);
+        session.AddLayer("Damage", Color.Red);
 
         var info = new SKImageInfo(400, 200);
         using var bitmap = new SKBitmap(info);
         using var canvas = new SKCanvas(bitmap);
         session.Render(canvas, info);
 
-        //Act - draw a stroke across the middle with the pointer API
-        session.PointerPressed(new SKPoint(100, 100), new SKSize(400, 200));
-        session.PointerMoved(new SKPoint(300, 100), new SKSize(400, 200));
+        //Act - draw a stroke across the middle with the CodeBrix.Imaging pointer API
+        session.PointerPressed(new PointF(100, 100), new SizeF(400, 200));
+        session.PointerMoved(new PointF(300, 100), new SizeF(400, 200));
         session.PointerReleased();
         byte[] png = session.ExportPng();
 

@@ -156,4 +156,30 @@ public class CanvasCalibrationTests
     [Fact]
     public void ScaleStrokeWidth_never_returns_less_than_one_pixel()
         => CanvasCalibration.ScaleStrokeWidth(2f, Square1000, new SKRect(0, 0, 10, 10)).Should().Be(1f);
+
+    [Fact]
+    public void GetDrawingRect_imaging_overload_matches_skia_overload()
+    {
+        //Arrange + Act - the CodeBrix.Imaging-typed companion
+        RectangleF rect = CanvasCalibration.GetDrawingRect(new Size(400, 200), new Size(1000, 1000));
+
+        //Assert - X/Y/Width/Height mirror the SKRect Left/Top/Width/Height
+        rect.X.Should().Be(100f);
+        rect.Y.Should().Be(0f);
+        rect.Width.Should().Be(200f);
+        rect.Height.Should().Be(200f);
+    }
+
+    [Fact]
+    public void ViewPointToCalibrated_imaging_overload_maps_center_to_center()
+    {
+        //Arrange + Act
+        Point? result = CanvasCalibration.ViewPointToCalibrated(
+            new PointF(100, 100), new SizeF(200, 200), new Size(200, 200), new Size(1000, 1000));
+
+        //Assert
+        result.Should().NotBeNull();
+        result.Value.X.Should().Be(500);
+        result.Value.Y.Should().Be(500);
+    }
 }

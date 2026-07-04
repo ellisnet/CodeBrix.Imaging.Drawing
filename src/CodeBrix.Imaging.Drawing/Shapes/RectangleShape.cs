@@ -44,7 +44,7 @@ public sealed class RectangleShape : DrawingShape
     /// or <paramref name="cornerRadius"/> is negative.
     /// </exception>
     public RectangleShape(float x, float y, float width, float height,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null,
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null,
         bool isFilled = false, float cornerRadius = 0f)
         : base(strokeThickness, color)
     {

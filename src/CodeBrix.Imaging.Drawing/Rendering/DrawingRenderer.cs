@@ -40,6 +40,12 @@ public sealed class DrawingRenderer : IDisposable
     private readonly object _renderLocker = new object();
     private readonly Dictionary<DrawingLayer, LayerCache> _layerCaches = new Dictionary<DrawingLayer, LayerCache>();
 
+    private readonly SKSizeI _calibrationSize;
+    private SKColor _backgroundFillColor = SKColors.Transparent;
+    private SKColor _surfaceClearColor = SKColors.Transparent;
+    private SKRect _lastDrawingRect;
+    private SKSizeI _lastCanvasSize;
+
     private SKSizeI _cachedCanvasSize;
 
     //The static scene (background + committed layers) is kept pre-composited so that the
@@ -57,7 +63,11 @@ public sealed class DrawingRenderer : IDisposable
     /// <summary>
     /// The size of the calibrated drawing space that all strokes are expressed in.
     /// </summary>
-    public SKSizeI CalibrationSize { get; }
+    public Size CalibrationSize => SkiaInterop.ToImaging(_calibrationSize);
+
+    /// <summary>Gets <see cref="CalibrationSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
+    /// <returns>The calibration size as a SkiaSharp size.</returns>
+    public SKSizeI GetCalibrationSizeAsSkia() => _calibrationSize;
 
     /// <summary>
     /// An optional background image drawn behind the layers, scaled (aspect-fit) into the
@@ -88,13 +98,37 @@ public sealed class DrawingRenderer : IDisposable
     /// layers are drawn. Defaults to transparent; set an opaque color (for example white)
     /// when the drawing should supply its own page background.
     /// </summary>
-    public SKColor BackgroundFillColor { get; set; } = SKColors.Transparent;
+    public Color BackgroundFillColor
+    {
+        get => SkiaInterop.ToImaging(_backgroundFillColor);
+        set => _backgroundFillColor = SkiaInterop.ToSK(value);
+    }
+
+    /// <summary>Sets <see cref="BackgroundFillColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <param name="color">The background fill color.</param>
+    public void SetBackgroundFillColor(SKColor color) => _backgroundFillColor = color;
+
+    /// <summary>Gets <see cref="BackgroundFillColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The background fill color as a SkiaSharp color.</returns>
+    public SKColor GetBackgroundFillColorAsSkia() => _backgroundFillColor;
 
     /// <summary>
     /// The color that the whole canvas is cleared to at the start of every render.
     /// Defaults to transparent so the drawing can be composited over other content.
     /// </summary>
-    public SKColor SurfaceClearColor { get; set; } = SKColors.Transparent;
+    public Color SurfaceClearColor
+    {
+        get => SkiaInterop.ToImaging(_surfaceClearColor);
+        set => _surfaceClearColor = SkiaInterop.ToSK(value);
+    }
+
+    /// <summary>Sets <see cref="SurfaceClearColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <param name="color">The surface clear color.</param>
+    public void SetSurfaceClearColor(SKColor color) => _surfaceClearColor = color;
+
+    /// <summary>Gets <see cref="SurfaceClearColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The surface clear color as a SkiaSharp color.</returns>
+    public SKColor GetSurfaceClearColorAsSkia() => _surfaceClearColor;
 
     /// <summary>
     /// The alpha (0-255) that completed layers are composited with; the default of 100
@@ -110,15 +144,23 @@ public sealed class DrawingRenderer : IDisposable
 
     /// <summary>
     /// The drawing rectangle, in canvas pixel coordinates, computed by the most recent
-    /// <see cref="Render"/> call; <see cref="SKRect.Empty"/> before the first render.
+    /// <see cref="Render"/> call; an empty rectangle before the first render.
     /// </summary>
-    public SKRect LastDrawingRect { get; private set; }
+    public RectangleF LastDrawingRect => SkiaInterop.ToImaging(_lastDrawingRect);
+
+    /// <summary>Gets <see cref="LastDrawingRect"/> as a SkiaSharp <see cref="SKRect"/>.</summary>
+    /// <returns>The last drawing rectangle as a SkiaSharp rectangle.</returns>
+    public SKRect GetLastDrawingRectAsSkia() => _lastDrawingRect;
 
     /// <summary>
     /// The canvas pixel size seen by the most recent <see cref="Render"/> call;
-    /// <see cref="SKSizeI.Empty"/> before the first render.
+    /// an empty size before the first render.
     /// </summary>
-    public SKSizeI LastCanvasSize { get; private set; }
+    public Size LastCanvasSize => SkiaInterop.ToImaging(_lastCanvasSize);
+
+    /// <summary>Gets <see cref="LastCanvasSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
+    /// <returns>The last canvas size as a SkiaSharp size.</returns>
+    public SKSizeI GetLastCanvasSizeAsSkia() => _lastCanvasSize;
 
     /// <summary>
     /// Indicates whether this renderer has been disposed.
@@ -140,7 +182,21 @@ public sealed class DrawingRenderer : IDisposable
         {
             throw new ArgumentOutOfRangeException(nameof(calibrationSize));
         }
-        CalibrationSize = calibrationSize;
+        _calibrationSize = calibrationSize;
+    }
+
+    /// <summary>
+    /// Creates a new renderer for the given calibrated drawing space.
+    /// </summary>
+    /// <param name="calibrationSize">
+    /// The size of the calibrated drawing space; both dimensions must be positive.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.
+    /// </exception>
+    public DrawingRenderer(Size calibrationSize)
+        : this(SkiaInterop.ToSK(calibrationSize))
+    {
     }
 
     /// <summary>
@@ -179,14 +235,14 @@ public sealed class DrawingRenderer : IDisposable
         lock (_renderLocker)
         {
             var canvasSize = new SKSizeI(info.Width, info.Height);
-            SKRect drawingRect = CanvasCalibration.GetDrawingRect(canvasSize, CalibrationSize);
+            SKRect drawingRect = CanvasCalibration.GetDrawingRect(canvasSize, _calibrationSize);
 
-            LastCanvasSize = canvasSize;
-            LastDrawingRect = drawingRect;
+            _lastCanvasSize = canvasSize;
+            _lastDrawingRect = drawingRect;
 
             if (clearCanvas)
             {
-                canvas.Clear(SurfaceClearColor);
+                canvas.Clear(_surfaceClearColor);
             }
 
             //If the drawing area is degenerate (control not laid out yet), there is nothing to draw
@@ -257,7 +313,7 @@ public sealed class DrawingRenderer : IDisposable
             SKCanvas canvas = surface.Canvas;
 
             canvas.Clear(SKColors.Transparent);
-            SKRect drawingRect = CanvasCalibration.GetDrawingRect(outputSize, CalibrationSize);
+            SKRect drawingRect = CanvasCalibration.GetDrawingRect(outputSize, _calibrationSize);
 
             if (includeBackground)
             {
@@ -281,6 +337,25 @@ public sealed class DrawingRenderer : IDisposable
             return surface.Snapshot();
         }
     }
+
+    /// <summary>
+    /// Renders the layers to a new image of the given size - for saving a finished drawing
+    /// to a file. The image is always a complete, from-scratch render (no caches are used),
+    /// with every layer composited at <see cref="LayerOpacity"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="layers">The layers to render, bottom-most first.</param>
+    /// <param name="includeBackground">
+    /// When <c>true</c> (the default), the <see cref="BackgroundFillColor"/> and
+    /// <see cref="BackgroundImage"/> are rendered behind the layers; when <c>false</c>,
+    /// the layers render over transparency.
+    /// </param>
+    /// <returns>A new <see cref="SKImage"/> that the caller must dispose.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the renderer has been disposed.</exception>
+    public SKImage RenderToImage(Size outputSize, IReadOnlyList<DrawingLayer> layers, bool includeBackground = true)
+        => RenderToImage(SkiaInterop.ToSK(outputSize), layers, includeBackground);
 
     private void EnsureScaledBackground(SKSizeI cacheSize)
     {
@@ -314,8 +389,8 @@ public sealed class DrawingRenderer : IDisposable
             || _sceneCache == null
             || _sceneCache.Width != canvasSize.Width
             || _sceneCache.Height != canvasSize.Height
-            || _sceneFillColor != BackgroundFillColor
-            || _sceneClearColor != SurfaceClearColor
+            || _sceneFillColor != _backgroundFillColor
+            || _sceneClearColor != _surfaceClearColor
             || _sceneLayerOpacity != LayerOpacity
             || _sceneLayers.Count != layers.Count)
         {
@@ -353,14 +428,14 @@ public sealed class DrawingRenderer : IDisposable
             cacheSize.Width, cacheSize.Height);
 
         using var sceneCanvas = new SKCanvas(_sceneCache);
-        sceneCanvas.Clear(SurfaceClearColor);
+        sceneCanvas.Clear(_surfaceClearColor);
 
-        if (BackgroundFillColor.Alpha > 0)
+        if (_backgroundFillColor.Alpha > 0)
         {
             using var fillPaint = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
-                Color = BackgroundFillColor,
+                Color = _backgroundFillColor,
             };
             sceneCanvas.DrawRect(cacheDest, fillPaint);
         }
@@ -384,8 +459,8 @@ public sealed class DrawingRenderer : IDisposable
         }
 
         //Record what the scene was built from, to detect staleness on later renders
-        _sceneFillColor = BackgroundFillColor;
-        _sceneClearColor = SurfaceClearColor;
+        _sceneFillColor = _backgroundFillColor;
+        _sceneClearColor = _surfaceClearColor;
         _sceneLayerOpacity = LayerOpacity;
         _sceneLayers.Clear();
         foreach (DrawingLayer layer in layers)
@@ -412,12 +487,12 @@ public sealed class DrawingRenderer : IDisposable
 
     private void DrawBackground(SKCanvas canvas, SKRect drawingRect)
     {
-        if (BackgroundFillColor.Alpha > 0)
+        if (_backgroundFillColor.Alpha > 0)
         {
             using var fillPaint = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
-                Color = BackgroundFillColor,
+                Color = _backgroundFillColor,
             };
             canvas.DrawRect(drawingRect, fillPaint);
         }
@@ -460,7 +535,7 @@ public sealed class DrawingRenderer : IDisposable
             using var cacheCanvas = new SKCanvas(cache.Bitmap);
             for (int i = cache.DrawnElementCount; i < elements.Length; i++)
             {
-                DrawElement(cacheCanvas, elements[i], cacheRect, layer.Color);
+                DrawElement(cacheCanvas, elements[i], cacheRect, layer.GetColorAsSkia());
             }
             cache.DrawnElementCount = elements.Length;
         }
@@ -477,7 +552,7 @@ public sealed class DrawingRenderer : IDisposable
 
         foreach (DrawingElement element in elements)
         {
-            DrawElement(canvas, element, drawingRect, layer.Color);
+            DrawElement(canvas, element, drawingRect, layer.GetColorAsSkia());
         }
 
         return bitmap;
@@ -491,7 +566,7 @@ public sealed class DrawingRenderer : IDisposable
         }
         else if (element is DrawingShape shape)
         {
-            DrawShape(canvas, shape, drawingRect, shape.Color ?? layerColor);
+            DrawShape(canvas, shape, drawingRect, shape.GetColorAsSkia() ?? layerColor);
         }
     }
 
@@ -499,7 +574,7 @@ public sealed class DrawingRenderer : IDisposable
     {
         //Shapes draw in calibrated coordinates; the canvas transform maps them (and their
         //  paint stroke widths, which scale with the matrix) to the output size
-        float scale = drawingRect.Width / CalibrationSize.Width;
+        float scale = drawingRect.Width / _calibrationSize.Width;
 
         canvas.Save();
         canvas.Translate(drawingRect.Left, drawingRect.Top);
@@ -513,13 +588,13 @@ public sealed class DrawingRenderer : IDisposable
         StrokePoint[] points = stroke.GetPoints();
         if (points.Length < 1) { return; }
 
-        float pixelWidth = CanvasCalibration.ScaleStrokeWidth(stroke.Width, CalibrationSize, drawingRect);
+        float pixelWidth = CanvasCalibration.ScaleStrokeWidth(stroke.Width, _calibrationSize, drawingRect);
 
         if (points.Length == 1)
         {
             //A single-point stroke renders as a dot
             SKPoint dot = CanvasCalibration.CalibratedToCanvas(
-                new SKPointI(points[0].X, points[0].Y), CalibrationSize, drawingRect);
+                new SKPointI(points[0].X, points[0].Y), _calibrationSize, drawingRect);
             using var dotPaint = new SKPaint
             {
                 Style = SKPaintStyle.Fill,
@@ -532,12 +607,12 @@ public sealed class DrawingRenderer : IDisposable
 
         var pathBuilder = new SKPathBuilder();
         SKPoint first = CanvasCalibration.CalibratedToCanvas(
-            new SKPointI(points[0].X, points[0].Y), CalibrationSize, drawingRect);
+            new SKPointI(points[0].X, points[0].Y), _calibrationSize, drawingRect);
         pathBuilder.MoveTo(first);
         for (int i = 1; i < points.Length; i++)
         {
             pathBuilder.LineTo(CanvasCalibration.CalibratedToCanvas(
-                new SKPointI(points[i].X, points[i].Y), CalibrationSize, drawingRect));
+                new SKPointI(points[i].X, points[i].Y), _calibrationSize, drawingRect));
         }
         using SKPath path = pathBuilder.Detach();
 

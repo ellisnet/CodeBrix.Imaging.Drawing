@@ -5,11 +5,13 @@
     <!-- Match the namespace used by the app code -->
     <RootNamespace>PainDiagram</RootNamespace>
 
-    <!-- CodeBrix.Platform needs this define for its internal conditional compilation -->
-    <DefineConstants>$(DefineConstants);HAS_CODEBRIX;HAS_CODEBRIX_WINUI</DefineConstants>
+    <!-- CodeBrix.Platform needs this define for its internal conditional compilation;
+         HAS_CODEBRIXPLATFORM selects the SKXamlCanvas base for the shared DrawingCanvas -->
+    <DefineConstants>$(DefineConstants);HAS_CODEBRIX;HAS_CODEBRIX_WINUI;HAS_CODEBRIXPLATFORM</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\Shared\Drawing\DrawingCanvas.cs" Link="Drawing\DrawingCanvas.cs" />
     <Compile Include="..\..\Shared\Helpers\FileDialogHelper.cs" Link="Helpers\FileDialogHelper.cs" />
     <Compile Include="..\..\Shared\Helpers\HostHelper.cs" Link="Helpers\HostHelper.cs" />
     <Compile Include="..\..\Shared\ViewModels\MainViewModel.cs" Link="ViewModels\MainViewModel.cs" />

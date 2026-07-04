@@ -44,7 +44,7 @@ public sealed class ArrowShape : DrawingShape
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="headLength"/> is provided but not positive.</exception>
     public ArrowShape(float x1, float y1, float x2, float y2,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null, float? headLength = null)
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null, float? headLength = null)
         : base(strokeThickness, color)
     {
         if (headLength.HasValue && headLength.Value <= 0) { throw new ArgumentOutOfRangeException(nameof(headLength)); }

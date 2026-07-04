@@ -1,4 +1,3 @@
-using CodeBrix.Imaging.PixelFormats;
 using SkiaSharp;
 
 namespace CodeBrix.Imaging.Drawing.Extensions;
@@ -15,17 +14,12 @@ public static class ColorBridgeExtensions
     /// </summary>
     /// <param name="color">The CodeBrix.Imaging color to convert.</param>
     /// <returns>The equivalent SkiaSharp color.</returns>
-    public static SKColor ToSKColor(this Color color)
-    {
-        Rgba32 rgba = color.ToPixel<Rgba32>();
-        return new SKColor(rgba.R, rgba.G, rgba.B, rgba.A);
-    }
+    public static SKColor ToSKColor(this Color color) => SkiaInterop.ToSK(color);
 
     /// <summary>
     /// Converts a SkiaSharp color to a CodeBrix.Imaging color.
     /// </summary>
     /// <param name="color">The SkiaSharp color to convert.</param>
     /// <returns>The equivalent CodeBrix.Imaging color.</returns>
-    public static Color ToImagingColor(this SKColor color)
-        => Color.FromRgba(color.Red, color.Green, color.Blue, color.Alpha);
+    public static Color ToImagingColor(this SKColor color) => SkiaInterop.ToImaging(color);
 }

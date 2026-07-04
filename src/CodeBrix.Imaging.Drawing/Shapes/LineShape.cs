@@ -31,7 +31,7 @@ public sealed class LineShape : DrawingShape
     /// <param name="strokeThickness">The line thickness, in calibrated drawing units.</param>
     /// <param name="color">The line's color; or <c>null</c> to use the owning layer's color.</param>
     public LineShape(float x1, float y1, float x2, float y2,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null)
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null)
         : base(strokeThickness, color)
     {
         X1 = x1;

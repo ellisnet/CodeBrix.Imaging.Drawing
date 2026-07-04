@@ -62,7 +62,7 @@ public class ImagingBridgeExtensionsTests
     {
         //Arrange
         using var session = new DrawingSession();
-        session.BackgroundFillColor = SKColors.White;
+        session.BackgroundFillColor = Color.White;
         session.AddLayer("Pain", SKColors.Red);
 
         //Act

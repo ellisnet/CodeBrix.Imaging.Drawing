@@ -40,7 +40,7 @@ public sealed class EllipseShape : DrawingShape
     /// Thrown when <paramref name="radiusX"/> or <paramref name="radiusY"/> is zero or negative.
     /// </exception>
     public EllipseShape(float centerX, float centerY, float radiusX, float radiusY,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null, bool isFilled = false)
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null, bool isFilled = false)
         : base(strokeThickness, color)
     {
         if (radiusX <= 0) { throw new ArgumentOutOfRangeException(nameof(radiusX)); }

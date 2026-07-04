@@ -11,11 +11,15 @@
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
+
+    <!-- HAS_WINUI selects the SKXamlCanvas base for the shared DrawingCanvas -->
+    <DefineConstants>$(DefineConstants);HAS_WINUI</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Views\MainPage.xaml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\Drawing\DrawingCanvas.cs" Link="Drawing\DrawingCanvas.cs" />
     <Compile Include="..\Shared\Helpers\FileDialogHelper.cs" Link="Helpers\FileDialogHelper.cs" />
     <Compile Include="..\Shared\Helpers\HostHelper.cs" Link="Helpers\HostHelper.cs" />
     <Compile Include="..\Shared\ViewModels\MainViewModel.cs" Link="ViewModels\MainViewModel.cs" />
@@ -41,6 +45,7 @@
 
   <ItemGroup>
     <PackageReference Include="CodeBrix.Platform.WinUI.ApacheLicenseForever" Version="1.0.183.475" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
     <PackageReference Include="SkiaSharp.Views.WinUI" Version="4.148.0" />
@@ -56,6 +61,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Drawing\" />
     <Folder Include="Helpers\" />
     <Folder Include="ViewModels\" />
   </ItemGroup>

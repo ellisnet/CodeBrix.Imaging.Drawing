@@ -35,8 +35,8 @@ public sealed class PolylineShape : DrawingShape
     /// <param name="isFilled"><c>true</c> to fill the resulting polygon solid (implies closed).</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="points"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when fewer than two points are provided.</exception>
-    public PolylineShape(IReadOnlyList<SKPoint> points,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null,
+    public PolylineShape(IReadOnlyList<PointF> points,
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null,
         bool isClosed = false, bool isFilled = false)
         : base(strokeThickness, color)
     {
@@ -46,7 +46,7 @@ public sealed class PolylineShape : DrawingShape
         _points = new SKPoint[points.Count];
         for (int i = 0; i < points.Count; i++)
         {
-            _points[i] = points[i];
+            _points[i] = SkiaInterop.ToSK(points[i]);
         }
 
         IsFilled = isFilled;
@@ -57,7 +57,21 @@ public sealed class PolylineShape : DrawingShape
     /// Returns a snapshot copy of the polyline's points.
     /// </summary>
     /// <returns>A new array holding the points, in order.</returns>
-    public SKPoint[] GetPoints() => (SKPoint[])_points.Clone();
+    public PointF[] GetPoints()
+    {
+        var result = new PointF[_points.Length];
+        for (int i = 0; i < _points.Length; i++)
+        {
+            result[i] = SkiaInterop.ToImaging(_points[i]);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Returns a snapshot copy of the polyline's points as SkiaSharp points.
+    /// </summary>
+    /// <returns>A new array holding the points, in order.</returns>
+    public SKPoint[] GetPointsAsSkia() => (SKPoint[])_points.Clone();
 
     /// <inheritdoc />
     public override void Draw(SKCanvas canvas, SKColor color)

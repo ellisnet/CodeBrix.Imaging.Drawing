@@ -45,7 +45,7 @@ public class DrawingRendererTests
     public void Render_clears_canvas_with_surface_clear_color()
     {
         //Arrange
-        using var renderer = new DrawingRenderer(Square1000) { SurfaceClearColor = SKColors.Green };
+        using var renderer = new DrawingRenderer(Square1000) { SurfaceClearColor = Color.Green };
 
         //Act
         using SKBitmap bitmap = RenderToBitmap(renderer, new List<DrawingLayer>());
@@ -58,7 +58,7 @@ public class DrawingRendererTests
     public void Render_fills_drawing_rect_with_background_fill_color()
     {
         //Arrange
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
 
         //Act
         using SKBitmap bitmap = RenderToBitmap(renderer, new List<DrawingLayer>());
@@ -77,7 +77,7 @@ public class DrawingRendererTests
         using SKBitmap bitmap = RenderToBitmap(renderer, new List<DrawingLayer>());
 
         //Assert
-        renderer.LastCanvasSize.Should().Be(new SKSizeI(200, 200));
+        renderer.LastCanvasSize.Should().Be(new Size(200, 200));
         renderer.LastDrawingRect.Width.Should().Be(200f);
         renderer.LastDrawingRect.Height.Should().Be(200f);
     }
@@ -86,7 +86,7 @@ public class DrawingRendererTests
     public void Render_draws_layer_stroke_translucently_over_background()
     {
         //Arrange
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var layer = new DrawingLayer("Pain", SKColors.Red);
         layer.AddStroke(CenterLineStroke());
 
@@ -104,11 +104,11 @@ public class DrawingRendererTests
     public void Overlapping_strokes_in_one_layer_do_not_double_darken()
     {
         //Arrange - the defining "highlighter" behavior of the renderer
-        using var singleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var singleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var singleLayer = new DrawingLayer("Pain", SKColors.Red);
         singleLayer.AddStroke(CenterLineStroke());
 
-        using var doubleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var doubleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var doubleLayer = new DrawingLayer("Pain", SKColors.Red);
         doubleLayer.AddStroke(CenterLineStroke());
         doubleLayer.AddStroke(CenterLineStroke());
@@ -125,11 +125,11 @@ public class DrawingRendererTests
     public void Overlapping_strokes_on_different_layers_do_compound()
     {
         //Arrange
-        using var singleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var singleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var painOnly = new DrawingLayer("Pain", SKColors.Red);
         painOnly.AddStroke(CenterLineStroke());
 
-        using var doubleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var doubleRenderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var pain = new DrawingLayer("Pain", SKColors.Red);
         pain.AddStroke(CenterLineStroke());
         var numbness = new DrawingLayer("Numbness", SKColors.Blue);
@@ -147,7 +147,7 @@ public class DrawingRendererTests
     public void Render_draws_active_stroke_when_supplied()
     {
         //Arrange
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
 
         //Act
         using SKBitmap bitmap = RenderToBitmap(renderer, new List<DrawingLayer>(),
@@ -161,7 +161,7 @@ public class DrawingRendererTests
     public void Render_reflects_strokes_added_after_a_previous_render()
     {
         //Arrange - exercises the incremental layer-cache path
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var layer = new DrawingLayer("Pain", SKColors.Red);
         var layers = new[] { layer };
         using (SKBitmap first = RenderToBitmap(renderer, layers))
@@ -181,7 +181,7 @@ public class DrawingRendererTests
     public void Render_reflects_layer_clear_after_a_previous_render()
     {
         //Arrange - exercises the ResetVersion cache-invalidation path
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
         var layer = new DrawingLayer("Pain", SKColors.Red);
         layer.AddStroke(CenterLineStroke());
         var layers = new[] { layer };
@@ -231,7 +231,7 @@ public class DrawingRendererTests
     public void RenderToImage_can_exclude_background()
     {
         //Arrange
-        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = SKColors.White };
+        using var renderer = new DrawingRenderer(Square1000) { BackgroundFillColor = Color.White };
 
         //Act
         using SKImage image = renderer.RenderToImage(new SKSizeI(100, 100), new List<DrawingLayer>(), includeBackground: false);

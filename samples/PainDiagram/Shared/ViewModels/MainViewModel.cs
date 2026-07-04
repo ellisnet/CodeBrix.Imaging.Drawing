@@ -1,11 +1,10 @@
+using CodeBrix.Imaging;
 using CodeBrix.Imaging.Drawing;
 using CodeBrix.Imaging.Drawing.Models;
 using CodeBrix.Platform.Simple;
-using SkiaSharp;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
@@ -65,14 +64,14 @@ public class MainViewModel : SimpleViewModel, IFileSaveBridge, ICanvasInvalidato
 
             _session = new DrawingSession(new DrawingSessionOptions
             {
-                BackgroundFillColor = SKColors.White,
-                SurfaceClearColor = SKColors.White,
+                BackgroundFillColor = Color.White,
+                SurfaceClearColor = Color.White,
             });
 
             //The same highlighter colors the original NuraPad application used
-            _session.AddLayer(PainLayerName, new SKColor(255, 30, 230));
-            _session.AddLayer(NumbnessLayerName, new SKColor(30, 128, 204));
-            _session.AddLayer(TinglingLayerName, new SKColor(204, 170, 10));
+            _session.AddLayer(PainLayerName, Color.FromRgb(255, 30, 230));
+            _session.AddLayer(NumbnessLayerName, Color.FromRgb(30, 128, 204));
+            _session.AddLayer(TinglingLayerName, Color.FromRgb(204, 170, 10));
 
             LoadBodyMapBackground();
 
@@ -291,7 +290,7 @@ public class MainViewModel : SimpleViewModel, IFileSaveBridge, ICanvasInvalidato
 
             IsBusy = true;
 
-            byte[] png = _session.ExportPng(new SKSizeI(ExportPixelSize, ExportPixelSize));
+            byte[] png = _session.ExportPng(new Size(ExportPixelSize, ExportPixelSize));
             await File.WriteAllBytesAsync(outputPath, png);
 
             StatusText = $"Saved: {outputPath}";

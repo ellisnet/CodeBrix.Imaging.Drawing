@@ -67,4 +67,21 @@ public static class ImagingBridgeExtensions
         using SKImage image = session.ExportImage(outputSize, includeBackground);
         return image.ToImagingImage();
     }
+
+    /// <summary>
+    /// Renders the completed drawing of a <see cref="DrawingSession"/> directly to a
+    /// CodeBrix.Imaging <see cref="Image{TPixel}"/> with <see cref="Rgba32"/> pixels.
+    /// </summary>
+    /// <param name="session">The drawing session to export.</param>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>A new <see cref="Image{TPixel}"/> that the caller must dispose.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="session"/> is null.</exception>
+    public static Image<Rgba32> ExportImagingImage(this DrawingSession session, Size outputSize, bool includeBackground = true)
+    {
+        if (session == null) { throw new ArgumentNullException(nameof(session)); }
+
+        using SKImage image = session.ExportImage(outputSize, includeBackground);
+        return image.ToImagingImage();
+    }
 }

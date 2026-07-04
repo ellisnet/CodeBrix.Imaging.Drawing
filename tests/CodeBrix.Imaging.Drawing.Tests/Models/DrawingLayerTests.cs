@@ -32,11 +32,12 @@ public class DrawingLayerTests
     public void Constructor_trims_name_and_stores_color()
     {
         //Arrange + Act
-        var layer = new DrawingLayer("  Pain  ", SKColors.Magenta);
+        var layer = new DrawingLayer("  Pain  ", Color.Magenta);
 
         //Assert
         layer.Name.Should().Be("Pain");
-        layer.Color.Should().Be(SKColors.Magenta);
+        layer.Color.Should().Be(Color.Magenta);
+        layer.GetColorAsSkia().Should().Be(SKColors.Magenta);
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public class DrawingLayerTests
         int versionBefore = layer.ResetVersion;
 
         //Act
-        layer.Color = SKColors.Blue;
+        layer.Color = Color.Blue;
 
         //Assert
         layer.ResetVersion.Should().NotBe(versionBefore);
@@ -150,7 +151,7 @@ public class DrawingLayerTests
         int versionBefore = layer.ResetVersion;
 
         //Act
-        layer.Color = SKColors.Red;
+        layer.SetColor(SKColors.Red);
 
         //Assert
         layer.ResetVersion.Should().Be(versionBefore);

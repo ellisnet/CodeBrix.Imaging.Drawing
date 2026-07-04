@@ -30,18 +30,29 @@ public sealed class DrawingLayer
     /// own color). Changing the color causes the layer to be fully re-rendered on the
     /// next draw.
     /// </summary>
-    public SKColor Color
+    public Color Color
     {
-        get => _color;
-        set
+        get => SkiaInterop.ToImaging(_color);
+        set => SetColor(SkiaInterop.ToSK(value));
+    }
+
+    /// <summary>
+    /// Sets <see cref="Color"/> from a SkiaSharp <see cref="SKColor"/>, for callers working
+    /// in SkiaSharp types.
+    /// </summary>
+    /// <param name="color">The color that the layer's elements are drawn with.</param>
+    public void SetColor(SKColor color)
+    {
+        if (_color != color)
         {
-            if (_color != value)
-            {
-                _color = value;
-                BumpResetVersion();
-            }
+            _color = color;
+            BumpResetVersion();
         }
     }
+
+    /// <summary>Gets <see cref="Color"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The layer color as a SkiaSharp color.</returns>
+    public SKColor GetColorAsSkia() => _color;
 
     /// <summary>
     /// The total number of completed elements (strokes and shapes) currently on the layer.
@@ -73,6 +84,17 @@ public sealed class DrawingLayer
         if (String.IsNullOrWhiteSpace(name)) { throw new ArgumentException("A layer name is required.", nameof(name)); }
         Name = name.Trim();
         _color = color;
+    }
+
+    /// <summary>
+    /// Creates a new, empty drawing layer.
+    /// </summary>
+    /// <param name="name">The display name of the layer.</param>
+    /// <param name="color">The color that the layer's elements are drawn with.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
+    public DrawingLayer(string name, Color color)
+        : this(name, SkiaInterop.ToSK(color))
+    {
     }
 
     /// <summary>

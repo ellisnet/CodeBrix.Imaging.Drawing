@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/Samples/">
+    <Project Path="samples/PainDiagram/PainDiagram.WinUI/PainDiagram.WinUI.csproj">
+      <Platform Project="x64" />
+      <Deploy />
+    </Project>
+    <Project Path="samples/PainDiagram/PainDiagram.Wpf/PainDiagram.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/Samples/CodeBrixPlatform/">
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.Core/PainDiagram.Core.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.LinuxFrameBuffer/PainDiagram.LinuxFrameBuffer.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.LinuxWayland/PainDiagram.LinuxWayland.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.LinuxX11/PainDiagram.LinuxX11.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.MacOS/PainDiagram.MacOS.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.UI/PainDiagram.UI.shproj" Id="87f3f3ff-52cb-4de2-8344-e4515c96c173" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.Win32Skia/PainDiagram.Win32Skia.csproj" />
+    <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.WinWpfSkia/PainDiagram.WinWpfSkia.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENT-README.txt" />
+    <File Path="icon-codebrix-128.png" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="THIRD-PARTY-NOTICES.txt" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/CodeBrix.Imaging.Drawing.Tests/CodeBrix.Imaging.Drawing.Tests.csproj" />
+  </Folder>
+  <Project Path="src/CodeBrix.Imaging.Drawing/CodeBrix.Imaging.Drawing.csproj" />
+</Solution>

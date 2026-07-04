@@ -34,7 +34,7 @@ public sealed class CircleShape : DrawingShape
     /// <param name="isFilled"><c>true</c> to fill the circle solid; <c>false</c> (the default) for an outline.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="radius"/> is zero or negative.</exception>
     public CircleShape(float centerX, float centerY, float radius,
-        float strokeThickness = Stroke.DefaultWidth, SKColor? color = null, bool isFilled = false)
+        float strokeThickness = Stroke.DefaultWidth, Color? color = null, bool isFilled = false)
         : base(strokeThickness, color)
     {
         if (radius <= 0) { throw new ArgumentOutOfRangeException(nameof(radius)); }

@@ -24,15 +24,15 @@ Please update your C#/.NET code and projects to the latest LTS version of Micros
 ### Drawing on a SkiaSharp canvas with highlighter layers
 
 ```csharp
-using CodeBrix.Imaging.Drawing;
-using SkiaSharp;
+using CodeBrix.Imaging;          // Color, Size
+using CodeBrix.Imaging.Drawing;  // DrawingSession, DrawingLayer
 
 var session = new DrawingSession();
 session.SetBackgroundImage(File.ReadAllBytes("body_map.png"));
-session.BackgroundFillColor = SKColors.White;
+session.BackgroundFillColor = Color.White;
 
-DrawingLayer pain = session.AddLayer("Pain", new SKColor(255, 30, 230));
-DrawingLayer numbness = session.AddLayer("Numbness", new SKColor(30, 128, 204));
+DrawingLayer pain = session.AddLayer("Pain", Color.FromRgb(255, 30, 230));
+DrawingLayer numbness = session.AddLayer("Numbness", Color.FromRgb(30, 128, 204));
 session.ActiveLayer = pain;
 
 // Hook the session to your UI framework's Skia canvas control:
@@ -43,22 +43,22 @@ session.RedrawRequested += (s, e) => canvasControl.Invalidate();
 //   session.PointerPressed(point, viewSize); session.PointerMoved(point, viewSize); session.PointerReleased();
 
 // Save the finished drawing:
-byte[] png = session.ExportPng(new SKSizeI(1000, 1000));
+byte[] png = session.ExportPng(new Size(1000, 1000));
 File.WriteAllBytes("highlighted_body_map.png", png);
 ```
 
 ### Annotating a photo (any aspect ratio)
 
 ```csharp
-using CodeBrix.Imaging.Drawing;
-using SkiaSharp;
+using CodeBrix.Imaging;          // Color, Size
+using CodeBrix.Imaging.Drawing;  // DrawingSession, CalibrationSizing
 
 // You explicitly choose the calibrated drawing space: pass a size, or ask for it
 // to be derived from the photo's aspect ratio
 var session = DrawingSession.CreateForImage(
     File.ReadAllBytes("car_photo.jpg"),
     CalibrationSizing.DeriveFromBackgroundImage);
-session.AddLayer("Damage", SKColors.Red);
+session.AddLayer("Damage", Color.Red);
 
 // ...wire pointer events and PaintSurface as above, draw on the photo...
 

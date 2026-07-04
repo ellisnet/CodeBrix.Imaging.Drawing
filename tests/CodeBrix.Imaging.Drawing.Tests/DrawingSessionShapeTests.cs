@@ -60,7 +60,7 @@ public class DrawingSessionShapeTests
 
         //Assert - the exported drawing carries a blue circle rim, not the layer's red
         session.LayerOpacity = 255;
-        session.BackgroundFillColor = SKColors.White;
+        session.BackgroundFillColor = Color.White;
         byte[] png = session.ExportPng(new SKSizeI(200, 200));
         using SKBitmap decoded = SKBitmap.Decode(png);
         SKColor rim = decoded.GetPixel(100, 60); //calibrated (500, 300): top of the circle

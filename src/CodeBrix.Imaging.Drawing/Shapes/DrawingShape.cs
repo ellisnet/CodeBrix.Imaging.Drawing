@@ -14,6 +14,8 @@ namespace CodeBrix.Imaging.Drawing.Shapes;
 /// </summary>
 public abstract class DrawingShape : DrawingElement
 {
+    private readonly SKColor? _color;
+
     /// <summary>
     /// The outline thickness of the shape, in calibrated drawing units.
     /// </summary>
@@ -23,7 +25,11 @@ public abstract class DrawingShape : DrawingElement
     /// The color the shape is drawn with; or <c>null</c> to draw in the owning layer's
     /// color. A shape with its own color still composites at the layer's opacity.
     /// </summary>
-    public SKColor? Color { get; }
+    public Color? Color => SkiaInterop.ToImaging(_color);
+
+    /// <summary>Gets <see cref="Color"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <returns>The shape's color as a SkiaSharp color; or <c>null</c> to use the owning layer's color.</returns>
+    public SKColor? GetColorAsSkia() => _color;
 
     /// <summary>
     /// Initializes the common shape values.
@@ -35,7 +41,18 @@ public abstract class DrawingShape : DrawingElement
     {
         if (strokeThickness <= 0) { throw new ArgumentOutOfRangeException(nameof(strokeThickness)); }
         StrokeThickness = strokeThickness;
-        Color = color;
+        _color = color;
+    }
+
+    /// <summary>
+    /// Initializes the common shape values.
+    /// </summary>
+    /// <param name="strokeThickness">The outline thickness, in calibrated drawing units; must be positive.</param>
+    /// <param name="color">The shape's color; or <c>null</c> to use the owning layer's color.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="strokeThickness"/> is zero or negative.</exception>
+    protected DrawingShape(float strokeThickness, Color? color)
+        : this(strokeThickness, SkiaInterop.ToSK(color))
+    {
     }
 
     /// <summary>
