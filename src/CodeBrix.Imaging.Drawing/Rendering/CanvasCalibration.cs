@@ -44,6 +44,52 @@ public static class CanvasCalibration
     }
 
     /// <summary>
+    /// Computes the centered aspect-fit drawing rectangle for a view (or canvas) of the
+    /// given fractional size - the floating-point companion of
+    /// <see cref="GetDrawingRect(SKSizeI, SKSizeI)"/> for callers holding logical view
+    /// sizes rather than integer pixel sizes.
+    /// </summary>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <param name="calibrationSize">The size of the calibrated drawing space.</param>
+    /// <returns>
+    /// The centered aspect-fit drawing rectangle; or <see cref="SKRect.Empty"/> when either
+    /// size has a zero or negative dimension.
+    /// </returns>
+    public static SKRect GetDrawingRect(SKSize viewSize, SKSizeI calibrationSize)
+    {
+        if (viewSize.Width <= 0 || viewSize.Height <= 0
+            || calibrationSize.Width < 1 || calibrationSize.Height < 1)
+        {
+            return SKRect.Empty;
+        }
+
+        float scale = Math.Min(
+            viewSize.Width / calibrationSize.Width,
+            viewSize.Height / calibrationSize.Height);
+
+        float width = calibrationSize.Width * scale;
+        float height = calibrationSize.Height * scale;
+        float left = (viewSize.Width - width) / 2f;
+        float top = (viewSize.Height - height) / 2f;
+
+        return new SKRect(left, top, left + width, top + height);
+    }
+
+    /// <summary>
+    /// Computes the centered aspect-fit drawing rectangle for a view (or canvas) of the
+    /// given fractional size - the CodeBrix.Imaging-typed companion of
+    /// <see cref="GetDrawingRect(SKSize, SKSizeI)"/>.
+    /// </summary>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <param name="calibrationSize">The size of the calibrated drawing space.</param>
+    /// <returns>
+    /// The centered aspect-fit drawing rectangle; or an empty rectangle when either size
+    /// has a zero or negative dimension.
+    /// </returns>
+    public static RectangleF GetDrawingRect(SizeF viewSize, Size calibrationSize)
+        => SkiaInterop.ToImaging(GetDrawingRect(SkiaInterop.ToSK(viewSize), SkiaInterop.ToSK(calibrationSize)));
+
+    /// <summary>
     /// Maps a point in view coordinates (relative to an on-screen control of the given
     /// logical size) to calibrated drawing coordinates.
     /// </summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using CodeBrix.Imaging.Drawing.Models;
 using CodeBrix.Imaging.Drawing.Rendering;
 using CodeBrix.Imaging.Drawing.Shapes;
@@ -359,6 +360,139 @@ public sealed class DrawingSession : IDisposable
         return session;
     }
 
+    /// <summary>
+    /// Creates a drawing session for annotating an image supplied as raw 32-bit BGRA
+    /// pixels - for example a webcam frame or photo capture - with the calibrated drawing
+    /// space set according to the explicitly chosen <paramref name="sizing"/> behavior.
+    /// The pixels are copied, so the caller may reuse its buffer immediately.
+    /// </summary>
+    /// <param name="bgraPixels">The image's tightly packed 32-bit BGRA pixels.</param>
+    /// <param name="width">The image's width in pixels.</param>
+    /// <param name="height">The image's height in pixels.</param>
+    /// <param name="sizing">How the session's calibration size is determined.</param>
+    /// <param name="options">Other initial settings; when omitted, defaults are used.</param>
+    /// <param name="mirrorHorizontally">
+    /// <c>true</c> to flip the image left-to-right - for example so a webcam still reads
+    /// like a mirror, matching a mirrored ("selfie") live preview.
+    /// </param>
+    /// <returns>A new session with the image as its background.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="bgraPixels"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a dimension is less than 1, or <paramref name="sizing"/> is not a defined value.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="bgraPixels"/> is too small for the stated dimensions.</exception>
+    public static DrawingSession CreateForImage(byte[] bgraPixels, int width, int height,
+        CalibrationSizing sizing, DrawingSessionOptions options = null, bool mirrorHorizontally = false)
+    {
+        SKBitmap bitmap = DecodeBgraPixels(bgraPixels, width, height, mirrorHorizontally);
+        try
+        {
+            SKSizeI calibrationSize = ResolveCalibrationSize(sizing, new SKSizeI(width, height), options);
+            DrawingSession session = CreateWithCalibration(calibrationSize, options);
+            session._ownedBackgroundImage = bitmap;
+            session._renderer.BackgroundImage = bitmap;
+            return session;
+        }
+        catch
+        {
+            bitmap.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a drawing session for annotating an image supplied as raw 32-bit BGRA
+    /// pixels, with an explicitly stated calibrated drawing space. Match the calibration
+    /// size's aspect ratio to the image's to avoid stretching. The pixels are copied, so
+    /// the caller may reuse its buffer immediately.
+    /// </summary>
+    /// <param name="bgraPixels">The image's tightly packed 32-bit BGRA pixels.</param>
+    /// <param name="width">The image's width in pixels.</param>
+    /// <param name="height">The image's height in pixels.</param>
+    /// <param name="calibrationSize">The calibrated drawing space; both dimensions must be positive.</param>
+    /// <param name="options">
+    /// Other initial settings; when omitted, defaults are used. Its
+    /// <see cref="DrawingSessionOptions.CalibrationSize"/> is replaced by
+    /// <paramref name="calibrationSize"/>.
+    /// </param>
+    /// <param name="mirrorHorizontally"><c>true</c> to flip the image left-to-right.</param>
+    /// <returns>A new session with the image as its background.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="bgraPixels"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a dimension of the image or of <paramref name="calibrationSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="bgraPixels"/> is too small for the stated dimensions.</exception>
+    public static DrawingSession CreateForImage(byte[] bgraPixels, int width, int height,
+        SKSizeI calibrationSize, DrawingSessionOptions options = null, bool mirrorHorizontally = false)
+    {
+        if (calibrationSize.Width < 1 || calibrationSize.Height < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(calibrationSize));
+        }
+
+        SKBitmap bitmap = DecodeBgraPixels(bgraPixels, width, height, mirrorHorizontally);
+        try
+        {
+            DrawingSession session = CreateWithCalibration(calibrationSize, options);
+            session._ownedBackgroundImage = bitmap;
+            session._renderer.BackgroundImage = bitmap;
+            return session;
+        }
+        catch
+        {
+            bitmap.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates a drawing session for annotating an image supplied as raw 32-bit BGRA
+    /// pixels, with an explicitly stated calibrated drawing space. Match the calibration
+    /// size's aspect ratio to the image's to avoid stretching. The pixels are copied, so
+    /// the caller may reuse its buffer immediately.
+    /// </summary>
+    /// <param name="bgraPixels">The image's tightly packed 32-bit BGRA pixels.</param>
+    /// <param name="width">The image's width in pixels.</param>
+    /// <param name="height">The image's height in pixels.</param>
+    /// <param name="calibrationSize">The calibrated drawing space; both dimensions must be positive.</param>
+    /// <param name="options">
+    /// Other initial settings; when omitted, defaults are used. Its
+    /// <see cref="DrawingSessionOptions.CalibrationSize"/> is replaced by
+    /// <paramref name="calibrationSize"/>.
+    /// </param>
+    /// <param name="mirrorHorizontally"><c>true</c> to flip the image left-to-right.</param>
+    /// <returns>A new session with the image as its background.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="bgraPixels"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a dimension of the image or of <paramref name="calibrationSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="bgraPixels"/> is too small for the stated dimensions.</exception>
+    public static DrawingSession CreateForImage(byte[] bgraPixels, int width, int height,
+        Size calibrationSize, DrawingSessionOptions options = null, bool mirrorHorizontally = false)
+        => CreateForImage(bgraPixels, width, height, SkiaInterop.ToSK(calibrationSize), options, mirrorHorizontally);
+
+    private static SKBitmap DecodeBgraPixels(byte[] bgraPixels, int width, int height, bool mirrorHorizontally)
+    {
+        if (bgraPixels == null) { throw new ArgumentNullException(nameof(bgraPixels)); }
+        if (width < 1) { throw new ArgumentOutOfRangeException(nameof(width)); }
+        if (height < 1) { throw new ArgumentOutOfRangeException(nameof(height)); }
+
+        int required = width * height * 4;
+        if (bgraPixels.Length < required)
+        {
+            throw new ArgumentException(
+                $"The pixel buffer holds {bgraPixels.Length} bytes but {width} x {height} 32-bit BGRA pixels require {required}.",
+                nameof(bgraPixels));
+        }
+
+        var bitmap = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque));
+        Marshal.Copy(bgraPixels, 0, bitmap.GetPixels(), required);
+        if (!mirrorHorizontally) { return bitmap; }
+
+        var mirrored = new SKBitmap(bitmap.Info);
+        using (var canvas = new SKCanvas(mirrored))
+        {
+            canvas.Scale(-1, 1, width / 2f, 0);
+            canvas.DrawBitmap(bitmap, new SKPoint(0, 0), new SKSamplingOptions(SKFilterMode.Nearest));
+        }
+        bitmap.Dispose();
+        return mirrored;
+    }
+
     private static DrawingSession CreateForEncodedImage(
         byte[] encodedImage,
         Func<SKSizeI, SKSizeI> calibrationForImageSize,
@@ -564,6 +698,36 @@ public sealed class DrawingSession : IDisposable
         RaiseRedrawRequested();
     }
 
+    /// <summary>
+    /// Uses raw 32-bit BGRA pixels - for example a webcam frame or photo capture - as the
+    /// drawing's background. The pixels are copied (so the caller may reuse its buffer
+    /// immediately) and the session owns the resulting bitmap. Note that, like every
+    /// background setter, this does NOT change the session's calibration size; to derive
+    /// the drawing space from the image, create the session with a raw-pixels
+    /// <c>CreateForImage</c> factory overload instead.
+    /// </summary>
+    /// <param name="bgraPixels">The image's tightly packed 32-bit BGRA pixels.</param>
+    /// <param name="width">The image's width in pixels.</param>
+    /// <param name="height">The image's height in pixels.</param>
+    /// <param name="mirrorHorizontally">
+    /// <c>true</c> to flip the image left-to-right - for example so a webcam still reads
+    /// like a mirror, matching a mirrored ("selfie") live preview.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="bgraPixels"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a dimension is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="bgraPixels"/> is too small for the stated dimensions.</exception>
+    public void SetBackgroundImage(byte[] bgraPixels, int width, int height, bool mirrorHorizontally = false)
+    {
+        ThrowIfDisposed();
+        SKBitmap bitmap = DecodeBgraPixels(bgraPixels, width, height, mirrorHorizontally);
+
+        DisposeOwnedBackground();
+        _ownedBackgroundImage = bitmap;
+        _renderer.BackgroundImage = bitmap;
+
+        RaiseRedrawRequested();
+    }
+
     #endregion
 
     #region Pointer input
@@ -586,16 +750,7 @@ public sealed class DrawingSession : IDisposable
             viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia());
         if (!calibrated.HasValue) { return false; }
 
-        //A new press while a stroke is somehow still active commits the earlier stroke first
-        if (_activeStroke != null) { PointerReleased(); }
-
-        _activeStrokeTimer = Stopwatch.StartNew();
-        _activeStroke = new Stroke(StrokeWidth, DateTimeOffset.UtcNow);
-        _activeStrokeLayer = layer;
-        _activeStroke.AddPoint(calibrated.Value.X, calibrated.Value.Y, 0);
-
-        RaiseRedrawRequested();
-        return true;
+        return BeginStrokeAtCalibrated(calibrated.Value, layer);
     }
 
     /// <summary>
@@ -626,11 +781,7 @@ public sealed class DrawingSession : IDisposable
             viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia(), clampToDrawingArea: true);
         if (!calibrated.HasValue) { return false; }
 
-        bool added = _activeStroke.AddPoint(calibrated.Value.X, calibrated.Value.Y,
-            (int)Math.Min(_activeStrokeTimer.ElapsedMilliseconds, Int32.MaxValue));
-
-        if (added) { RaiseRedrawRequested(); }
-        return added;
+        return ExtendStrokeToCalibrated(calibrated.Value);
     }
 
     /// <summary>
@@ -644,6 +795,86 @@ public sealed class DrawingSession : IDisposable
     /// <returns><c>true</c> when the stroke was extended with a new point.</returns>
     public bool PointerMoved(PointF viewPoint, SizeF viewSize)
         => PointerMoved(SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize));
+
+    /// <summary>
+    /// Begins a new stroke at the given NORMALIZED drawing-space position - (0, 0) is the
+    /// drawing space's top-left corner, (1, 1) its bottom-right. Unlike the view-coordinate
+    /// <see cref="PointerPressed(SKPoint, SKSize)"/>, this works in the calibrated drawing
+    /// space directly, needs no prior <see cref="Render(SKCanvas, SKImageInfo, bool)"/>
+    /// call, and never depends on a canvas or view size - ideal for programmatic input
+    /// sources such as computer-vision hand or object tracking. A position outside the
+    /// 0..1 range is ignored (mirroring how a view-coordinate press outside the drawing
+    /// area is ignored). The stroke completes through the same
+    /// <see cref="PointerReleased"/> / <see cref="PointerCanceled"/> calls as view-driven
+    /// strokes, and the two input styles may be mixed freely.
+    /// </summary>
+    /// <param name="normX">The horizontal position across the drawing space, 0..1.</param>
+    /// <param name="normY">The vertical position down the drawing space, 0..1.</param>
+    /// <returns><c>true</c> when a stroke was started.</returns>
+    public bool PointerPressedNormalized(float normX, float normY)
+    {
+        ThrowIfDisposed();
+
+        DrawingLayer layer = ActiveLayer;
+        if (layer == null) { return false; }
+        if (Single.IsNaN(normX) || Single.IsNaN(normY)
+            || normX < 0f || normX > 1f || normY < 0f || normY > 1f)
+        {
+            return false;
+        }
+
+        return BeginStrokeAtCalibrated(NormalizedToCalibrated(normX, normY), layer);
+    }
+
+    /// <summary>
+    /// Extends the in-progress stroke to the given NORMALIZED drawing-space position -
+    /// the programmatic companion of <see cref="PointerMoved(SKPoint, SKSize)"/> (see
+    /// <see cref="PointerPressedNormalized"/>). Calls made while no stroke is in progress
+    /// are ignored; positions outside the 0..1 range are clamped to the drawing area's
+    /// edge, matching the view-coordinate behavior.
+    /// </summary>
+    /// <param name="normX">The horizontal position across the drawing space, 0..1.</param>
+    /// <param name="normY">The vertical position down the drawing space, 0..1.</param>
+    /// <returns><c>true</c> when the stroke was extended with a new point.</returns>
+    public bool PointerMovedNormalized(float normX, float normY)
+    {
+        ThrowIfDisposed();
+        if (_activeStroke == null) { return false; }
+        if (Single.IsNaN(normX) || Single.IsNaN(normY)) { return false; }
+
+        return ExtendStrokeToCalibrated(NormalizedToCalibrated(normX, normY));
+    }
+
+    private SKPointI NormalizedToCalibrated(float normX, float normY)
+    {
+        SKSizeI calibration = GetCalibrationSizeAsSkia();
+        return new SKPointI(
+            (int)Math.Round(Math.Clamp(normX, 0f, 1f) * calibration.Width, MidpointRounding.AwayFromZero),
+            (int)Math.Round(Math.Clamp(normY, 0f, 1f) * calibration.Height, MidpointRounding.AwayFromZero));
+    }
+
+    private bool BeginStrokeAtCalibrated(SKPointI calibrated, DrawingLayer layer)
+    {
+        //A new press while a stroke is somehow still active commits the earlier stroke first
+        if (_activeStroke != null) { PointerReleased(); }
+
+        _activeStrokeTimer = Stopwatch.StartNew();
+        _activeStroke = new Stroke(StrokeWidth, DateTimeOffset.UtcNow);
+        _activeStrokeLayer = layer;
+        _activeStroke.AddPoint(calibrated.X, calibrated.Y, 0);
+
+        RaiseRedrawRequested();
+        return true;
+    }
+
+    private bool ExtendStrokeToCalibrated(SKPointI calibrated)
+    {
+        bool added = _activeStroke.AddPoint(calibrated.X, calibrated.Y,
+            (int)Math.Min(_activeStrokeTimer.ElapsedMilliseconds, Int32.MaxValue));
+
+        if (added) { RaiseRedrawRequested(); }
+        return added;
+    }
 
     /// <summary>
     /// Completes the in-progress stroke and commits it to the active layer. Call from the
@@ -875,6 +1106,54 @@ public sealed class DrawingSession : IDisposable
     {
         ThrowIfDisposed();
         _renderer.Render(canvas, info, Layers, _activeStroke, _activeStrokeLayer?.GetColorAsSkia(), clearCanvas);
+    }
+
+    /// <summary>
+    /// The rectangle that the drawing occupies within a view (or canvas) of the given size:
+    /// the centered aspect-fit rectangle with the calibration space's aspect ratio. Useful
+    /// for positioning overlays - cursors, markers, hit regions - that must line up with
+    /// the drawing: a normalized drawing-space position (nx, ny) lands at
+    /// (rect.X + nx * rect.Width, rect.Y + ny * rect.Height).
+    /// </summary>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <returns>The drawing's aspect-fit rectangle; empty when <paramref name="viewSize"/> is unusable.</returns>
+    public RectangleF GetDrawingRect(SizeF viewSize)
+        => SkiaInterop.ToImaging(GetDrawingRect(SkiaInterop.ToSK(viewSize)));
+
+    /// <summary>
+    /// The rectangle that the drawing occupies within a view (or canvas) of the given size -
+    /// the SkiaSharp-typed companion of <see cref="GetDrawingRect(SizeF)"/>.
+    /// </summary>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <returns>The drawing's aspect-fit rectangle; empty when <paramref name="viewSize"/> is unusable.</returns>
+    public SKRect GetDrawingRect(SKSize viewSize)
+        => CanvasCalibration.GetDrawingRect(viewSize, GetCalibrationSizeAsSkia());
+
+    /// <summary>
+    /// Scales a length from calibrated drawing units to view (or canvas) units for a view
+    /// of the given size - for example to draw a cursor ring whose radius matches what a
+    /// stroke of that calibrated width will actually cover on screen.
+    /// </summary>
+    /// <param name="calibratedLength">The length, in calibrated drawing units (e.g. a stroke width or brush radius).</param>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <returns>The equivalent length in view units; the input value when the sizes are unusable.</returns>
+    public float ScaleToView(float calibratedLength, SizeF viewSize)
+        => ScaleToView(calibratedLength, SkiaInterop.ToSK(viewSize));
+
+    /// <summary>
+    /// Scales a length from calibrated drawing units to view (or canvas) units - the
+    /// SkiaSharp-typed companion of <see cref="ScaleToView(float, SizeF)"/>.
+    /// </summary>
+    /// <param name="calibratedLength">The length, in calibrated drawing units.</param>
+    /// <param name="viewSize">The size of the view or canvas.</param>
+    /// <returns>The equivalent length in view units; the input value when the sizes are unusable.</returns>
+    public float ScaleToView(float calibratedLength, SKSize viewSize)
+    {
+        SKRect drawingRect = GetDrawingRect(viewSize);
+        if (drawingRect.IsEmpty || calibratedLength <= 0) { return calibratedLength; }
+
+        SKSizeI calibration = GetCalibrationSizeAsSkia();
+        return calibratedLength * (drawingRect.Width / calibration.Width);
     }
 
     /// <summary>

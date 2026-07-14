@@ -286,7 +286,17 @@ Image-annotation factories (photos of any aspect ratio):
   DrawingSession CreateForImage(byte[] encodedImage, CalibrationSizing sizing, DrawingSessionOptions options = null)
   DrawingSession CreateForImage(SKBitmap image, Size calibrationSize, DrawingSessionOptions options = null)
   DrawingSession CreateForImage(SKBitmap image, CalibrationSizing sizing, DrawingSessionOptions options = null)
-  // (SKSizeI overloads of the two size-taking factories also exist.)
+  DrawingSession CreateForImage(byte[] bgraPixels, int width, int height, Size calibrationSize,
+      DrawingSessionOptions options = null, bool mirrorHorizontally = false)
+  DrawingSession CreateForImage(byte[] bgraPixels, int width, int height, CalibrationSizing sizing,
+      DrawingSessionOptions options = null, bool mirrorHorizontally = false)
+  // (SKSizeI overloads of the size-taking factories also exist.)
+  // The raw-pixels overloads take a tightly packed 32-bit BGRA buffer - exactly what
+  // webcam and video-capture libraries produce (e.g. CodeBrix.Webcam's WebcamPhoto.
+  // PixelsBgra32) - so "annotate a captured photo" needs no PNG round-trip. The pixels
+  // are COPIED (reuse your buffer immediately) and the session owns the bitmap.
+  // mirrorHorizontally flips the image left-to-right, for stills that must read like a
+  // mirror because the user watched a mirrored ("selfie") live preview when capturing.
   // Decodes/uses the image as the session's background. The calibration size
   // is ALWAYS an explicit caller choice - there is no automatic behavior:
   //   * pass a Size to state the drawing space inline (match its aspect
@@ -311,6 +321,12 @@ Layers:
 
 Background:
   void SetBackgroundImage(byte[] encodedImage)  // decodes; session owns the bitmap
+  void SetBackgroundImage(byte[] bgraPixels, int width, int height,
+      bool mirrorHorizontally = false)          // raw 32-bit BGRA pixels (webcam frames);
+                                                //   copied, session owns the bitmap.
+                                                //   NOTE: does not change CalibrationSize -
+                                                //   use a raw-pixels CreateForImage factory
+                                                //   to derive the drawing space instead
   SKBitmap BackgroundImage { get; set; }        // caller-owned alternative (image type)
   Color BackgroundFillColor { get; set; }       // + SetBackgroundFillColor(SKColor)
                                                 //   + GetBackgroundFillColorAsSkia()
@@ -335,12 +351,42 @@ the control's logical coordinates - the session handles DPI scaling):
   // PointerPressed requires one prior Render call (it needs the canvas
   // size to calibrate coordinates); before that it returns false.
 
+Normalized (programmatic / vision-driven) stroke input - positions are
+0..1 across the calibrated drawing space, NOT view coordinates:
+  bool PointerPressedNormalized(float normX, float normY)
+  bool PointerMovedNormalized(float normX, float normY)
+  // The programmatic companions of PointerPressed/PointerMoved, for input
+  // that does not come from a pointing device - e.g. computer-vision hand
+  // or object tracking that reports positions as fractions of the image.
+  // (0,0) = drawing-space top-left, (1,1) = bottom-right. They work in the
+  // calibrated space directly, so they need NO view size and NO prior
+  // Render call. A press outside 0..1 is ignored; moves clamp to the
+  // edge; NaN is rejected - all mirroring the view-coordinate semantics.
+  // Strokes complete through the same PointerReleased()/PointerCanceled(),
+  // and normalized and view-driven input may be mixed freely, even within
+  // one stroke. When the calibration size was derived from a background
+  // photo (CreateForImage), normalized drawing-space coordinates ARE
+  // normalized photo coordinates - a vision result maps straight in.
+
 Rendering (call from the view's paint handler):
   void Render(SKSurface surface, SKImageInfo info, bool clearCanvas = true)
   void Render(SKCanvas canvas, SKImageInfo info, bool clearCanvas = true)
   // clearCanvas: false renders the drawing OVER whatever the caller already
   // drew on the canvas (e.g. a live video frame painted immediately before
   // this call) instead of clearing to SurfaceClearColor first.
+
+Overlay positioning helpers (cursors, markers, hit regions that must line
+up with the drawing):
+  RectangleF GetDrawingRect(SizeF viewSize)     // SKSize/SKRect overload also exists
+  float ScaleToView(float calibratedLength, SizeF viewSize)   // SKSize overload also exists
+  // GetDrawingRect returns the centered aspect-fit rectangle the drawing
+  // occupies in a view (or canvas) of the given size - the same mapping the
+  // renderer uses. A normalized drawing-space position (nx, ny) lands at
+  // (rect.X + nx * rect.Width, rect.Y + ny * rect.Height). ScaleToView
+  // converts a calibrated length (stroke width, brush radius) into view
+  // units - e.g. to draw a cursor ring exactly as wide as the stroke that
+  // painting at that spot will produce. Both are pure math passthroughs of
+  // CanvasCalibration bound to the session's own CalibrationSize.
 
 Live-video overlay ("telestrator") hosting - two patterns:
   1. Separate elements: put the video view underneath and a Skia canvas view
@@ -510,11 +556,15 @@ CanvasCalibration (Rendering; static)
 Pure coordinate math - useful for custom hit testing or overlays. Each
 helper has a CodeBrix.Imaging-typed form and a SkiaSharp-typed form:
   RectangleF GetDrawingRect(Size canvasSize, Size calibrationSize)
+  RectangleF GetDrawingRect(SizeF viewSize, Size calibrationSize)   // fractional view sizes
   Point? ViewPointToCalibrated(PointF viewPoint, SizeF viewSize,
       Size canvasSize, Size calibrationSize, bool clampToDrawingArea = false)
   PointF CalibratedToCanvas(Point calibratedPoint, Size calibrationSize, RectangleF drawingRect)
   float ScaleStrokeWidth(float calibratedWidth, Size calibrationSize, RectangleF drawingRect)
   // The SkiaSharp forms (SKRect/SKPointI/SKSizeI/SKPoint/SKSize) also exist.
+  // Most callers can use the DrawingSession-level GetDrawingRect/ScaleToView
+  // sugar instead (see "Overlay positioning helpers" above), which binds
+  // these statics to the session's own CalibrationSize.
 The drawing rectangle is the centered aspect-fit rectangle with the
 calibration space's aspect ratio - match CalibrationSize to the
 background image's aspect ratio for edge-to-edge alignment.
@@ -719,6 +769,59 @@ To reuse PainDiagram as a template for a new drawing app:
      extension/filters.
   5. Update the embedded resource LogicalName in all three embedding
      projects if you rename the app.
+
+VISION-DRIVEN PAINTING (THE WEBCAMPAINTER PATTERN)
+========================================================================
+
+The WebcamPainter sample (CodeBrix.Samples repo, WebcamPainter folder)
+paints on a captured webcam still with an open-palm hand gesture tracked
+through a webcam - "spreading frosting on a cake". It is the reference
+for driving this library from a computer-vision pipeline instead of a
+mouse. The essential recipe:
+
+  1. Create the session straight from the captured frame's raw pixels,
+     deriving the drawing space from the photo so normalized photo
+     coordinates and normalized drawing coordinates coincide:
+       var session = DrawingSession.CreateForImage(
+           photo.PixelsBgra32, photo.Width, photo.Height,
+           CalibrationSizing.DeriveFromBackgroundImage,
+           new DrawingSessionOptions { BackgroundFillColor = Color.White,
+                                       StrokeWidth = 60f },
+           mirrorHorizontally: true);   //matches a mirrored live preview
+  2. Feed tracking results in as normalized strokes - no view size, no
+     prior render, no coordinate mapping in the app:
+       gesture active   -> session.PointerPressedNormalized(nx, ny)   //first frame
+                           session.PointerMovedNormalized(nx, ny)     //subsequent
+       gesture lost/off -> session.PointerReleased()
+     Vision positions are normally in UNMIRRORED camera coordinates; when
+     the still was mirrored, mirror the hand too: nx = 1 - nx.
+  3. Draw a cursor so the user can aim. In the paint handler, after
+     session.Render(...):
+       var rect = session.GetDrawingRect(new SKSize(info.Width, info.Height));
+       float cx = rect.Left + (nx * rect.Width);
+       float cy = rect.Top + (ny * rect.Height);
+       float radius = session.ScaleToView(BrushRadius, ...) // ring = true brush size
+  4. Marshal threading carefully: tracking results arrive on a vision
+     worker thread; make all Pointer* calls from ONE thread (the UI
+     thread is the natural choice, since Render runs there too).
+
+Lessons learned building WebcamPainter (before the normalized-input API
+existed, each of these was app code - now the library covers them):
+  - Deriving the calibration from the photo (DeriveFromBackgroundImage)
+    is what makes vision coordinates line up edge-to-edge; an explicit
+    calibration size with a different aspect ratio letterboxes the image
+    and shifts every stroke off-target.
+  - JPEG export of an annotated photo "just works" at native resolution:
+    ExportJpeg() with no size uses DefaultExportSize = the background
+    image's pixel size. Set an opaque BackgroundFillColor (JPEG has no
+    alpha).
+  - Set StrokeWidth for a wide "spatula" feel; a brush-size cursor ring
+    via ScaleToView makes the width tangible to the user before they
+    commit a stroke.
+  - Translucent highlighter compositing (LayerOpacity default 100) means
+    repeated palm passes over the same spot do NOT darken - which reads
+    as "spreading" rather than "scribbling". Use LayerOpacity = 255 for
+    opaque paint instead.
 
 CODING CONVENTIONS (CodeBrix family)
 ========================================================================
