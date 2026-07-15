@@ -66,7 +66,7 @@ NuGet Package: CodeBrix.Imaging.Drawing.ApacheLicenseForever
   under the Apache-2.0 license. Namespaces do NOT carry the suffix:
   code uses the CodeBrix.Imaging.Drawing namespace.
 - Requires .NET 10.0 or higher.
-- Dependencies: SkiaSharp (4.150.0 or later) and
+- Dependencies: SkiaSharp (4.150.1 or later) and
   CodeBrix.Imaging.ApacheLicenseForever. Applications must also
   provide the SkiaSharp native assets for their platform - desktop
   apps built on CodeBrix.Platform get them from their platform head
@@ -697,9 +697,9 @@ How the pieces connect, end to end:
    SKIASHARP OUT OF THE HOSTING APP'S XAML (the DrawingCanvas trick)"
    above. That one linked file compiles to SkiaSharp.Views.Windows.
    SKXamlCanvas on the Skia heads + native WinUI (from CodeBrix.Platform.
-   SkiaSharp.Views.MitLicenseForever 4.150.0 and SkiaSharp.Views.WinUI
-   4.150.0 respectively) and to SkiaSharp.Views.WPF.SKElement on native
-   WPF (4.150.0). The XAML is just <drawing:DrawingCanvas x:Name=
+   SkiaSharp.Views.MitLicenseForever 4.150.1 and SkiaSharp.Views.WinUI
+   4.150.1 respectively) and to SkiaSharp.Views.WPF.SKElement on native
+   WPF (4.150.1). The XAML is just <drawing:DrawingCanvas x:Name=
    "DrawCanvas" />; the page's constructor wires it after
    InitializeComponent with lambdas, so no code-behind carries a
    using SkiaSharp;:
