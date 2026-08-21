@@ -2,7 +2,11 @@ using System;
 using CodeBrix.Imaging.Drawing.Extensions;
 using CodeBrix.Imaging.PixelFormats;
 using SilverAssertions;
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 using Xunit;
 
 namespace CodeBrix.Imaging.Drawing.Tests.Extensions;

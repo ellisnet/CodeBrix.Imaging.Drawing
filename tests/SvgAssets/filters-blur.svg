@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <filter id="blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blurred"/>
+      <feOffset in="blurred" dx="8" dy="8" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="400" height="300" fill="#fefbf3"/>
+  <circle cx="100" cy="90" r="50" fill="#2980b9" filter="url(#blur)"/>
+  <rect x="200" y="50" width="140" height="80" rx="12" fill="#27ae60" filter="url(#shadow)"/>
+  <circle cx="120" cy="220" r="45" fill="#c0392b"/>
+  <rect x="230" y="185" width="120" height="70" fill="#8e44ad" filter="url(#blur)"/>
+</svg>

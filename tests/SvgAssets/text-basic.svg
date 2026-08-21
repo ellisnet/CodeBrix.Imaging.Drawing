@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#fdfefe"/>
+  <text x="20" y="50" font-family="Open Sans" font-size="34" fill="#1b2631">Invoice #4021</text>
+  <text x="20" y="95" font-family="Open Sans" font-size="18" fill="#616a6b">Rendered without any native code.</text>
+  <text x="200" y="150" font-family="Open Sans" font-size="24" fill="#b03a2e" text-anchor="middle">Centered heading</text>
+  <text x="380" y="190" font-family="Open Sans" font-size="16" fill="#1a5276" text-anchor="end">right-aligned total: 1,234.56</text>
+  <text x="20" y="240" font-family="Open Sans" font-size="20" fill="#186a3b">Mixed <tspan fill="#922b21" font-size="26">sizes</tspan> and <tspan dy="-8" fill="#6c3483">shifts</tspan></text>
+</svg>

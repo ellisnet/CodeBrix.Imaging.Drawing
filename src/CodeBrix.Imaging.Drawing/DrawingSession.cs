@@ -6,7 +6,11 @@ using System.Runtime.InteropServices;
 using CodeBrix.Imaging.Drawing.Models;
 using CodeBrix.Imaging.Drawing.Rendering;
 using CodeBrix.Imaging.Drawing.Shapes;
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 
 namespace CodeBrix.Imaging.Drawing;
 

@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CodeBrix.Imaging.Drawing.NoSkia</AssemblyName>
+    <RootNamespace>CodeBrix.Imaging.Drawing</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      NOSKIA selects the fully managed backend in the shared (linked) sources: their
+      SkiaSharp using directives switch to CodeBrix.Imaging.Drawing.NoSkia, where the
+      SKCanvas/SKBitmap/SKColor/... workalike types live.
+    -->
+    <DefineConstants>$(DefineConstants);NOSKIA</DefineConstants>
+  </PropertyGroup>
+
+  <!--
+    Package / assembly version: date-stamped and auto-incrementing - identical scheme to
+    CodeBrix.Imaging.Drawing (see that project file for the full explanation).
+  -->
+  <PropertyGroup>
+    <_VersionBaseYear>2026</_VersionBaseYear>
+    <_VersionYears>$([MSBuild]::Subtract($([System.DateTime]::UtcNow.Year), $(_VersionBaseYear)))</_VersionYears>
+    <_VersionDayOfYear>$([System.DateTime]::UtcNow.DayOfYear)</_VersionDayOfYear>
+    <_VersionMinuteOfDay>$([System.Convert]::ToInt32($([System.Math]::Floor($([System.DateTime]::UtcNow.TimeOfDay.TotalMinutes)))))</_VersionMinuteOfDay>
+    <BuildVersion>1.$(_VersionYears).$(_VersionDayOfYear).$(_VersionMinuteOfDay)</BuildVersion>
+    <Version>$(BuildVersion)</Version>
+    <AssemblyVersion>$(BuildVersion)</AssemblyVersion>
+    <FileVersion>$(BuildVersion)</FileVersion>
+  </PropertyGroup>
+
+  <!--
+    This assembly is NOT packed on its own: the CodeBrix.Imaging.Drawing.NoSkia.Package
+    project packs this assembly TOGETHER with CodeBrix.Imaging.Drawing.NoSkia.Svg into the
+    single CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    The complete drawing-session API (DrawingSession, DrawingRenderer, models, shapes,
+    extensions) is compiled from the SAME source files as CodeBrix.Imaging.Drawing - linked,
+    not copied - so there is exactly one copy of that code in the repository. The NOSKIA
+    symbol (above) retargets their SkiaSharp using directives to the workalike types.
+  -->
+  <ItemGroup>
+    <Compile Include="..\CodeBrix.Imaging.Drawing\**\*.cs"
+             Exclude="..\CodeBrix.Imaging.Drawing\bin\**;..\CodeBrix.Imaging.Drawing\obj\**"
+             LinkBase="Shared" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.233.968" />
+  </ItemGroup>
+
+</Project>

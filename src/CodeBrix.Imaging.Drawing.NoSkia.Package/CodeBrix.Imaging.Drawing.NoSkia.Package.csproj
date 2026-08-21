@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The PACKAGING project for CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever.
+
+    The package carries TWO assemblies - CodeBrix.Imaging.Drawing.NoSkia (the managed
+    drawing engine + drop-in session API) and CodeBrix.Imaging.Drawing.NoSkia.Svg (the
+    vendored SVG pipeline + rasterizing backend). Because the Svg assembly references the
+    core assembly, neither project can pack the pair by itself; this otherwise empty
+    project references both and folds their build outputs into one package. Its own
+    (empty) assembly is excluded from the package.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeNoSkiaAssembliesInPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <!--
+    Package / assembly version: date-stamped and auto-incrementing - identical scheme to
+    CodeBrix.Imaging.Drawing (see that project file for the full explanation).
+  -->
+  <PropertyGroup>
+    <_VersionBaseYear>2026</_VersionBaseYear>
+    <_VersionYears>$([MSBuild]::Subtract($([System.DateTime]::UtcNow.Year), $(_VersionBaseYear)))</_VersionYears>
+    <_VersionDayOfYear>$([System.DateTime]::UtcNow.DayOfYear)</_VersionDayOfYear>
+    <_VersionMinuteOfDay>$([System.Convert]::ToInt32($([System.Math]::Floor($([System.DateTime]::UtcNow.TimeOfDay.TotalMinutes)))))</_VersionMinuteOfDay>
+    <BuildVersion>1.$(_VersionYears).$(_VersionDayOfYear).$(_VersionMinuteOfDay)</BuildVersion>
+    <Version>$(BuildVersion)</Version>
+    <AssemblyVersion>$(BuildVersion)</AssemblyVersion>
+    <FileVersion>$(BuildVersion)</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever</PackageId>
+    <Product>CodeBrix.Imaging.Drawing.NoSkia</Product>
+    <Title>CodeBrix.Imaging.Drawing.NoSkia</Title>
+    <Authors>Jeremy Ellis</Authors>
+    <Description>The fully managed, zero-native-dependency companion of CodeBrix.Imaging.Drawing: the same stroke-based drawing, painting and highlighting API, SkiaSharp-workalike drawing types (DrawingCanvas, DrawingBitmap, DrawingPaint, DrawingPath, gradients, blend modes, clipping, save-layers), and SVG rendering - all rasterized entirely in managed code on CodeBrix.Imaging pixel buffers. No SkiaSharp, no Skia native libraries, no native dependencies of any kind. Reference EITHER this package OR CodeBrix.Imaging.Drawing.ApacheLicenseForever, never both: they compile the same drawing-session sources into the same namespaces.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ellisnet/CodeBrix.Imaging.Drawing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ellisnet/CodeBrix.Imaging.Drawing</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon-codebrix-128.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) 2026 Jeremy Ellis and contributors</Copyright>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <IsPackable>true</IsPackable>
+    <PackageTags>drawing;painting;highlighting;annotation;ink;strokes;svg;rasterizer;managed;noskia;imaging;CodeBrix</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\icon-codebrix-128.png" Pack="true" PackagePath="" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="" />
+    <None Include="..\..\AGENT-README.txt" Pack="true" PackagePath="" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!--
+    The referenced projects are folded into this package (PrivateAssets keeps them from
+    being emitted as package dependencies of their own); the packages the assemblies
+    genuinely depend on are declared explicitly so consumers restore them.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj"
+                      PrivateAssets="all" />
+    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia.Svg\CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.233.968" />
+    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.165.135" />
+  </ItemGroup>
+
+  <Target Name="IncludeNoSkiaAssembliesInPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <!-- The two referenced projects' assemblies (and XML docs), but not their package dependencies -->
+      <_NoSkiaPackFile Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+      <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)"
+                              PackagePath="lib/$(TargetFramework)"
+                              Condition="'%(_NoSkiaPackFile.Extension)' == '.dll' or '%(_NoSkiaPackFile.Extension)' == '.xml'" />
+      <!-- The core assembly's IntelliSense documentation (not part of copy-local paths) -->
+      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml"
+                              PackagePath="lib/$(TargetFramework)"
+                              Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml')" />
+    </ItemGroup>
+  </Target>
+
+</Project>

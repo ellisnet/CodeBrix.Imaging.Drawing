@@ -8,6 +8,11 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/CodeBrix.Imaging.Drawing.Tests/CodeBrix.Imaging.Drawing.Tests.csproj" />
+    <Project Path="tests/CodeBrix.Imaging.Drawing.NoSkia.Tests/CodeBrix.Imaging.Drawing.NoSkia.Tests.csproj" />
+    <Project Path="tests/CodeBrix.Imaging.Drawing.ParityTests/CodeBrix.Imaging.Drawing.ParityTests.csproj" />
   </Folder>
   <Project Path="src/CodeBrix.Imaging.Drawing/CodeBrix.Imaging.Drawing.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia/CodeBrix.Imaging.Drawing.NoSkia.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia.Svg/CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia.Package/CodeBrix.Imaging.Drawing.NoSkia.Package.csproj" />
 </Solution>

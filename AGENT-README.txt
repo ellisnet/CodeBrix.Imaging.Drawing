@@ -54,6 +54,16 @@ The repository also contains a complete reference application -
 samples/PainDiagram - documented in detail in THE PAINDIAGRAM SAMPLE
 APPLICATION section near the end of this file.
 
+The repository produces TWO packages. Besides the SkiaSharp-backed
+package documented above, it builds
+CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever - a COMPLETELY
+MANAGED companion with the identical drawing-session API, a
+SkiaSharp-workalike 2D drawing engine (DrawingCanvas/DrawingBitmap/
+DrawingPaint/...), and a fully managed SVG renderer - with zero
+dependence on SkiaSharp or any native library. See THE NOSKIA COMPANION
+PACKAGE section below. The two packages are EITHER/OR alternatives:
+never reference both from one application.
+
 INSTALLATION
 ========================================================================
 
@@ -823,6 +833,168 @@ existed, each of these was app code - now the library covers them):
     as "spreading" rather than "scribbling". Use LayerOpacity = 255 for
     opaque paint instead.
 
+THE NOSKIA COMPANION PACKAGE (CodeBrix.Imaging.Drawing.NoSkia)
+========================================================================
+
+NuGet Package: CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
+
+  dotnet add package CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
+
+WHAT IT IS
+------------------------------------------------------------------------
+A completely managed drawing stack with ZERO dependence on SkiaSharp or
+any native library. Its only dependencies are the fully managed
+CodeBrix.Imaging.ApacheLicenseForever (pixel buffers, codecs, fonts) and
+CodeBrix.SvgParse.MsplLicenseForever (SVG DOM) packages. Choose between
+the two packages this repository produces:
+
+  * Want Skia's performance and the full non-drawing Skia surface?
+    -> CodeBrix.Imaging.Drawing.ApacheLicenseForever (+ SkiaSharp).
+  * Want no Skia/native dependence and can accept slower (still
+    entirely correct) CPU rendering?
+    -> CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever.
+
+NEVER reference both packages from one application: they compile the
+SAME drawing-session source files into the SAME CodeBrix.Imaging.Drawing
+namespaces (deliberately, so switching is a package swap).
+
+The package carries two assemblies:
+  CodeBrix.Imaging.Drawing.NoSkia      - the managed drawing engine and
+                                         the drop-in drawing-session API
+  CodeBrix.Imaging.Drawing.NoSkia.Svg  - the managed SVG renderer
+
+THE DRAWING-SESSION API (drop-in)
+------------------------------------------------------------------------
+Everything documented in the CORE API REFERENCE above exists identically
+in the NoSkia package - DrawingSession, DrawingSessionOptions,
+DrawingLayer, Stroke, all shapes, DrawingRenderer, CanvasCalibration,
+the bridge extensions, exports - compiled from the same (linked) source
+files. Differences a consumer sees when switching:
+
+  1. Where the Skia package's API surfaces SkiaSharp types (SKColor,
+     SKBitmap, SKCanvas, SKSizeI, ...), the NoSkia package surfaces the
+     workalike types below instead - the mechanical rename is SK -> Drawing
+     (SKColor -> DrawingColor, SKCanvas -> DrawingCanvas, etc.). Member
+     NAMES that mention Skia (GetColorAsSkia(), ToSKColor(), ...) are
+     unchanged - they simply return the workalike types.
+  2. Custom shapes override Draw(DrawingCanvas, DrawingColor) instead of
+     Draw(SKCanvas, SKColor); the drawing code inside is otherwise
+     identical because the canvas API matches SkiaSharp's.
+  3. There is no GPU and no on-screen hosting: render offscreen and
+     export (ExportPng/ExportJpeg/ExportImagingImage), which is exactly
+     the calibrated session model's sweet spot.
+  4. Performance is deliberately NOT a goal - typical drawings render in
+     tens of milliseconds, not Skia's single-digit milliseconds.
+
+Rendering parity with the Skia package is verified by the test suites
+(see TESTING below): identical scenes differ only in anti-aliased edge
+pixels (mean channel delta ~0.01/255 across a frame).
+
+THE WORKALIKE DRAWING ENGINE (namespace CodeBrix.Imaging.Drawing.NoSkia)
+------------------------------------------------------------------------
+Public, SkiaSharp-shaped 2D raster drawing types, renamed SK -> Drawing:
+
+  DrawingBitmap    mutable 32-bit pixel buffer (Rgba8888/Bgra8888,
+                   straight alpha internally); GetPixels() pins for raw
+                   interop; Decode(byte[]) via CodeBrix.Imaging codecs;
+                   ScalePixels via CodeBrix.Imaging resamplers
+  DrawingSurface   raster surface (Create/Canvas/Snapshot)
+  DrawingImage     immutable snapshot; Encode to PNG/JPEG/BMP/GIF/WebP;
+                   ReadPixels with BGRA/RGBA + premul conversion
+  DrawingCanvas    Clear, Save/SaveLayer(paint)/Restore/RestoreToCount,
+                   Scale/Translate/RotateDegrees/Concat/SetMatrix
+                   (System.Numerics.Matrix3x2, row-vector convention),
+                   ClipRect/ClipPath (Intersect/Difference, antialiased
+                   coverage-mask clipping), DrawLine/Rect/RoundRect/
+                   Oval/Circle/Path, DrawBitmap/DrawImage (with
+                   source-rect overloads and nearest/bilinear sampling)
+  DrawingPaint     Color, Style, StrokeWidth/Cap/Join/Miter, IsAntialias,
+                   Shader, ColorFilter, BlendMode, PathEffect (dash),
+                   ImageFilter (applied at SaveLayer restore)
+  DrawingPath +    move/line/quad/cubic/close verbs, Winding/EvenOdd
+  DrawingPathBuilder  fill rules - the SkiaSharp 4.x builder pattern
+  DrawingShader    CreateColor / CreateLinearGradient /
+                   CreateRadialGradient / CreateTwoPointConicalGradient
+                   (tile modes Clamp/Repeat/Mirror/Decal, local matrix)
+  DrawingColorFilter  CreateColorMatrix / CreateTable / CreateBlendMode /
+                   CreateLumaColor (SVG luminance masks)
+  DrawingBlendMode all 12 Porter-Duff operators + the W3C separable and
+                   non-separable blend modes
+  value types      DrawingColor(s), DrawingPoint(I), DrawingSize(I),
+                   DrawingRect, DrawingImageInfo + enums
+
+Rendering internals (namespace ...NoSkia.Raster, internal): adaptive
+Bezier flattening, stroke-outline building (caps/joins/miter/dashes as
+consistently wound polygons unioned by non-zero fill - overlapping
+stroke pieces never double-blend), and an anti-aliased scanline
+rasterizer (4x vertical supersampling + exact analytic horizontal span
+coverage) compositing straight-alpha with any blend mode, clip mask,
+and per-pixel paint source. Heavy lifting is delegated to
+CodeBrix.Imaging wherever it exists (codecs, resamplers, Gaussian blur,
+font parsing); the rasterizer, stroker, clipping, gradients, and blend
+stack are original to this repository because CodeBrix.Imaging has no
+general vector-drawing engine.
+
+THE SVG RENDERER (assembly CodeBrix.Imaging.Drawing.NoSkia.Svg)
+------------------------------------------------------------------------
+Fully managed SVG -> bitmap rendering. The scene compiler is VENDORED
+from CodeBrix.SkiaSvg (MIT; Svg.Skia lineage) - namespaces renamed to
+CodeBrix.Imaging.Drawing.NoSkia.Svg.* - and kept byte-faithful where
+possible; the Skia binding layer is replaced by a managed backend that
+replays the compiled display list onto DrawingCanvas. Usage:
+
+  using CodeBrix.Imaging.Drawing.NoSkia.Svg;
+
+  using var svg = new DrawingSvg();
+  svg.Fonts.RegisterFont(@"path\to\OpenSans-Regular.ttf");  //BEFORE Load
+  svg.Load(stream);                    // or Load(path) / FromSvg(markup)
+  if (svg.Picture == null) { /* not loadable as SVG */ }
+  var bounds = svg.Bounds;             // SVG user units; origin may be non-zero
+  byte[] png = svg.RasterizeToPng(scale: 2.0f);      // transparent bg
+  using DrawingBitmap bmp = svg.RasterizeToBitmap(2.0f, DrawingColors.White);
+  foreach (string warning in svg.Warnings) { ... }   // degraded features
+
+Font model: system fonts are NEVER consulted. Register every font file
+the document's text needs (NoSkiaFontRegistry, by path/bytes/stream,
+optional family-name override) BEFORE Load - text is measured at
+compile time. Unregistered families fall back to the first registered
+font; with no fonts registered, text renders as nothing (safely).
+
+Feature support: shapes, paths (including arcs), transforms, groups,
+opacity, viewBox, use/defs/symbols, clipPath, masks (luminance),
+linear/radial/focal gradients, dashes, and text (via
+CodeBrix.Imaging.Fonts glyph outlines) render for real. Filters are
+tiered: feGaussianBlur, feOffset, feMerge, feFlood, feColorMatrix,
+feComponentTransfer, feBlend, feComposite (incl. arithmetic), and
+feImage evaluate fully; exotic primitives (lighting, displacement,
+morphology, convolution, turbulence, feTile) degrade gracefully -
+the element still renders, minus that effect - and report through
+DrawingSvg.Warnings. Also degraded: <pattern> paint (falls back to
+plain color), text-on-path, and glyph-id-positioned runs.
+
+REPOSITORY / PACKAGING STRUCTURE FOR THE NOSKIA PACKAGE
+------------------------------------------------------------------------
+  src/CodeBrix.Imaging.Drawing.NoSkia/          workalike engine + the
+      LINKED drawing-session sources (single copy shared with the Skia
+      project via <Compile Include> - the NOSKIA compile symbol swaps
+      their `using SkiaSharp;` for the workalike namespace)
+      NoSkiaTypeAliases.cs   THE one deliberate exception to the
+      "no global usings" convention: global using aliases map the SK
+      type names the shared sources spell onto the Drawing* types,
+      keeping the shared sources byte-identical between packages
+  src/CodeBrix.Imaging.Drawing.NoSkia.Svg/      vendored scene compiler
+      (ShimSkiaSharp display list + Model + SceneGraph) + Rendering/
+      (NoSkiaModel replayer, ImagingSvgAssetLoader font/image loader,
+      NoSkiaImageFilterFactory, NoSkiaTextRenderer, DrawingSvg facade).
+      GenerateDocumentationFile is OFF for this one assembly (vendored
+      code lacks complete XML docs; suppressing CS1591 is not done).
+      It is a SEPARATE assembly because the vendored shim types are
+      literally named SKPaint/SKCanvas/... and would collide with the
+      global aliases inside the core assembly.
+  src/CodeBrix.Imaging.Drawing.NoSkia.Package/  packaging-only project
+      that folds both assemblies into the single
+      CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package.
+
 CODING CONVENTIONS (CodeBrix family)
 ========================================================================
 
@@ -876,12 +1048,39 @@ TESTING
 
   dotnet test CodeBrix.Imaging.Drawing.slnx
 
-Tests are pure managed SkiaSharp (raster surfaces; no GPU, no display
-server needed) and run headlessly on Linux, macOS, and Windows. The
-test project references the SkiaSharp.NativeAssets.* packages so the
-native Skia library is present at test time. Rendering tests assert on
-actual pixels (e.g. the highlighter guarantee: two overlapping strokes
-on one layer produce pixel-identical output to one stroke; a blue
-shape on a red layer renders blue). When changing the renderer, keep
-the pixel tests passing and never reintroduce per-frame rescaling of
-the background image.
+Four test projects:
+
+  tests/CodeBrix.Imaging.Drawing.Tests         the original suite,
+      against the SkiaSharp backend (needs SkiaSharp.NativeAssets.*)
+  tests/CodeBrix.Imaging.Drawing.NoSkia.Tests  the SAME suite (linked
+      sources, NOSKIA symbol) against the managed backend - both
+      backends must satisfy every behavioral guarantee - plus the SVG
+      reference tests (below). Needs NO native library.
+  tests/CodeBrix.Imaging.Drawing.ParityTests   references BOTH drawing
+      packages at once (extern aliases "skia"/"noskia") and renders
+      identical scenes through both, asserting near-identical pixels;
+      plus the SVG parity tests, which render every tests/SvgAssets/
+      *.svg sample through both the CodeBrix.SkiaSvg (SkiaSharp) stack
+      and the NoSkia SVG renderer.
+  tests/Shared/                                 linked helpers
+      (ImageComparison, SvgTestAssets).
+
+SVG reference images: tests/SvgAssets/References/*.png are rendered by
+the SKIA stack (by the ParityTests suite - any missing reference is
+generated automatically; set REGENERATE_SVG_REFERENCES=1 to force a
+refresh) and are checked into the repository. The NoSkia.Tests suite
+then compares the NoSkia renderer's output against those committed
+references on any machine, with no Skia present. SVG text renders with
+the committed tests/SvgAssets/Fonts/OpenSans-Regular.ttf (OFL), never
+system fonts, so output is machine-independent.
+
+Cross-engine comparisons are tolerance-based (two independent
+rasterizers never produce bit-identical anti-aliased edges): premul
+per-channel mean delta and fraction of noticeably different pixels,
+with per-sample limits in SvgTestAssets.GetTolerance.
+
+Rendering tests assert on actual pixels (e.g. the highlighter
+guarantee: two overlapping strokes on one layer produce pixel-identical
+output to one stroke; a blue shape on a red layer renders blue). When
+changing either renderer, keep the pixel tests passing and never
+reintroduce per-frame rescaling of the background image.

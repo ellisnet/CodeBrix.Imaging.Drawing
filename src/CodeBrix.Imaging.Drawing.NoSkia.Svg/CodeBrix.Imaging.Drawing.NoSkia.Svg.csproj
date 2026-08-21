@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CodeBrix.Imaging.Drawing.NoSkia.Svg</AssemblyName>
+    <RootNamespace>CodeBrix.Imaging.Drawing.NoSkia.Svg</RootNamespace>
+    <!--
+      Unlike the repository's own code, most of this assembly is VENDORED from
+      CodeBrix.SkiaSvg (Svg.Skia lineage), which does not carry complete XML documentation.
+      Documentation-file generation is therefore off for this one assembly - the
+      alternative would be suppressing CS1591, which this repository never does. New code
+      written for this assembly still documents every public member.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!--
+      This assembly ships INSIDE the CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
+      package (see that project's packaging targets); it is never packed on its own.
+    -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.165.135" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj" />
+  </ItemGroup>
+
+</Project>

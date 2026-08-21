@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using CodeBrix.Imaging.Drawing.Models;
 using CodeBrix.Imaging.Drawing.Shapes;
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 
 namespace CodeBrix.Imaging.Drawing.Rendering;
 

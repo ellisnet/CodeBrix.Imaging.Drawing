@@ -2,20 +2,21 @@ THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
 
 CodeBrix.Imaging.Drawing is a library that provides stroke-based drawing,
 painting and highlighting functionality for SkiaSharp canvases and images.
-CodeBrix.Imaging.Drawing does not incorporate any third-party source code
-into its own assemblies. In particular, the library's drawing-primitives
+The original CodeBrix.Imaging.Drawing assembly does not incorporate any
+third-party source code. In particular, the library's drawing-primitives
 functionality (lines, arrows, circles, ellipses, rectangles, and
 polylines/polygons) is original code that renders through the library's
 SkiaSharp NuGet package dependency (BSD-3-Clause licensed, and consumed as
 a package - its source code is not incorporated into this repository); no
-third-party drawing or geometry source code was copied or adapted for it. Portions of its source code were adapted from the
-NuraPad application and the CodeBrix.Prism libraries — earlier projects
-authored by Jeremy Ellis — and all of that code, along with the body-map
-diagram image used by the PainDiagram sample application, is the original
-intellectual property of Jeremy Ellis. Portions of the PainDiagram sample
-application (application scaffolding and native file-dialog helpers) were
-adapted from the JustBetweenUs and WikipediaPublisher reference
-applications, which are also authored by Jeremy Ellis.
+third-party drawing or geometry source code was copied or adapted for it.
+Portions of its source code were adapted from the NuraPad application and
+the CodeBrix.Prism libraries — earlier projects authored by Jeremy Ellis —
+and all of that code, along with the body-map diagram image used by the
+PainDiagram sample application, is the original intellectual property of
+Jeremy Ellis. Portions of the PainDiagram sample application (application
+scaffolding and native file-dialog helpers) were adapted from the
+JustBetweenUs and WikipediaPublisher reference applications, which are also
+authored by Jeremy Ellis.
 
 Jeremy Ellis and contributors license the CodeBrix.Imaging.Drawing project
 to you under the terms set forth in the LICENSE file, which is located at
@@ -25,6 +26,40 @@ If you have any questions about any third-party code or services referenced
 here, or if you believe that any third-party code has been included in
 CodeBrix.Imaging.Drawing in error, please open a new issue at:
 https://github.com/ellisnet/CodeBrix.Imaging.Drawing/issues
+
+================================================================================
+
+The CodeBrix.Imaging.Drawing.NoSkia and CodeBrix.Imaging.Drawing.NoSkia.Svg
+assemblies (shipped together in the
+CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package)
+
+1. SkiaSharp API compatibility. The CodeBrix.Imaging.Drawing.NoSkia
+   assembly implements a fully managed drawing engine whose public types
+   (DrawingCanvas, DrawingBitmap, DrawingPaint, DrawingPath, ...) mirror the
+   API SHAPE of SkiaSharp (MIT license, Copyright (c) Microsoft Corporation
+   and .NET Foundation contributors; https://github.com/mono/SkiaSharp) and
+   of the underlying Skia library (BSD-3-Clause, Copyright (c) Google LLC;
+   https://skia.org), so that code written against SkiaSharp can be
+   retargeted mechanically. The implementation is original managed code
+   built on the CodeBrix.Imaging library; no SkiaSharp or Skia source code
+   is incorporated into that assembly.
+
+2. Vendored SVG pipeline. The CodeBrix.Imaging.Drawing.NoSkia.Svg assembly
+   incorporates source code vendored from the CodeBrix.SkiaSvg library
+   (MIT license, authored by Jeremy Ellis), which is itself a derivative of
+   the Svg.Skia project (MIT license, Copyright (c) Wiesław Šoltés;
+   https://github.com/wieslawsoltes/Svg.Skia), including its ShimSkiaSharp
+   display-list model and Svg.Model scene compiler. See
+   src/CodeBrix.Imaging.Drawing.NoSkia.Svg/VENDORED-NOTICES.txt for the
+   complete carried-forward notices. The SVG parsing dependency,
+   CodeBrix.SvgParse.MsplLicenseForever (Microsoft Public License, from the
+   SVG.NET lineage), is consumed as a NuGet package only - its source code
+   is not incorporated into this repository.
+
+3. Test assets. The test suites include the Open Sans Regular font
+   (tests/SvgAssets/Fonts/OpenSans-Regular.ttf), licensed under the SIL
+   Open Font License 1.1 (see tests/SvgAssets/Fonts/OFL.txt), used solely
+   to render deterministic text in SVG parity tests.
 
 ================================================================================
 

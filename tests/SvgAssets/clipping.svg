@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <clipPath id="circleClip">
+      <circle cx="110" cy="110" r="70"/>
+    </clipPath>
+    <clipPath id="starClip">
+      <polygon points="290,40 310,95 370,95 322,130 340,185 290,152 240,185 258,130 210,95 270,95"/>
+    </clipPath>
+    <clipPath id="doubleClip">
+      <rect x="60" y="200" width="130" height="70"/>
+    </clipPath>
+  </defs>
+  <rect width="400" height="300" fill="#eaf2f8"/>
+  <g clip-path="url(#circleClip)">
+    <rect x="30" y="30" width="160" height="160" fill="#2e86c1"/>
+    <rect x="30" y="95" width="160" height="30" fill="#f7dc6f"/>
+    <circle cx="110" cy="60" r="26" fill="#e74c3c"/>
+  </g>
+  <g clip-path="url(#starClip)">
+    <rect x="200" y="30" width="180" height="160" fill="#884ea0"/>
+    <circle cx="290" cy="110" r="55" fill="#f5b041"/>
+  </g>
+  <g clip-path="url(#doubleClip)">
+    <circle cx="125" cy="235" r="60" fill="#148f77"/>
+  </g>
+</svg>

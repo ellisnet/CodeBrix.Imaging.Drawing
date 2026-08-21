@@ -1,6 +1,10 @@
 using System;
 using CodeBrix.Imaging.Drawing.Models;
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 
 namespace CodeBrix.Imaging.Drawing.Shapes;
 

@@ -1,0 +1,94 @@
+The code in this folder is vendored from the CodeBrix.SkiaSvg project (MIT-licensed, Svg.Skia lineage).
+The original third-party notices for that project follow below.
+
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+
+CodeBrix.SkiaSvg incorporates material from the project(s) listed below
+(collectively, "Third Party Code"). Jeremy Ellis and contributors are not the
+original author(s) of the Third Party Code. The original copyright notice and
+the license, under which Jeremy Ellis and contributors received such Third Party
+Code, are set forth below. Such license and notices are provided for
+informational purposes only. Jeremy Ellis and contributors license the
+CodeBrix.SkiaSvg project to you under the terms set forth in the LICENSE file,
+which is located at the root of this repository.
+
+If you have any questions about any Third Party Code noticed here, or if you
+believe that any Third Party Code noticed here has been included in
+CodeBrix.SkiaSvg in error, please open a new issue at:
+https://github.com/ellisnet/CodeBrix.SkiaSvg/issues
+
+================================================================================
+
+1.  Svg.Skia v4.2.0 (https://github.com/wieslawsoltes/Svg.Skia)
+
+    Copyright (c) 2020 Wieslaw Soltes
+
+    License: MIT License
+
+    The MIT License (MIT)
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+================================================================================
+
+2.  resvg SVG rendering test suite
+    (https://github.com/wieslawsoltes/resvg) -- a fork of
+    https://github.com/RazrFalcon/resvg, pinned at commit
+    a739aef5d01360ec238c886bc50674f31458df00 (the commit referenced by
+    Svg.Skia v4.2.0). Used ONLY as test input and reference-image data by the
+    CodeBrix.SkiaSvg test suite (under externals/resvg). It is NOT distributed
+    as part of any CodeBrix.SkiaSvg NuGet package.
+
+    Copyright (c) Reizner Evgeniy and the resvg authors
+
+    License: Mozilla Public License, Version 2.0 (MPL-2.0)
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this file,
+    You can obtain one at https://mozilla.org/MPL/2.0/.
+
+    The full MPL-2.0 license text is distributed alongside the test data at
+    externals/resvg/LICENSE.txt.
+
+================================================================================
+
+3.  W3C SVG 1.1 Test Suite
+    (https://github.com/wieslawsoltes/W3C_SVG_11_TestSuite) -- a redistribution
+    of the World Wide Web Consortium's SVG 1.1 conformance test suite, pinned at
+    commit b6937c121ce24c09bf204bc51b73d73233a18354 (the commit referenced by
+    Svg.Skia v4.2.0). Used ONLY as test input and reference-image data by the
+    CodeBrix.SkiaSvg test suite (under externals/W3C_SVG_11_TestSuite). It is
+    NOT distributed as part of any CodeBrix.SkiaSvg NuGet package.
+
+    Copyright (c) World Wide Web Consortium (Massachusetts Institute of
+    Technology, European Research Consortium for Informatics and Mathematics,
+    Keio University, Beihang). All Rights Reserved.
+
+    License: W3C Document License. The test files are redistributed verbatim and
+    retain their original per-file "Copyright ... World Wide Web Consortium"
+    headers. The W3C copyright/license document is distributed with the test
+    data at
+    externals/W3C_SVG_11_TestSuite/W3C_SVG_11_TestSuite/images/copyright-documents-19990405.html.
+    W3C test suites are additionally made available under the W3C Test Suite
+    License and the 3-clause BSD License; see
+    https://www.w3.org/copyright/test-suites-licenses/.
+
+================================================================================
+
+END OF THIRD-PARTY SOFTWARE NOTICES AND INFORMATION

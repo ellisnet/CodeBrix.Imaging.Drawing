@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="4.0.0" />
+    <PackageReference Include="SilverAssertions.ApacheLicenseForever" Version="1.0.164.180" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.151.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.151.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.151.0" />
+    <!--
+      The SkiaSharp-based SVG stack, used ONLY to generate (and A/B-verify against) the
+      reference images that the NoSkia SVG renderer is compared with.
+    -->
+    <PackageReference Include="CodeBrix.SkiaSvg.MitLicenseForever" Version="1.0.214.1201" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <!--
+    Both backends side by side: the SkiaSharp-backed library under the "skia" alias and
+    the fully managed library under the "noskia" alias (the two assemblies declare the
+    same types in the same CodeBrix.Imaging.Drawing namespaces, so extern aliases keep
+    them apart). Every parity test renders the same drawing through both and asserts the
+    outputs are near-identical.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing\CodeBrix.Imaging.Drawing.csproj"
+                      Aliases="skia" />
+    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj"
+                      Aliases="noskia" />
+    <!--
+      The NoSkia SVG assembly's namespaces collide with nothing, so it needs no alias -
+      but the workalike types its API exposes still resolve through the noskia alias.
+    -->
+    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing.NoSkia.Svg\CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj" />
+  </ItemGroup>
+
+</Project>

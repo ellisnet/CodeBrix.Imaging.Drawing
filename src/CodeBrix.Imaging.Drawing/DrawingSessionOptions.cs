@@ -1,4 +1,8 @@
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 using CodeBrix.Imaging.Drawing.Models;
 
 namespace CodeBrix.Imaging.Drawing;

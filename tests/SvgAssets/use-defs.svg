@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <g id="pin">
+      <circle cx="0" cy="0" r="16" fill="#c0392b" stroke="#78281f" stroke-width="3"/>
+      <circle cx="0" cy="0" r="6" fill="#fdfefe"/>
+      <path d="M 0 14 L -8 34 L 8 34 Z" fill="#78281f"/>
+    </g>
+    <rect id="tile" width="52" height="34" fill="#2874a6" stroke="#1b4f72" stroke-width="2"/>
+  </defs>
+  <rect width="400" height="300" fill="#fef9e7"/>
+  <use xlink:href="#pin" x="70" y="60"/>
+  <use xlink:href="#pin" x="180" y="100" transform="scale(1.35)"/>
+  <use xlink:href="#pin" x="330" y="70"/>
+  <use xlink:href="#tile" x="40" y="180"/>
+  <use xlink:href="#tile" x="110" y="200"/>
+  <use xlink:href="#tile" x="180" y="220"/>
+  <use xlink:href="#tile" x="250" y="240" transform="rotate(-8 276 257)"/>
+</svg>

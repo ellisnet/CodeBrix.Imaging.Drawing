@@ -1,5 +1,9 @@
 using CodeBrix.Imaging.PixelFormats;
+#if NOSKIA
+using CodeBrix.Imaging.Drawing.NoSkia;
+#else
 using SkiaSharp;
+#endif
 
 namespace CodeBrix.Imaging.Drawing;
 

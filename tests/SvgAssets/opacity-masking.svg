@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <defs>
+    <mask id="fade">
+      <rect x="0" y="0" width="400" height="300" fill="white"/>
+      <circle cx="120" cy="150" r="80" fill="black"/>
+    </mask>
+    <mask id="softCircle">
+      <circle cx="300" cy="150" r="75" fill="#bbbbbb"/>
+    </mask>
+  </defs>
+  <rect width="400" height="300" fill="#17202a"/>
+  <rect x="20" y="40" width="360" height="220" fill="#e74c3c" mask="url(#fade)"/>
+  <rect x="200" y="60" width="180" height="180" fill="#5dade2" mask="url(#softCircle)"/>
+  <rect x="40" y="60" width="120" height="70" fill="#f4d03f" fill-opacity="0.5"/>
+  <rect x="70" y="95" width="120" height="70" fill="#58d68d" fill-opacity="0.65"/>
+  <circle cx="210" cy="240" r="34" fill="none" stroke="#f8f9f9" stroke-width="10" stroke-opacity="0.45"/>
+</svg>
