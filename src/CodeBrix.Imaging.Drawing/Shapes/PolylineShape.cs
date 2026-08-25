@@ -50,7 +50,7 @@ public sealed class PolylineShape : DrawingShape
         _points = new SKPoint[points.Count];
         for (int i = 0; i < points.Count; i++)
         {
-            _points[i] = SkiaInterop.ToSK(points[i]);
+            _points[i] = GraphicsInterop.ToGraphics(points[i]);
         }
 
         IsFilled = isFilled;
@@ -66,16 +66,24 @@ public sealed class PolylineShape : DrawingShape
         var result = new PointF[_points.Length];
         for (int i = 0; i < _points.Length; i++)
         {
-            result[i] = SkiaInterop.ToImaging(_points[i]);
+            result[i] = GraphicsInterop.ToImaging(_points[i]);
         }
         return result;
     }
 
+#if NOSKIA
+    /// <summary>
+    /// Returns a snapshot copy of the polyline's points as <see cref="DrawingPoint"/> values.
+    /// </summary>
+    /// <returns>A new array holding the points, in order.</returns>
+    public DrawingPoint[] GetPointsAsDrawing() => (DrawingPoint[])_points.Clone();
+#else
     /// <summary>
     /// Returns a snapshot copy of the polyline's points as SkiaSharp points.
     /// </summary>
     /// <returns>A new array holding the points, in order.</returns>
     public SKPoint[] GetPointsAsSkia() => (SKPoint[])_points.Clone();
+#endif
 
     /// <inheritdoc />
     public override void Draw(SKCanvas canvas, SKColor color)

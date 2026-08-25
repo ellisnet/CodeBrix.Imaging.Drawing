@@ -1,0 +1,81 @@
+<Project>
+
+  <!--
+    OPT-IN Skia type names for CodeBrix.Imaging.Drawing.NoSkia.
+
+    This package is Skia-free by default, all the way down: nothing it exposes is named
+    after another vendor's API. Some developers, though, already think in those names -
+    they are porting code, or they simply know the API - and their only reason for choosing
+    this package is that they do not want a second native drawing stack in their app. This
+    file is for them, and it is the ONLY place in the package where those names appear.
+
+    Set the property in the consuming project to turn them on:
+
+        <PropertyGroup>
+          <CodeBrixUseSkiaTypeNames>true</CodeBrixUseSkiaTypeNames>
+        </PropertyGroup>
+
+    Every item below is a C# global using ALIAS: it adds a second name for a type, and
+    changes nothing else. The types, the assembly, and the documentation keep their own
+    names, so anything written against the Drawing names keeps compiling either way.
+
+    Three things worth knowing before switching it on:
+
+      - It is per-project, not per-file, and it is a global using: an alias applies to every
+        file in the project that imports it.
+      - Never combine it with a project that also references SkiaSharp. Both would define
+        the same names, and every use of one becomes ambiguous.
+      - It covers the drawing types only. The display-list surface (DrawingPicture aside,
+        which is aliased below) is this package's own design rather than a workalike, so
+        DrawingCommand, DrawingTextStyle, IDrawingCommandVisitor and the command records
+        keep their Drawing names whether this is on or off.
+
+    MAINTENANCE: this list mirrors src/CodeBrix.Imaging.Drawing.NoSkia/NoSkiaTypeAliases.cs
+    (the aliases the library's own shared sources compile against) plus the types that file
+    does not need. Add a workalike type to one and add it to the other.
+  -->
+
+  <ItemGroup Condition="'$(CodeBrixUseSkiaTypeNames)' == 'true'">
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingAlphaType" Alias="SKAlphaType" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingBitmap" Alias="SKBitmap" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingBlendMode" Alias="SKBlendMode" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingCanvas" Alias="SKCanvas" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingClipOperation" Alias="SKClipOperation" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingColor" Alias="SKColor" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingColorFilter" Alias="SKColorFilter" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingColors" Alias="SKColors" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingColorType" Alias="SKColorType" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingCubicResampler" Alias="SKCubicResampler" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingData" Alias="SKData" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingEncodedImageFormat" Alias="SKEncodedImageFormat" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingFilterMode" Alias="SKFilterMode" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingFontSlant" Alias="SKFontStyleSlant" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingFontWeight" Alias="SKFontStyleWeight" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingFontWidth" Alias="SKFontStyleWidth" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingImage" Alias="SKImage" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingImageFilter" Alias="SKImageFilter" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingImageInfo" Alias="SKImageInfo" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingMipmapMode" Alias="SKMipmapMode" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPaint" Alias="SKPaint" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPaintStyle" Alias="SKPaintStyle" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPath" Alias="SKPath" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPathBuilder" Alias="SKPathBuilder" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPathEffect" Alias="SKPathEffect" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPathFillType" Alias="SKPathFillType" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPathVerb" Alias="SKPathVerb" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPicture" Alias="SKPicture" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPoint" Alias="SKPoint" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingPointI" Alias="SKPointI" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingRect" Alias="SKRect" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingSamplingOptions" Alias="SKSamplingOptions" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingShader" Alias="SKShader" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingShaderTileMode" Alias="SKShaderTileMode" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingSize" Alias="SKSize" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingSizeI" Alias="SKSizeI" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingStrokeCap" Alias="SKStrokeCap" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingStrokeJoin" Alias="SKStrokeJoin" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingSurface" Alias="SKSurface" />
+    <Using Include="CodeBrix.Imaging.Drawing.NoSkia.DrawingTextAlign" Alias="SKTextAlign" />
+  </ItemGroup>
+
+</Project>

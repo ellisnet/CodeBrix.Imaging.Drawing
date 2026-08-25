@@ -41,7 +41,11 @@ public class DrawingLayerTests
         //Assert
         layer.Name.Should().Be("Pain");
         layer.Color.Should().Be(Color.Magenta);
+#if NOSKIA
+        layer.GetColorAsDrawing().Should().Be(SKColors.Magenta);
+#else
         layer.GetColorAsSkia().Should().Be(SKColors.Magenta);
+#endif
     }
 
     [Fact]

@@ -11,10 +11,10 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>
-/// Compiles SVG documents and fragments into <see cref="SvgSceneDocument"/> scene graphs.
-/// </summary>
-public static class SvgSceneCompiler
+// <summary>
+// Compiles SVG documents and fragments into <see cref="SvgSceneDocument"/> scene graphs.
+// </summary>
+internal static class SvgSceneCompiler
 {
     private sealed class SvgSceneCompileContext
     {
@@ -50,15 +50,15 @@ public static class SvgSceneCompiler
         }
     }
 
-    /// <summary>
-    /// Attempts to compile an SVG document into a scene document.
-    /// </summary>
-    /// <param name="sourceDocument">The SVG document to compile.</param>
-    /// <param name="cullRect">The culling rectangle for the scene.</param>
-    /// <param name="assetLoader">The asset loader for resolving external resources.</param>
-    /// <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
-    /// <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
-    /// <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
+    // <summary>
+    // Attempts to compile an SVG document into a scene document.
+    // </summary>
+    // <param name="sourceDocument">The SVG document to compile.</param>
+    // <param name="cullRect">The culling rectangle for the scene.</param>
+    // <param name="assetLoader">The asset loader for resolving external resources.</param>
+    // <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
+    // <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
+    // <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
     public static bool TryCompile(
         SvgDocument sourceDocument,
         SKRect cullRect,

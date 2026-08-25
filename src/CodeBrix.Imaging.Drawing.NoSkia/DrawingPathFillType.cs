@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The rule that decides which regions are inside a filled path, API-compatible with the
-/// SkiaSharp <c>SKPathFillType</c> enumeration.
+/// The rule that decides which regions are inside a filled path.
 /// </summary>
 public enum DrawingPathFillType
 {

@@ -4,13 +4,12 @@ namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
 /// Describes how geometry is drawn - its color, fill/stroke style, stroke geometry, and
-/// anti-aliasing - API-compatible with the SkiaSharp <c>SKPaint</c> type (reduced to the
-/// properties this managed implementation renders).
+/// anti-aliasing - reduced to the properties this managed implementation renders.
 /// </summary>
 public sealed class DrawingPaint : IDisposable
 {
     /// <summary>
-    /// The paint's color; opaque black by default (matching SkiaSharp). When a bitmap is
+    /// The paint's color; opaque black by default. When a bitmap is
     /// drawn with a paint, the color's alpha modulates the bitmap's alpha.
     /// </summary>
     public DrawingColor Color { get; set; } = DrawingColors.Black;
@@ -38,20 +37,19 @@ public sealed class DrawingPaint : IDisposable
 
     /// <summary>
     /// The miter limit for <see cref="DrawingStrokeJoin.Miter"/> joins - the maximum ratio of
-    /// miter length to stroke width before the join falls back to a bevel; 4 by default
-    /// (matching SkiaSharp).
+    /// miter length to stroke width before the join falls back to a bevel; 4 by default.
     /// </summary>
     public float StrokeMiter { get; set; } = 4f;
 
     /// <summary>
-    /// Whether edges are anti-aliased; <c>false</c> by default (matching SkiaSharp).
+    /// Whether edges are anti-aliased; <c>false</c> by default.
     /// </summary>
     public bool IsAntialias { get; set; }
 
     /// <summary>
     /// An optional shader (solid color or gradient) that supplies the paint's colors. When
     /// set, it replaces <see cref="Color"/>'s RGB - but <see cref="Color"/>'s alpha still
-    /// modulates the shader's output, matching SkiaSharp.
+    /// modulates the shader's output.
     /// </summary>
     public DrawingShader Shader { get; set; }
 
@@ -87,7 +85,7 @@ public sealed class DrawingPaint : IDisposable
 
     /// <summary>
     /// Releases the paint. The managed implementation holds no unmanaged resources; this
-    /// exists for API compatibility with SkiaSharp's disposable paints.
+    /// exists so callers can treat the paint as disposable.
     /// </summary>
     public void Dispose()
     {

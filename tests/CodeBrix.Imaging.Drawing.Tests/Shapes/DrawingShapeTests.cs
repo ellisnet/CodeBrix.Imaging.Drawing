@@ -216,7 +216,11 @@ public class DrawingShapeTests
 
         //Act + Assert - readable as either type
         circle.Color.Should().Be(Color.Blue);
+#if NOSKIA
+        circle.GetColorAsDrawing().Should().Be(SKColors.Blue);
+#else
         circle.GetColorAsSkia().Should().Be(SKColors.Blue);
+#endif
     }
 
     [Fact]
@@ -227,7 +231,11 @@ public class DrawingShapeTests
 
         //Act + Assert
         circle.Color.Should().BeNull();
+#if NOSKIA
+        circle.GetColorAsDrawing().Should().BeNull();
+#else
         circle.GetColorAsSkia().Should().BeNull();
+#endif
     }
 
     [Fact]
@@ -238,7 +246,11 @@ public class DrawingShapeTests
 
         //Act
         PointF[] imaging = polyline.GetPoints();
+#if NOSKIA
+        SKPoint[] skia = polyline.GetPointsAsDrawing();
+#else
         SKPoint[] skia = polyline.GetPointsAsSkia();
+#endif
 
         //Assert
         imaging[0].Should().Be(new PointF(10, 20));

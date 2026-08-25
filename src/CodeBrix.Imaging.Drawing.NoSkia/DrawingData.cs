@@ -4,8 +4,7 @@ using System.IO;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// An immutable byte buffer, API-compatible with the SkiaSharp <c>SKData</c> type as used
-/// for encoded image bytes.
+/// An immutable byte buffer, as used for encoded image bytes.
 /// </summary>
 public sealed class DrawingData : IDisposable
 {
@@ -50,7 +49,7 @@ public sealed class DrawingData : IDisposable
 
     /// <summary>
     /// Releases the buffer. The managed implementation holds no unmanaged resources; this
-    /// exists for API compatibility with SkiaSharp's disposable data buffers.
+    /// exists so callers can treat the buffer as disposable.
     /// </summary>
     public void Dispose()
     {

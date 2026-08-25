@@ -10,17 +10,17 @@ using SkiaSharp;
 namespace CodeBrix.Imaging.Drawing.Extensions;
 
 /// <summary>
-/// Extension methods that bridge SkiaSharp image types to CodeBrix.Imaging
+/// Extension methods that bridge the rendering backend's image types to CodeBrix.Imaging
 /// <see cref="Image{TPixel}"/> instances, so a drawing produced by this library can flow
 /// into any CodeBrix.Imaging processing pipeline (resize, crop, format conversion, etc.).
 /// </summary>
 public static class ImagingBridgeExtensions
 {
     /// <summary>
-    /// Converts a SkiaSharp image to a CodeBrix.Imaging <see cref="Image{TPixel}"/> with
+    /// Converts a <see cref="SKImage"/> to a CodeBrix.Imaging <see cref="Image{TPixel}"/> with
     /// <see cref="Rgba32"/> pixels, using CodeBrix.Imaging's SIMD-optimized BGRA ingestion path.
     /// </summary>
-    /// <param name="image">The SkiaSharp image to convert.</param>
+    /// <param name="image">The image to convert.</param>
     /// <returns>A new <see cref="Image{TPixel}"/> that the caller must dispose.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="image"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the image's pixels cannot be read.</exception>
@@ -40,10 +40,10 @@ public static class ImagingBridgeExtensions
     }
 
     /// <summary>
-    /// Converts a SkiaSharp bitmap to a CodeBrix.Imaging <see cref="Image{TPixel}"/> with
+    /// Converts a <see cref="SKBitmap"/> to a CodeBrix.Imaging <see cref="Image{TPixel}"/> with
     /// <see cref="Rgba32"/> pixels.
     /// </summary>
-    /// <param name="bitmap">The SkiaSharp bitmap to convert.</param>
+    /// <param name="bitmap">The bitmap to convert.</param>
     /// <returns>A new <see cref="Image{TPixel}"/> that the caller must dispose.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="bitmap"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the bitmap's pixels cannot be read.</exception>

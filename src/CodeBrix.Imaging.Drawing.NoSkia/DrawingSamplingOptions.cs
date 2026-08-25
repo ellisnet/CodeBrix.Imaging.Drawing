@@ -3,8 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How pixels are sampled when a bitmap is drawn or rescaled, API-compatible with the
-/// SkiaSharp <c>SKSamplingOptions</c> type. Cubic sampling is honored by
+/// How pixels are sampled when a bitmap is drawn or rescaled. Cubic sampling is honored by
 /// <c>DrawingBitmap.ScalePixels</c> (which rescales through CodeBrix.Imaging's resamplers);
 /// bitmap draws through <c>DrawingCanvas</c> treat cubic sampling as linear.
 /// </summary>

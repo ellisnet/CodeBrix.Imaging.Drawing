@@ -3,10 +3,9 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A per-pixel color transformation assigned to <see cref="DrawingPaint.ColorFilter"/>,
-/// API-compatible with the SkiaSharp <c>SKColorFilter</c> factory surface this managed
-/// implementation supports: color matrices, per-channel tables, blend-mode tinting, and
-/// the luminance-to-alpha filter that implements SVG luminance masks.
+/// A per-pixel color transformation assigned to <see cref="DrawingPaint.ColorFilter"/>.
+/// This managed implementation supports color matrices, per-channel tables, blend-mode
+/// tinting, and the luminance-to-alpha filter that implements SVG luminance masks.
 /// </summary>
 public abstract class DrawingColorFilter
 {
@@ -16,7 +15,7 @@ public abstract class DrawingColorFilter
 
     /// <summary>
     /// Creates a filter that applies a 4x5 color matrix (20 values, row-major, in the
-    /// R G B A order Skia and SVG feColorMatrix use, with offsets in the fifth column).
+    /// R G B A order SVG feColorMatrix uses, with offsets in the fifth column).
     /// </summary>
     /// <param name="matrix">The 20 matrix values.</param>
     /// <returns>The filter.</returns>
@@ -60,6 +59,48 @@ public abstract class DrawingColorFilter
     public static DrawingColorFilter CreateLumaColor() => new LumaFilter();
 
     /// <summary>
+    /// What this filter does - the discriminator that says which of the properties below
+    /// carry meaningful values.
+    /// </summary>
+    public abstract DrawingColorFilterKind Kind { get; }
+
+    /// <summary>
+    /// The 20 matrix values, for <see cref="DrawingColorFilterKind.ColorMatrix"/>;
+    /// <c>null</c> otherwise. The returned array is a copy, so changing it does not change
+    /// the filter.
+    /// </summary>
+    public virtual float[] Matrix => null;
+
+    /// <summary>
+    /// The alpha lookup table, for <see cref="DrawingColorFilterKind.Table"/>; <c>null</c>
+    /// when the channel is unchanged or the filter is another kind. The returned array is a
+    /// copy.
+    /// </summary>
+    public virtual byte[] AlphaTable => null;
+
+    /// <summary>The red lookup table; see <see cref="AlphaTable"/>.</summary>
+    public virtual byte[] RedTable => null;
+
+    /// <summary>The green lookup table; see <see cref="AlphaTable"/>.</summary>
+    public virtual byte[] GreenTable => null;
+
+    /// <summary>The blue lookup table; see <see cref="AlphaTable"/>.</summary>
+    public virtual byte[] BlueTable => null;
+
+    /// <summary>
+    /// The blended color, for <see cref="DrawingColorFilterKind.BlendMode"/>; transparent
+    /// black otherwise.
+    /// </summary>
+    public virtual DrawingColor Color => default;
+
+    /// <summary>
+    /// The mode the color is blended with, for
+    /// <see cref="DrawingColorFilterKind.BlendMode"/>;
+    /// <see cref="DrawingBlendMode.SrcOver"/> otherwise.
+    /// </summary>
+    public virtual DrawingBlendMode BlendMode => DrawingBlendMode.SrcOver;
+
+    /// <summary>
     /// Applies the filter to one straight-alpha color (components 0..1) - for the
     /// rendering internals.
     /// </summary>
@@ -73,6 +114,10 @@ public abstract class DrawingColorFilter
         {
             _matrix = matrix;
         }
+
+        public override DrawingColorFilterKind Kind => DrawingColorFilterKind.ColorMatrix;
+
+        public override float[] Matrix => (float[])_matrix.Clone();
 
         internal override void Apply(ref float red, ref float green, ref float blue, ref float alpha)
         {
@@ -103,6 +148,18 @@ public abstract class DrawingColorFilter
             _blueTable = blueTable;
         }
 
+        public override DrawingColorFilterKind Kind => DrawingColorFilterKind.Table;
+
+        public override byte[] AlphaTable => Copy(_alphaTable);
+
+        public override byte[] RedTable => Copy(_redTable);
+
+        public override byte[] GreenTable => Copy(_greenTable);
+
+        public override byte[] BlueTable => Copy(_blueTable);
+
+        private static byte[] Copy(byte[] table) => table != null ? (byte[])table.Clone() : null;
+
         internal override void Apply(ref float red, ref float green, ref float blue, ref float alpha)
         {
             red = Remap(_redTable, red);
@@ -121,6 +178,7 @@ public abstract class DrawingColorFilter
 
     private sealed class BlendFilter : DrawingColorFilter
     {
+        private readonly DrawingColor _color;
         private readonly float _red;
         private readonly float _green;
         private readonly float _blue;
@@ -129,12 +187,19 @@ public abstract class DrawingColorFilter
 
         public BlendFilter(DrawingColor color, DrawingBlendMode mode)
         {
+            _color = color;
             _red = color.Red / 255f;
             _green = color.Green / 255f;
             _blue = color.Blue / 255f;
             _alpha = color.Alpha / 255f;
             _mode = mode;
         }
+
+        public override DrawingColorFilterKind Kind => DrawingColorFilterKind.BlendMode;
+
+        public override DrawingColor Color => _color;
+
+        public override DrawingBlendMode BlendMode => _mode;
 
         internal override void Apply(ref float red, ref float green, ref float blue, ref float alpha)
         {
@@ -146,6 +211,8 @@ public abstract class DrawingColorFilter
 
     private sealed class LumaFilter : DrawingColorFilter
     {
+        public override DrawingColorFilterKind Kind => DrawingColorFilterKind.LumaColor;
+
         internal override void Apply(ref float red, ref float green, ref float blue, ref float alpha)
         {
             //Rec. 709 luminance, matching Skia's SkLumaColorFilter

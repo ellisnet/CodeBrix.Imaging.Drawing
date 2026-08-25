@@ -3,7 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A floating-point (width, height) size, API-compatible with the SkiaSharp <c>SKSize</c> type.
+/// A floating-point (width, height) size.
 /// </summary>
 public struct DrawingSize : IEquatable<DrawingSize>
 {

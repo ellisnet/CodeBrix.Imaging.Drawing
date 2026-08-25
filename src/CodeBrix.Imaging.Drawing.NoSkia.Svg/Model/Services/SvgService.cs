@@ -13,10 +13,10 @@ using CodeBrix.SvgParse;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services; //Was previously: namespace Svg.Model.Services;
 
-/// <summary>Provides services for loading and parsing SVG and VectorDrawable documents.</summary>
-public static class SvgService
+// <summary>Provides services for loading and parsing SVG and VectorDrawable documents.</summary>
+internal static class SvgService
 {
-    /// <summary>Overrides the system language used for conditional processing in SVG documents.</summary>
+    // <summary>Overrides the system language used for conditional processing in SVG documents.</summary>
     public static CultureInfo s_systemLanguageOverride = default;
 
     private static readonly char[] s_spaceTab = { ' ', '\t' };
@@ -660,10 +660,10 @@ public static class SvgService
         return svgDocument;
     }
 
-    /// <summary>Gets the dimensions of an SVG fragment.</summary>
-    /// <param name="svgFragment">The SVG fragment.</param>
-    /// <param name="skViewport">The viewport rectangle for percentage calculations.</param>
-    /// <returns>The computed dimensions.</returns>
+    // <summary>Gets the dimensions of an SVG fragment.</summary>
+    // <param name="svgFragment">The SVG fragment.</param>
+    // <param name="skViewport">The viewport rectangle for percentage calculations.</param>
+    // <returns>The computed dimensions.</returns>
     public static SKSize GetDimensions(SvgFragment svgFragment, SKRect skViewport = default)
     {
         float w, h;
@@ -725,19 +725,19 @@ public static class SvgService
         return new SKSize((float)Math.Round(w), (float)Math.Round(h));
     }
 
-    /// <summary>Opens an SVG document from a file path.</summary>
-    /// <param name="path">The file path to the SVG file.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens an SVG document from a file path.</summary>
+    // <param name="path">The file path to the SVG file.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument OpenSvg(string path, SvgParameters? parameters = null)
     {
         return SvgDocumentCompatibilityLoader.Open<SvgDocument>(path, new SvgOptions(parameters?.Entities, parameters?.Css));
     }
 
-    /// <summary>Opens a compressed SVG (.svgz) document from a file path.</summary>
-    /// <param name="path">The file path to the .svgz file.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens a compressed SVG (.svgz) document from a file path.</summary>
+    // <param name="path">The file path to the .svgz file.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument OpenSvgz(string path, SvgParameters? parameters = null)
     {
         using var fileStream = System.IO.File.OpenRead(path);
@@ -750,10 +750,10 @@ public static class SvgService
         return Open(memoryStream, parameters);
     }
 
-    /// <summary>Opens an SVG or VectorDrawable document from a file path, detecting format by extension.</summary>
-    /// <param name="path">The file path.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens an SVG or VectorDrawable document from a file path, detecting format by extension.</summary>
+    // <param name="path">The file path.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument Open(string path, SvgParameters? parameters = null)
     {
         var extension = System.IO.Path.GetExtension(path);
@@ -766,10 +766,10 @@ public static class SvgService
         };
     }
 
-    /// <summary>Opens a VectorDrawable document from a file path.</summary>
-    /// <param name="path">The file path to the VectorDrawable XML file.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens a VectorDrawable document from a file path.</summary>
+    // <param name="path">The file path to the VectorDrawable XML file.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument OpenVectorDrawable(string path, SvgParameters? parameters = null)
     {
         _ = parameters;
@@ -784,52 +784,52 @@ public static class SvgService
         return svgDocument;
     }
 
-    /// <summary>Opens a VectorDrawable document from a stream.</summary>
-    /// <param name="stream">The stream containing VectorDrawable XML.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens a VectorDrawable document from a stream.</summary>
+    // <param name="stream">The stream containing VectorDrawable XML.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument OpenVectorDrawable(System.IO.Stream stream, SvgParameters? parameters = null)
     {
         _ = parameters;
         return VectorDrawableConverter.Open(stream);
     }
 
-    /// <summary>Parses a VectorDrawable from an XML string.</summary>
-    /// <param name="xml">The VectorDrawable XML string.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Parses a VectorDrawable from an XML string.</summary>
+    // <param name="xml">The VectorDrawable XML string.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument FromVectorDrawable(string xml)
     {
         return VectorDrawableConverter.FromXml(xml);
     }
 
-    /// <summary>Opens a VectorDrawable document from an XML reader.</summary>
-    /// <param name="reader">The XML reader.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens a VectorDrawable document from an XML reader.</summary>
+    // <param name="reader">The XML reader.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument OpenVectorDrawable(XmlReader reader)
     {
         return VectorDrawableConverter.Open(reader);
     }
 
-    /// <summary>Opens an SVG document from a stream.</summary>
-    /// <param name="stream">The stream containing SVG content.</param>
-    /// <param name="parameters">Optional SVG parsing parameters.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens an SVG document from a stream.</summary>
+    // <param name="stream">The stream containing SVG content.</param>
+    // <param name="parameters">Optional SVG parsing parameters.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument Open(System.IO.Stream stream, SvgParameters? parameters = null)
     {
         return SvgDocumentCompatibilityLoader.Open<SvgDocument>(stream, new SvgOptions(parameters?.Entities, parameters?.Css));
     }
 
-    /// <summary>Parses an SVG document from an SVG markup string.</summary>
-    /// <param name="svg">The SVG markup string.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Parses an SVG document from an SVG markup string.</summary>
+    // <param name="svg">The SVG markup string.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument FromSvg(string svg)
     {
         return SvgDocumentCompatibilityLoader.FromSvg<SvgDocument>(svg);
     }
 
-    /// <summary>Opens an SVG document from an XML reader.</summary>
-    /// <param name="reader">The XML reader.</param>
-    /// <returns>The parsed SVG document.</returns>
+    // <summary>Opens an SVG document from an XML reader.</summary>
+    // <param name="reader">The XML reader.</param>
+    // <returns>The parsed SVG document.</returns>
     public static SvgDocument Open(XmlReader reader)
     {
         return SvgDocumentCompatibilityLoader.Open<SvgDocument>(reader);

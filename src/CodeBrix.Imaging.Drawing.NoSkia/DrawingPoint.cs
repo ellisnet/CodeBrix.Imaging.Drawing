@@ -3,7 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A floating-point (x, y) position, API-compatible with the SkiaSharp <c>SKPoint</c> type.
+/// A floating-point (x, y) position.
 /// </summary>
 public struct DrawingPoint : IEquatable<DrawingPoint>
 {

@@ -1,9 +1,8 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The in-memory pixel layout of a bitmap, API-compatible with the SkiaSharp
-/// <c>DrawingColorType</c> enumeration (reduced to the layouts this managed implementation
-/// supports - both are 32 bits per pixel).
+/// The in-memory pixel layout of a bitmap (reduced to the layouts this managed
+/// implementation supports - both are 32 bits per pixel).
 /// </summary>
 public enum DrawingColorType
 {

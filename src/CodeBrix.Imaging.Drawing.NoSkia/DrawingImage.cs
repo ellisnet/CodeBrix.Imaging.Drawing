@@ -12,8 +12,8 @@ using CodeBrix.Imaging.PixelFormats;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// An immutable raster image, API-compatible with the SkiaSharp <c>SKImage</c> type as
-/// used for snapshots and encoded exports. Encoding runs through CodeBrix.Imaging's fully
+/// An immutable raster image, as used for snapshots and encoded exports. Encoding runs
+/// through CodeBrix.Imaging's fully
 /// managed codecs.
 /// </summary>
 public sealed class DrawingImage : IDisposable

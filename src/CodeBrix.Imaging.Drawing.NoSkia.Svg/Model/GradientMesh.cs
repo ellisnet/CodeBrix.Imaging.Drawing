@@ -6,18 +6,18 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Model; //Was previously: namespace Svg.Model;
 
-/// <summary>
-/// Represents a simple gradient mesh consisting of colored points.
-/// </summary>
-public sealed class GradientMesh
+// <summary>
+// Represents a simple gradient mesh consisting of colored points.
+// </summary>
+internal sealed class GradientMesh
 {
-    /// <summary>
-    /// List of mesh points.
-    /// </summary>
+    // <summary>
+    // List of mesh points.
+    // </summary>
     public List<GradientMeshPoint> Points { get; } = new();
 }
 
-/// <summary>
-/// Defines a single mesh point with position and color.
-/// </summary>
-public sealed record GradientMeshPoint(SKPoint Position, SKColor Color);
+// <summary>
+// Defines a single mesh point with position and color.
+// </summary>
+internal sealed record GradientMeshPoint(SKPoint Position, SKColor Color);

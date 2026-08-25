@@ -1,9 +1,8 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How source pixels combine with destination pixels, API-compatible with the SkiaSharp
-/// <c>SKBlendMode</c> enumeration: the twelve Porter-Duff compositing operators plus the
-/// standard separable and non-separable blend modes.
+/// How source pixels combine with destination pixels: the twelve Porter-Duff compositing
+/// operators plus the standard separable and non-separable blend modes.
 /// </summary>
 public enum DrawingBlendMode
 {

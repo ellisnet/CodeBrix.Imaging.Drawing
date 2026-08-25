@@ -18,7 +18,7 @@ namespace CodeBrix.Imaging.Drawing;
 /// The main entry point of the CodeBrix.Imaging.Drawing library: an interactive drawing
 /// surface model that turns pointer (mouse, pen, or touch) events into calibrated strokes
 /// on named, colored <see cref="DrawingLayer"/> collections, renders them onto any
-/// SkiaSharp canvas with translucent "highlighter" compositing, and exports the finished
+/// <see cref="SKCanvas"/> with translucent "highlighter" compositing, and exports the finished
 /// drawing as an image. The session is UI-framework-agnostic: the hosting view forwards
 /// its pointer events and paint callbacks, and the session raises
 /// <see cref="RedrawRequested"/> whenever the view should invalidate its canvas.
@@ -43,9 +43,19 @@ public sealed class DrawingSession : IDisposable
     /// </summary>
     public Size CalibrationSize => _renderer.CalibrationSize;
 
+    //The name-neutral accessor that this class's own code reads, so the public accessor
+    //  can carry a different name in each package without an #if at any call site
+    private SKSizeI CalibrationSizeValue => _renderer.CalibrationSizeValue;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="CalibrationSize"/> as a <see cref="DrawingSizeI"/>.</summary>
+    /// <returns>The calibration size as a backend size.</returns>
+    public DrawingSizeI GetCalibrationSizeAsDrawing() => _renderer.CalibrationSizeValue;
+#else
     /// <summary>Gets <see cref="CalibrationSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
     /// <returns>The calibration size as a SkiaSharp size.</returns>
-    public SKSizeI GetCalibrationSizeAsSkia() => _renderer.GetCalibrationSizeAsSkia();
+    public SKSizeI GetCalibrationSizeAsSkia() => _renderer.CalibrationSizeValue;
+#endif
 
     /// <summary>
     /// The layers of the drawing, bottom-most first, as configured via <see cref="AddLayer(string, Color)"/>.
@@ -116,13 +126,19 @@ public sealed class DrawingSession : IDisposable
         set => _renderer.BackgroundFillColor = value;
     }
 
-    /// <summary>Sets <see cref="BackgroundFillColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <summary>Sets <see cref="BackgroundFillColor"/> from a <see cref="SKColor"/>.</summary>
     /// <param name="color">The background fill color.</param>
     public void SetBackgroundFillColor(SKColor color) => _renderer.SetBackgroundFillColor(color);
 
+#if NOSKIA
+    /// <summary>Gets <see cref="BackgroundFillColor"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The background fill color as a backend color.</returns>
+    public DrawingColor GetBackgroundFillColorAsDrawing() => _renderer.BackgroundFillColorValue;
+#else
     /// <summary>Gets <see cref="BackgroundFillColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The background fill color as a SkiaSharp color.</returns>
-    public SKColor GetBackgroundFillColorAsSkia() => _renderer.GetBackgroundFillColorAsSkia();
+    public SKColor GetBackgroundFillColorAsSkia() => _renderer.BackgroundFillColorValue;
+#endif
 
     /// <summary>
     /// The color that the whole canvas is cleared to at the start of every render.
@@ -133,13 +149,19 @@ public sealed class DrawingSession : IDisposable
         set => _renderer.SurfaceClearColor = value;
     }
 
-    /// <summary>Sets <see cref="SurfaceClearColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <summary>Sets <see cref="SurfaceClearColor"/> from a <see cref="SKColor"/>.</summary>
     /// <param name="color">The surface clear color.</param>
     public void SetSurfaceClearColor(SKColor color) => _renderer.SetSurfaceClearColor(color);
 
+#if NOSKIA
+    /// <summary>Gets <see cref="SurfaceClearColor"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The surface clear color as a backend color.</returns>
+    public DrawingColor GetSurfaceClearColorAsDrawing() => _renderer.SurfaceClearColorValue;
+#else
     /// <summary>Gets <see cref="SurfaceClearColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The surface clear color as a SkiaSharp color.</returns>
-    public SKColor GetSurfaceClearColorAsSkia() => _renderer.GetSurfaceClearColorAsSkia();
+    public SKColor GetSurfaceClearColorAsSkia() => _renderer.SurfaceClearColorValue;
+#endif
 
     /// <summary>
     /// Indicates whether any layer currently holds at least one completed element (stroke or shape).
@@ -273,7 +295,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="ArgumentException">Thrown when the bytes cannot be decoded as an image.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.</exception>
     public static DrawingSession CreateForImage(byte[] encodedImage, Size calibrationSize, DrawingSessionOptions options = null)
-        => CreateForImage(encodedImage, SkiaInterop.ToSK(calibrationSize), options);
+        => CreateForImage(encodedImage, GraphicsInterop.ToGraphics(calibrationSize), options);
 
     /// <summary>
     /// Creates a drawing session for annotating an image: the encoded image (PNG, JPEG,
@@ -340,7 +362,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="image"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.</exception>
     public static DrawingSession CreateForImage(SKBitmap image, Size calibrationSize, DrawingSessionOptions options = null)
-        => CreateForImage(image, SkiaInterop.ToSK(calibrationSize), options);
+        => CreateForImage(image, GraphicsInterop.ToGraphics(calibrationSize), options);
 
     /// <summary>
     /// Creates a drawing session for annotating an already-decoded image: the bitmap
@@ -467,7 +489,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="bgraPixels"/> is too small for the stated dimensions.</exception>
     public static DrawingSession CreateForImage(byte[] bgraPixels, int width, int height,
         Size calibrationSize, DrawingSessionOptions options = null, bool mirrorHorizontally = false)
-        => CreateForImage(bgraPixels, width, height, SkiaInterop.ToSK(calibrationSize), options, mirrorHorizontally);
+        => CreateForImage(bgraPixels, width, height, GraphicsInterop.ToGraphics(calibrationSize), options, mirrorHorizontally);
 
     private static SKBitmap DecodeBgraPixels(byte[] bgraPixels, int width, int height, bool mirrorHorizontally)
     {
@@ -530,7 +552,7 @@ public sealed class DrawingSession : IDisposable
         switch (sizing)
         {
             case CalibrationSizing.FromOptions:
-                return (options ?? new DrawingSessionOptions()).GetCalibrationSizeAsSkia();
+                return (options ?? new DrawingSessionOptions()).CalibrationSizeValue;
 
             case CalibrationSizing.DeriveFromBackgroundImage:
                 return DeriveCalibrationSize(imageSize);
@@ -544,7 +566,7 @@ public sealed class DrawingSession : IDisposable
     {
         var effective = new DrawingSessionOptions
         {
-            CalibrationSize = SkiaInterop.ToImaging(calibrationSize),
+            CalibrationSize = GraphicsInterop.ToImaging(calibrationSize),
         };
         if (options != null)
         {
@@ -615,7 +637,7 @@ public sealed class DrawingSession : IDisposable
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> is null/whitespace, or a layer with that name already exists.
     /// </exception>
-    public DrawingLayer AddLayer(string name, Color color) => AddLayer(name, SkiaInterop.ToSK(color));
+    public DrawingLayer AddLayer(string name, Color color) => AddLayer(name, GraphicsInterop.ToGraphics(color));
 
     /// <summary>
     /// Finds a layer by its (case-sensitive) name.
@@ -751,7 +773,7 @@ public sealed class DrawingSession : IDisposable
         if (layer == null || _renderer.LastCanvasSize.IsEmpty) { return false; }
 
         SKPointI? calibrated = CanvasCalibration.ViewPointToCalibrated(
-            viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia());
+            viewPoint, viewSize, _renderer.LastCanvasSizeValue, CalibrationSizeValue);
         if (!calibrated.HasValue) { return false; }
 
         return BeginStrokeAtCalibrated(calibrated.Value, layer);
@@ -765,7 +787,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="viewSize">The logical size of the hosting control.</param>
     /// <returns><c>true</c> when a stroke was started (the view should capture the pointer).</returns>
     public bool PointerPressed(PointF viewPoint, SizeF viewSize)
-        => PointerPressed(SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize));
+        => PointerPressed(GraphicsInterop.ToGraphics(viewPoint), GraphicsInterop.ToGraphics(viewSize));
 
     /// <summary>
     /// Extends the in-progress stroke to the given pointer position. Call from the hosting
@@ -782,7 +804,7 @@ public sealed class DrawingSession : IDisposable
         if (_activeStroke == null) { return false; }
 
         SKPointI? calibrated = CanvasCalibration.ViewPointToCalibrated(
-            viewPoint, viewSize, _renderer.GetLastCanvasSizeAsSkia(), GetCalibrationSizeAsSkia(), clampToDrawingArea: true);
+            viewPoint, viewSize, _renderer.LastCanvasSizeValue, CalibrationSizeValue, clampToDrawingArea: true);
         if (!calibrated.HasValue) { return false; }
 
         return ExtendStrokeToCalibrated(calibrated.Value);
@@ -798,7 +820,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="viewSize">The logical size of the hosting control.</param>
     /// <returns><c>true</c> when the stroke was extended with a new point.</returns>
     public bool PointerMoved(PointF viewPoint, SizeF viewSize)
-        => PointerMoved(SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize));
+        => PointerMoved(GraphicsInterop.ToGraphics(viewPoint), GraphicsInterop.ToGraphics(viewSize));
 
     /// <summary>
     /// Begins a new stroke at the given NORMALIZED drawing-space position - (0, 0) is the
@@ -851,7 +873,7 @@ public sealed class DrawingSession : IDisposable
 
     private SKPointI NormalizedToCalibrated(float normX, float normY)
     {
-        SKSizeI calibration = GetCalibrationSizeAsSkia();
+        SKSizeI calibration = CalibrationSizeValue;
         return new SKPointI(
             (int)Math.Round(Math.Clamp(normX, 0f, 1f) * calibration.Width, MidpointRounding.AwayFromZero),
             (int)Math.Round(Math.Clamp(normY, 0f, 1f) * calibration.Height, MidpointRounding.AwayFromZero));
@@ -1079,7 +1101,7 @@ public sealed class DrawingSession : IDisposable
     /// Renders the drawing onto the given surface - call from the hosting view's
     /// paint-surface handler.
     /// </summary>
-    /// <param name="surface">The Skia surface to render onto.</param>
+    /// <param name="surface">The surface to render onto.</param>
     /// <param name="info">The image info describing the surface, including its pixel size.</param>
     /// <param name="clearCanvas">
     /// When <c>true</c> (the default), the canvas is cleared to <see cref="SurfaceClearColor"/>
@@ -1098,7 +1120,7 @@ public sealed class DrawingSession : IDisposable
     /// Renders the drawing onto the given canvas - call from the hosting view's
     /// paint-surface handler.
     /// </summary>
-    /// <param name="canvas">The Skia canvas to render onto.</param>
+    /// <param name="canvas">The canvas to render onto.</param>
     /// <param name="info">The image info describing the canvas, including its pixel size.</param>
     /// <param name="clearCanvas">
     /// When <c>true</c> (the default), the canvas is cleared to <see cref="SurfaceClearColor"/>
@@ -1109,7 +1131,7 @@ public sealed class DrawingSession : IDisposable
     public void Render(SKCanvas canvas, SKImageInfo info, bool clearCanvas = true)
     {
         ThrowIfDisposed();
-        _renderer.Render(canvas, info, Layers, _activeStroke, _activeStrokeLayer?.GetColorAsSkia(), clearCanvas);
+        _renderer.Render(canvas, info, Layers, _activeStroke, _activeStrokeLayer?.ColorValue, clearCanvas);
     }
 
     /// <summary>
@@ -1122,16 +1144,16 @@ public sealed class DrawingSession : IDisposable
     /// <param name="viewSize">The size of the view or canvas.</param>
     /// <returns>The drawing's aspect-fit rectangle; empty when <paramref name="viewSize"/> is unusable.</returns>
     public RectangleF GetDrawingRect(SizeF viewSize)
-        => SkiaInterop.ToImaging(GetDrawingRect(SkiaInterop.ToSK(viewSize)));
+        => GraphicsInterop.ToImaging(GetDrawingRect(GraphicsInterop.ToGraphics(viewSize)));
 
     /// <summary>
     /// The rectangle that the drawing occupies within a view (or canvas) of the given size -
-    /// the SkiaSharp-typed companion of <see cref="GetDrawingRect(SizeF)"/>.
+    /// the <see cref="SKSize"/>-typed companion of <see cref="GetDrawingRect(SizeF)"/>.
     /// </summary>
     /// <param name="viewSize">The size of the view or canvas.</param>
     /// <returns>The drawing's aspect-fit rectangle; empty when <paramref name="viewSize"/> is unusable.</returns>
     public SKRect GetDrawingRect(SKSize viewSize)
-        => CanvasCalibration.GetDrawingRect(viewSize, GetCalibrationSizeAsSkia());
+        => CanvasCalibration.GetDrawingRect(viewSize, CalibrationSizeValue);
 
     /// <summary>
     /// Scales a length from calibrated drawing units to view (or canvas) units for a view
@@ -1142,11 +1164,11 @@ public sealed class DrawingSession : IDisposable
     /// <param name="viewSize">The size of the view or canvas.</param>
     /// <returns>The equivalent length in view units; the input value when the sizes are unusable.</returns>
     public float ScaleToView(float calibratedLength, SizeF viewSize)
-        => ScaleToView(calibratedLength, SkiaInterop.ToSK(viewSize));
+        => ScaleToView(calibratedLength, GraphicsInterop.ToGraphics(viewSize));
 
     /// <summary>
     /// Scales a length from calibrated drawing units to view (or canvas) units - the
-    /// SkiaSharp-typed companion of <see cref="ScaleToView(float, SizeF)"/>.
+    /// <see cref="SKSize"/>-typed companion of <see cref="ScaleToView(float, SizeF)"/>.
     /// </summary>
     /// <param name="calibratedLength">The length, in calibrated drawing units.</param>
     /// <param name="viewSize">The size of the view or canvas.</param>
@@ -1156,7 +1178,7 @@ public sealed class DrawingSession : IDisposable
         SKRect drawingRect = GetDrawingRect(viewSize);
         if (drawingRect.IsEmpty || calibratedLength <= 0) { return calibratedLength; }
 
-        SKSizeI calibration = GetCalibrationSizeAsSkia();
+        SKSizeI calibration = CalibrationSizeValue;
         return calibratedLength * (drawingRect.Width / calibration.Width);
     }
 
@@ -1177,9 +1199,15 @@ public sealed class DrawingSession : IDisposable
         }
     }
 
+#if NOSKIA
+    /// <summary>Gets <see cref="DefaultExportSize"/> as a <see cref="DrawingSizeI"/>.</summary>
+    /// <returns>The default export size as a backend size.</returns>
+    public DrawingSizeI GetDefaultExportSizeAsDrawing() => GraphicsInterop.ToGraphics(DefaultExportSize);
+#else
     /// <summary>Gets <see cref="DefaultExportSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
     /// <returns>The default export size as a SkiaSharp size.</returns>
-    public SKSizeI GetDefaultExportSizeAsSkia() => SkiaInterop.ToSK(DefaultExportSize);
+    public SKSizeI GetDefaultExportSizeAsSkia() => GraphicsInterop.ToGraphics(DefaultExportSize);
+#endif
 
     /// <summary>
     /// Renders the completed drawing to a new image at the <see cref="DefaultExportSize"/>.
@@ -1230,7 +1258,7 @@ public sealed class DrawingSession : IDisposable
     /// </param>
     /// <returns>A new <see cref="SKImage"/> that the caller must dispose.</returns>
     public SKImage ExportImage(Size outputSize, bool includeBackground = true)
-        => ExportImage(SkiaInterop.ToSK(outputSize), includeBackground);
+        => ExportImage(GraphicsInterop.ToGraphics(outputSize), includeBackground);
 
     /// <summary>
     /// Renders the completed drawing to PNG-encoded image bytes.
@@ -1252,7 +1280,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
     /// <returns>The PNG-encoded image bytes.</returns>
     public byte[] ExportPng(Size outputSize, bool includeBackground = true)
-        => ExportPng(SkiaInterop.ToSK(outputSize), includeBackground);
+        => ExportPng(GraphicsInterop.ToGraphics(outputSize), includeBackground);
 
     /// <summary>
     /// Renders the completed drawing to JPEG-encoded image bytes. JPEG has no alpha
@@ -1279,7 +1307,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="quality">The JPEG quality, 1-100; defaults to 90.</param>
     /// <returns>The JPEG-encoded image bytes.</returns>
     public byte[] ExportJpeg(Size outputSize, int quality = 90)
-        => ExportJpeg(SkiaInterop.ToSK(outputSize), quality);
+        => ExportJpeg(GraphicsInterop.ToGraphics(outputSize), quality);
 
     /// <summary>
     /// Renders the completed drawing to a stream in PNG format.
@@ -1303,7 +1331,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> is null.</exception>
     public void ExportPng(Stream destination, Size outputSize, bool includeBackground = true)
-        => ExportPng(destination, SkiaInterop.ToSK(outputSize), includeBackground);
+        => ExportPng(destination, GraphicsInterop.ToGraphics(outputSize), includeBackground);
 
     #endregion
 

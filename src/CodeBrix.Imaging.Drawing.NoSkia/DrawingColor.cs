@@ -3,10 +3,8 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A 32-bit RGBA color, API-compatible with the SkiaSharp <c>SKColor</c> type: the color
-/// is packed as ARGB (alpha in the highest byte) and the components are exposed as bytes.
-/// This is the fully managed CodeBrix.Imaging.Drawing.NoSkia workalike - it carries no
-/// SkiaSharp dependency.
+/// A 32-bit RGBA color: the color is packed as ARGB (alpha in the highest byte) and the
+/// components are exposed as bytes.
 /// </summary>
 public readonly struct DrawingColor : IEquatable<DrawingColor>
 {
@@ -91,13 +89,13 @@ public readonly struct DrawingColor : IEquatable<DrawingColor>
     public DrawingColor WithBlue(byte blue) => new DrawingColor(Red, Green, blue, Alpha);
 
     /// <summary>
-    /// Converts a packed ARGB value to a color, mirroring SkiaSharp's implicit conversion.
+    /// Converts a packed ARGB value to a color.
     /// </summary>
     /// <param name="value">The packed ARGB value.</param>
     public static implicit operator DrawingColor(uint value) => new DrawingColor(value);
 
     /// <summary>
-    /// Converts a color to its packed ARGB value, mirroring SkiaSharp's explicit conversion.
+    /// Converts a color to its packed ARGB value.
     /// </summary>
     /// <param name="color">The color to convert.</param>
     public static explicit operator uint(DrawingColor color) => color._value;

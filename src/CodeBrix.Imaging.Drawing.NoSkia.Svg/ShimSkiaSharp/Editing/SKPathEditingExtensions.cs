@@ -5,18 +5,18 @@ using System;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp.Editing; //Was previously: namespace ShimSkiaSharp.Editing;
 
-/// <summary>
-/// Provides extension methods for editing <see cref="SKPath"/> commands.
-/// </summary>
-public static class SKPathEditingExtensions
+// <summary>
+// Provides extension methods for editing <see cref="SKPath"/> commands.
+// </summary>
+internal static class SKPathEditingExtensions
 {
-    /// <summary>
-    /// Replaces path commands that match the specified predicate.
-    /// </summary>
-    /// <param name="path">The path whose commands to update.</param>
-    /// <param name="predicate">A function that determines which commands to replace.</param>
-    /// <param name="replace">A function that returns a replacement command for each matching command.</param>
-    /// <returns>The number of commands that were replaced.</returns>
+    // <summary>
+    // Replaces path commands that match the specified predicate.
+    // </summary>
+    // <param name="path">The path whose commands to update.</param>
+    // <param name="predicate">A function that determines which commands to replace.</param>
+    // <param name="replace">A function that returns a replacement command for each matching command.</param>
+    // <returns>The number of commands that were replaced.</returns>
     public static int UpdateCommands(
         this SKPath path,
         Func<PathCommand, bool> predicate,
@@ -64,12 +64,12 @@ public static class SKPathEditingExtensions
         return count;
     }
 
-    /// <summary>
-    /// Applies an axis-aligned transformation matrix to all commands in the path.
-    /// </summary>
-    /// <param name="path">The path to transform.</param>
-    /// <param name="matrix">The transformation matrix to apply. Must be axis-aligned (translation and scale only).</param>
-    /// <exception cref="NotSupportedException">The matrix is not axis-aligned.</exception>
+    // <summary>
+    // Applies an axis-aligned transformation matrix to all commands in the path.
+    // </summary>
+    // <param name="path">The path to transform.</param>
+    // <param name="matrix">The transformation matrix to apply. Must be axis-aligned (translation and scale only).</param>
+    // <exception cref="NotSupportedException">The matrix is not axis-aligned.</exception>
     public static void Transform(this SKPath path, SKMatrix matrix)
     {
         if (path is null)

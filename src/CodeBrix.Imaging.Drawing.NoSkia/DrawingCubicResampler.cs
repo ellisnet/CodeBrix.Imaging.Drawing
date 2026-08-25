@@ -3,8 +3,8 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A cubic resampling kernel described by its B and C parameters, API-compatible with the
-/// SkiaSharp <c>SKCubicResampler</c> type. <c>DrawingBitmap.ScalePixels</c> maps the well-known
+/// A cubic resampling kernel described by its B and C parameters.
+/// <c>DrawingBitmap.ScalePixels</c> maps the well-known
 /// kernels onto the matching CodeBrix.Imaging resampler.
 /// </summary>
 public struct DrawingCubicResampler : IEquatable<DrawingCubicResampler>

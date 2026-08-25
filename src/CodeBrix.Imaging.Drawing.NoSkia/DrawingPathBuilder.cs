@@ -5,7 +5,7 @@ namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
 /// A mutable builder that accumulates path segments and detaches them as an immutable
-/// <see cref="DrawingPath"/>, API-compatible with the SkiaSharp 4.x <c>SKPathBuilder</c> type.
+/// <see cref="DrawingPath"/>.
 /// </summary>
 public sealed class DrawingPathBuilder
 {
@@ -125,6 +125,44 @@ public sealed class DrawingPathBuilder
         LineTo(rect.Right, rect.Bottom);
         LineTo(rect.Left, rect.Bottom);
         return Close();
+    }
+
+    /// <summary>
+    /// Appends every segment of another path, keeping its contours separate from anything
+    /// already in this builder. The added path's own fill rule is ignored: the built path
+    /// uses this builder's fill rule.
+    /// </summary>
+    /// <param name="path">The path whose segments are appended; ignored when <c>null</c> or empty.</param>
+    /// <returns>This same builder, so calls can be chained.</returns>
+    public DrawingPathBuilder AddPath(DrawingPath path)
+    {
+        if (path == null || path.IsEmpty) { return this; }
+
+        var pointIndex = 0;
+        foreach (DrawingPathVerb verb in path.Verbs)
+        {
+            switch (verb)
+            {
+                case DrawingPathVerb.Move:
+                    MoveTo(path.Points[pointIndex++]);
+                    break;
+                case DrawingPathVerb.Line:
+                    LineTo(path.Points[pointIndex++]);
+                    break;
+                case DrawingPathVerb.Quad:
+                    QuadTo(path.Points[pointIndex], path.Points[pointIndex + 1]);
+                    pointIndex += 2;
+                    break;
+                case DrawingPathVerb.Cubic:
+                    CubicTo(path.Points[pointIndex], path.Points[pointIndex + 1], path.Points[pointIndex + 2]);
+                    pointIndex += 3;
+                    break;
+                default:
+                    Close();
+                    break;
+            }
+        }
+        return this;
     }
 
     /// <summary>

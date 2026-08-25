@@ -6,16 +6,16 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>
-/// Renders compiled <see cref="SvgSceneDocument"/> instances into <see cref="SKPicture"/> objects.
-/// </summary>
-public static class SvgSceneRenderer
+// <summary>
+// Renders compiled <see cref="SvgSceneDocument"/> instances into <see cref="SKPicture"/> objects.
+// </summary>
+internal static class SvgSceneRenderer
 {
-    /// <summary>
-    /// Renders the specified scene document into an <see cref="SKPicture"/>.
-    /// </summary>
-    /// <param name="sceneDocument">The scene document to render.</param>
-    /// <returns>An <see cref="SKPicture"/> representing the rendered scene, or <see langword="null"/> if the scene is empty.</returns>
+    // <summary>
+    // Renders the specified scene document into an <see cref="SKPicture"/>.
+    // </summary>
+    // <param name="sceneDocument">The scene document to render.</param>
+    // <returns>An <see cref="SKPicture"/> representing the rendered scene, or <see langword="null"/> if the scene is empty.</returns>
     public static SKPicture Render(SvgSceneDocument sceneDocument)
     {
         if (sceneDocument is null)

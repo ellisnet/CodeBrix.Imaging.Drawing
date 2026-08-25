@@ -29,11 +29,21 @@ public abstract class DrawingShape : DrawingElement
     /// The color the shape is drawn with; or <c>null</c> to draw in the owning layer's
     /// color. A shape with its own color still composites at the layer's opacity.
     /// </summary>
-    public Color? Color => SkiaInterop.ToImaging(_color);
+    public Color? Color => GraphicsInterop.ToImaging(_color);
 
+    //The name-neutral accessor that this library's own rendering code reads, so the public
+    //  accessor below can carry a different name in each package without an #if at any call site
+    internal SKColor? ColorValue => _color;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="Color"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The shape's color as a backend color; or <c>null</c> to use the owning layer's color.</returns>
+    public DrawingColor? GetColorAsDrawing() => _color;
+#else
     /// <summary>Gets <see cref="Color"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The shape's color as a SkiaSharp color; or <c>null</c> to use the owning layer's color.</returns>
     public SKColor? GetColorAsSkia() => _color;
+#endif
 
     /// <summary>
     /// Initializes the common shape values.
@@ -55,7 +65,7 @@ public abstract class DrawingShape : DrawingElement
     /// <param name="color">The shape's color; or <c>null</c> to use the owning layer's color.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="strokeThickness"/> is zero or negative.</exception>
     protected DrawingShape(float strokeThickness, Color? color)
-        : this(strokeThickness, SkiaInterop.ToSK(color))
+        : this(strokeThickness, GraphicsInterop.ToGraphics(color))
     {
     }
 

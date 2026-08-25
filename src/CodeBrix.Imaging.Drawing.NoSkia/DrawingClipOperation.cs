@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How a new clip shape combines with the current clip, API-compatible with the SkiaSharp
-/// <c>SKClipOperation</c> enumeration.
+/// How a new clip shape combines with the current clip.
 /// </summary>
 public enum DrawingClipOperation
 {

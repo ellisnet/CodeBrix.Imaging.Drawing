@@ -39,7 +39,7 @@ public class SvgReferenceTests
         //Act
         using var svg = new DrawingSvg();
         svg.Fonts.RegisterFont(SvgTestAssets.TestFontPath);
-        svg.Load(SvgTestAssets.GetSvgPath(sampleName)).Should().NotBeNull();
+        svg.Load(SvgTestAssets.GetSvgPath(sampleName)).Should().BeTrue();
         byte[] noSkiaPng = svg.RasterizeToPng(SvgTestAssets.RasterScale);
 
         //Assert
@@ -58,18 +58,20 @@ public class SvgReferenceTests
         svg.Load(SvgTestAssets.GetSvgPath("basic-shapes"));
 
         //Assert
-        svg.Picture.Should().NotBeNull();
+        svg.IsLoaded.Should().BeTrue();
         svg.Bounds.Width.Should().Be(400f);
         svg.Bounds.Height.Should().Be(300f);
     }
 
     [Fact]
-    public void Unloadable_markup_returns_null()
+    public void Unloadable_markup_does_not_load()
     {
         //Arrange
         using var svg = new DrawingSvg();
 
         //Act + Assert - not-actually-SVG markup compiles to no picture
-        svg.FromSvg("<not-svg/>").Should().BeNull();
+        svg.FromSvg("<not-svg/>").Should().BeFalse();
+        svg.IsLoaded.Should().BeFalse();
+        svg.Picture.Should().BeNull();
     }
 }

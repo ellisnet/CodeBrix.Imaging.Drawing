@@ -9,37 +9,37 @@ using CodeBrix.Imaging.Fonts.Unicode;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering;
 
-/// <summary>
-/// A fully managed <see cref="ISvgAssetLoader"/> implementation backed by the CodeBrix.Imaging
-/// font and image machinery (no SkiaSharp, no HarfBuzz, no native code). Text measurement,
-/// font metrics, and text-to-path conversion are performed against fonts registered in a
-/// <see cref="NoSkiaFontRegistry"/>; when a requested family is not registered the first
-/// registered font is used as a fallback, and when no fonts are registered at all every text
-/// operation returns safe defaults (zero metrics and empty paths) instead of throwing.
-/// </summary>
-public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
+// <summary>
+// A fully managed <see cref="ISvgAssetLoader"/> implementation backed by the CodeBrix.Imaging
+// font and image machinery (no SkiaSharp, no HarfBuzz, no native code). Text measurement,
+// font metrics, and text-to-path conversion are performed against fonts registered in a
+// <see cref="NoSkiaFontRegistry"/>; when a requested family is not registered the first
+// registered font is used as a fallback, and when no fonts are registered at all every text
+// operation returns safe defaults (zero metrics and empty paths) instead of throwing.
+// </summary>
+internal sealed class ImagingSvgAssetLoader : ISvgAssetLoader
 {
     private readonly NoSkiaFontRegistry _fontRegistry;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ImagingSvgAssetLoader"/> class.
-    /// </summary>
-    /// <param name="fontRegistry">The registry supplying the fonts used for text operations.</param>
+    // <summary>
+    // Initializes a new instance of the <see cref="ImagingSvgAssetLoader"/> class.
+    // </summary>
+    // <param name="fontRegistry">The registry supplying the fonts used for text operations.</param>
     public ImagingSvgAssetLoader(NoSkiaFontRegistry fontRegistry)
     {
         _fontRegistry = fontRegistry ?? throw new ArgumentNullException(nameof(fontRegistry));
     }
 
-    /// <summary>Gets the registry supplying the fonts used for text operations.</summary>
+    // <summary>Gets the registry supplying the fonts used for text operations.</summary>
     public NoSkiaFontRegistry FontRegistry => _fontRegistry;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether SVG fonts (fonts defined via SVG
-    /// <c>&lt;font&gt;</c> elements) are enabled. Defaults to <c>true</c>.
-    /// </summary>
+    // <summary>
+    // Gets or sets a value indicating whether SVG fonts (fonts defined via SVG
+    // <c>&lt;font&gt;</c> elements) are enabled. Defaults to <c>true</c>.
+    // </summary>
     public bool EnableSvgFonts { get; set; } = true;
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKImage LoadImage(Stream stream)
     {
         if (stream is null)
@@ -68,7 +68,7 @@ public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
         return new SKImage { Data = data, Width = width, Height = height };
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public List<TypefaceSpan> FindTypefaces(string text, SKPaint paintPreferredTypeface)
     {
         var ret = new List<TypefaceSpan>();
@@ -186,7 +186,7 @@ public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
         return ret;
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKFontMetrics GetFontMetrics(SKPaint paint)
     {
         var font = ResolveFont(paint);
@@ -216,7 +216,7 @@ public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
         };
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public float MeasureText(string text, SKPaint paint, ref SKRect bounds)
     {
         bounds = default;
@@ -239,7 +239,7 @@ public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
         return advance;
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKPath GetTextPath(string text, SKPaint paint, float x, float y)
     {
         var path = new SKPath();
@@ -339,10 +339,10 @@ public sealed class ImagingSvgAssetLoader : ISvgAssetLoader
         return false;
     }
 
-    /// <summary>
-    /// An <see cref="IGlyphRenderer"/> that records glyph outlines into a shim
-    /// <see cref="SKPath"/> as move/line/quad/cubic/close commands.
-    /// </summary>
+    // <summary>
+    // An <see cref="IGlyphRenderer"/> that records glyph outlines into a shim
+    // <see cref="SKPath"/> as move/line/quad/cubic/close commands.
+    // </summary>
     private sealed class PathGlyphRenderer : IGlyphRenderer
     {
         private readonly SKPath _path;

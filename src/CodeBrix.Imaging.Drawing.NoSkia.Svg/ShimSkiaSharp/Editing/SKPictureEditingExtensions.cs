@@ -7,17 +7,17 @@ using System.Linq;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp.Editing; //Was previously: namespace ShimSkiaSharp.Editing;
 
-/// <summary>
-/// Provides extension methods for editing <see cref="SKPicture"/> command trees.
-/// </summary>
-public static class SKPictureEditingExtensions
+// <summary>
+// Provides extension methods for editing <see cref="SKPicture"/> command trees.
+// </summary>
+internal static class SKPictureEditingExtensions
 {
-    /// <summary>
-    /// Finds all canvas commands of the specified type within the picture, including nested pictures.
-    /// </summary>
-    /// <typeparam name="TCommand">The type of canvas command to find.</typeparam>
-    /// <param name="picture">The picture to search.</param>
-    /// <returns>An enumerable of matching canvas commands.</returns>
+    // <summary>
+    // Finds all canvas commands of the specified type within the picture, including nested pictures.
+    // </summary>
+    // <typeparam name="TCommand">The type of canvas command to find.</typeparam>
+    // <param name="picture">The picture to search.</param>
+    // <returns>An enumerable of matching canvas commands.</returns>
     public static IEnumerable<TCommand> FindCommands<TCommand>(this SKPicture picture)
         where TCommand : CanvasCommand
     {
@@ -29,12 +29,12 @@ public static class SKPictureEditingExtensions
         return EnumerateCommands(picture).OfType<TCommand>();
     }
 
-    /// <summary>
-    /// Replaces canvas commands in the picture using the specified replacement function.
-    /// </summary>
-    /// <param name="picture">The picture whose commands to replace.</param>
-    /// <param name="replace">A function that returns a replacement command for each command.</param>
-    /// <returns>The number of commands that were replaced.</returns>
+    // <summary>
+    // Replaces canvas commands in the picture using the specified replacement function.
+    // </summary>
+    // <param name="picture">The picture whose commands to replace.</param>
+    // <param name="replace">A function that returns a replacement command for each command.</param>
+    // <returns>The number of commands that were replaced.</returns>
     public static int ReplaceCommands(this SKPicture picture, Func<CanvasCommand, CanvasCommand> replace)
     {
         if (picture is null)
@@ -50,14 +50,14 @@ public static class SKPictureEditingExtensions
         return ReplaceCommandsRecursive(picture, replace);
     }
 
-    /// <summary>
-    /// Updates paint objects in the picture that match the specified predicate.
-    /// </summary>
-    /// <param name="picture">The picture whose paints to update.</param>
-    /// <param name="predicate">A function that determines which paints to update.</param>
-    /// <param name="update">An action that modifies the matching paints.</param>
-    /// <param name="mode">The edit mode controlling clone-on-write behavior.</param>
-    /// <returns>The number of paints that were updated.</returns>
+    // <summary>
+    // Updates paint objects in the picture that match the specified predicate.
+    // </summary>
+    // <param name="picture">The picture whose paints to update.</param>
+    // <param name="predicate">A function that determines which paints to update.</param>
+    // <param name="update">An action that modifies the matching paints.</param>
+    // <param name="mode">The edit mode controlling clone-on-write behavior.</param>
+    // <returns>The number of paints that were updated.</returns>
     public static int UpdatePaints(
         this SKPicture picture,
         Func<SKPaint, bool> predicate,
@@ -84,14 +84,14 @@ public static class SKPictureEditingExtensions
         return UpdatePaintsRecursive(picture, predicate, update, mode, context, visited);
     }
 
-    /// <summary>
-    /// Updates path objects in the picture that match the specified predicate.
-    /// </summary>
-    /// <param name="picture">The picture whose paths to update.</param>
-    /// <param name="predicate">A function that determines which paths to update.</param>
-    /// <param name="update">An action that modifies the matching paths.</param>
-    /// <param name="mode">The edit mode controlling clone-on-write behavior.</param>
-    /// <returns>The number of paths that were updated.</returns>
+    // <summary>
+    // Updates path objects in the picture that match the specified predicate.
+    // </summary>
+    // <param name="picture">The picture whose paths to update.</param>
+    // <param name="predicate">A function that determines which paths to update.</param>
+    // <param name="update">An action that modifies the matching paths.</param>
+    // <param name="mode">The edit mode controlling clone-on-write behavior.</param>
+    // <returns>The number of paths that were updated.</returns>
     public static int UpdatePaths(
         this SKPicture picture,
         Func<SKPath, bool> predicate,

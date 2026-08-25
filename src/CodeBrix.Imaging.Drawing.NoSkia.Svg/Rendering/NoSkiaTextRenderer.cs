@@ -4,39 +4,39 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering;
 
-/// <summary>
-/// Renders replayed SVG text commands by converting text to glyph-outline paths through
-/// the <see cref="ImagingSvgAssetLoader"/> font stack (CodeBrix.Imaging.Fonts) and filling
-/// them on the managed canvas - no font rasterization outside managed code.
-/// </summary>
-public sealed class NoSkiaTextRenderer : INoSkiaTextRenderer
+// <summary>
+// Renders replayed SVG text commands by converting text to glyph-outline paths through
+// the <see cref="ImagingSvgAssetLoader"/> font stack (CodeBrix.Imaging.Fonts) and filling
+// them on the managed canvas - no font rasterization outside managed code.
+// </summary>
+internal sealed class NoSkiaTextRenderer : INoSkiaTextRenderer
 {
     private readonly ImagingSvgAssetLoader _assetLoader;
 
-    /// <summary>
-    /// Creates a text renderer over the given asset loader (whose font registry supplies
-    /// every typeface used).
-    /// </summary>
-    /// <param name="assetLoader">The asset loader that provides text outlines.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="assetLoader"/> is null.</exception>
+    // <summary>
+    // Creates a text renderer over the given asset loader (whose font registry supplies
+    // every typeface used).
+    // </summary>
+    // <param name="assetLoader">The asset loader that provides text outlines.</param>
+    // <exception cref="ArgumentNullException">Thrown when <paramref name="assetLoader"/> is null.</exception>
     public NoSkiaTextRenderer(ImagingSvgAssetLoader assetLoader)
     {
         _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
     }
 
-    /// <summary>
-    /// The display-list replayer used to convert shim paints and paths. Assign after
-    /// constructing the <see cref="NoSkiaModel"/> (the two reference each other).
-    /// </summary>
+    // <summary>
+    // The display-list replayer used to convert shim paints and paths. Assign after
+    // constructing the <see cref="NoSkiaModel"/> (the two reference each other).
+    // </summary>
     public NoSkiaModel Model { get; set; }
 
-    /// <summary>
-    /// An optional callback invoked with a short description of each text feature that
-    /// could not be rendered (glyph-id runs, text-on-path).
-    /// </summary>
+    // <summary>
+    // An optional callback invoked with a short description of each text feature that
+    // could not be rendered (glyph-id runs, text-on-path).
+    // </summary>
     public Action<string> Unsupported { get; set; }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public void DrawText(string text, float x, float y, SKPaint paint, DrawingCanvas canvas)
     {
         if (String.IsNullOrEmpty(text) || paint == null || Model == null) { return; }
@@ -45,7 +45,7 @@ public sealed class NoSkiaTextRenderer : INoSkiaTextRenderer
         FillTextPath(shimPath, paint, canvas);
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public void DrawTextBlob(SKTextBlob textBlob, float x, float y, SKPaint paint, DrawingCanvas canvas)
     {
         if (textBlob == null || paint == null || Model == null) { return; }
@@ -76,7 +76,7 @@ public sealed class NoSkiaTextRenderer : INoSkiaTextRenderer
         }
     }
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public void DrawTextOnPath(string text, SKPath path, float hOffset, float vOffset, SKPaint paint,
         DrawingCanvas canvas)
     {

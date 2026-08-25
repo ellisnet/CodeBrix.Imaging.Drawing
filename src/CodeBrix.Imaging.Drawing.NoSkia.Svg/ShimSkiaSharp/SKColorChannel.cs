@@ -3,17 +3,17 @@
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>
-/// Identifies a single channel of a color value.
-/// </summary>
-public enum SKColorChannel
+// <summary>
+// Identifies a single channel of a color value.
+// </summary>
+internal enum SKColorChannel
 {
-    /// <summary>The red channel.</summary>
+    // <summary>The red channel.</summary>
     R = 0,
-    /// <summary>The green channel.</summary>
+    // <summary>The green channel.</summary>
     G = 1,
-    /// <summary>The blue channel.</summary>
+    // <summary>The blue channel.</summary>
     B = 2,
-    /// <summary>The alpha (transparency) channel.</summary>
+    // <summary>The alpha (transparency) channel.</summary>
     A = 3
 }

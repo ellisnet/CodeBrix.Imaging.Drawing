@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How the ends of an open stroked path are capped, API-compatible with the SkiaSharp
-/// <c>DrawingStrokeCap</c> enumeration.
+/// How the ends of an open stroked path are capped.
 /// </summary>
 public enum DrawingStrokeCap
 {

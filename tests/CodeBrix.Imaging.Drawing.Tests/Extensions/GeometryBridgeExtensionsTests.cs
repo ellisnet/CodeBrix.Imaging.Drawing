@@ -18,7 +18,11 @@ public class GeometryBridgeExtensionsTests
         var size = new Size(1000, 500);
 
         //Act
+#if NOSKIA
+        SKSizeI sk = size.ToDrawingSizeI();
+#else
         SKSizeI sk = size.ToSKSizeI();
+#endif
         Size back = sk.ToImagingSize();
 
         //Assert
@@ -34,7 +38,11 @@ public class GeometryBridgeExtensionsTests
         var size = new SizeF(12.5f, 7.25f);
 
         //Act
+#if NOSKIA
+        SKSize sk = size.ToDrawingSize();
+#else
         SKSize sk = size.ToSKSize();
+#endif
         SizeF back = sk.ToImagingSizeF();
 
         //Assert
@@ -50,7 +58,11 @@ public class GeometryBridgeExtensionsTests
         var point = new Point(3, 9);
 
         //Act
+#if NOSKIA
+        SKPointI sk = point.ToDrawingPointI();
+#else
         SKPointI sk = point.ToSKPointI();
+#endif
         Point back = sk.ToImagingPoint();
 
         //Assert
@@ -66,7 +78,11 @@ public class GeometryBridgeExtensionsTests
         var point = new PointF(3.5f, 9.75f);
 
         //Act
+#if NOSKIA
+        SKPoint sk = point.ToDrawingPoint();
+#else
         SKPoint sk = point.ToSKPoint();
+#endif
         PointF back = sk.ToImagingPointF();
 
         //Assert
@@ -82,7 +98,11 @@ public class GeometryBridgeExtensionsTests
         var rect = new RectangleF(10f, 20f, 30f, 40f);
 
         //Act
+#if NOSKIA
+        SKRect sk = rect.ToDrawingRect();
+#else
         SKRect sk = rect.ToSKRect();
+#endif
 
         //Assert
         sk.Left.Should().Be(10f);

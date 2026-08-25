@@ -79,7 +79,7 @@ public class SvgParityTests
     {
         using var svg = new NoSkiaDrawingSvg();
         svg.Fonts.RegisterFont(SvgTestAssets.TestFontPath);
-        Assert.True(svg.Load(svgPath) != null,
+        Assert.True(svg.Load(svgPath),
             $"The NoSkia stack could not load {Path.GetFileName(svgPath)}");
         return svg.RasterizeToPng(SvgTestAssets.RasterScale);
     }

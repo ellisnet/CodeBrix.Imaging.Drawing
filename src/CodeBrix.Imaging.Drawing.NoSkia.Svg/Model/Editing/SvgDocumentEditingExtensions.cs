@@ -6,16 +6,16 @@ using CodeBrix.SvgParse;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Editing; //Was previously: namespace Svg.Model.Editing;
 
-/// <summary>
-/// Provides extension methods for editing <see cref="SvgDocument"/> instances.
-/// </summary>
-public static class SvgDocumentEditingExtensions
+// <summary>
+// Provides extension methods for editing <see cref="SvgDocument"/> instances.
+// </summary>
+internal static class SvgDocumentEditingExtensions
 {
-    /// <summary>
-    /// Traverses all elements in the document tree using depth-first order.
-    /// </summary>
-    /// <param name="document">The SVG document to traverse.</param>
-    /// <returns>An enumerable of all elements in the document tree.</returns>
+    // <summary>
+    // Traverses all elements in the document tree using depth-first order.
+    // </summary>
+    // <param name="document">The SVG document to traverse.</param>
+    // <returns>An enumerable of all elements in the document tree.</returns>
     public static IEnumerable<SvgElement> TraverseElements(this SvgDocument document)
     {
         if (document is null)
@@ -43,13 +43,13 @@ public static class SvgDocumentEditingExtensions
         }
     }
 
-    /// <summary>
-    /// Updates style attributes on visual elements in the document that match the specified predicate.
-    /// </summary>
-    /// <param name="document">The SVG document to update.</param>
-    /// <param name="predicate">A function that determines which visual elements to update.</param>
-    /// <param name="update">An action that modifies the matching visual elements.</param>
-    /// <returns>The number of elements that were updated.</returns>
+    // <summary>
+    // Updates style attributes on visual elements in the document that match the specified predicate.
+    // </summary>
+    // <param name="document">The SVG document to update.</param>
+    // <param name="predicate">A function that determines which visual elements to update.</param>
+    // <param name="update">An action that modifies the matching visual elements.</param>
+    // <returns>The number of elements that were updated.</returns>
     public static int UpdateStyleAttributes(
         this SvgDocument document,
         Func<SvgVisualElement, bool> predicate,

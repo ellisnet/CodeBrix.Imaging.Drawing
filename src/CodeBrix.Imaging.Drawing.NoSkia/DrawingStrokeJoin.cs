@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How the corners of a stroked path are joined, API-compatible with the SkiaSharp
-/// <c>DrawingStrokeJoin</c> enumeration.
+/// How the corners of a stroked path are joined.
 /// </summary>
 public enum DrawingStrokeJoin
 {

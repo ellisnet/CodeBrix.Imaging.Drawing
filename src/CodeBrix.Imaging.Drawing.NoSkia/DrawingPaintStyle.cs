@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// Whether geometry is filled, stroked, or both, API-compatible with the SkiaSharp
-/// <c>DrawingPaintStyle</c> enumeration.
+/// Whether geometry is filled, stroked, or both.
 /// </summary>
 public enum DrawingPaintStyle
 {

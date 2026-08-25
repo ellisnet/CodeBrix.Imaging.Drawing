@@ -3,7 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// An integer (width, height) size, API-compatible with the SkiaSharp <c>SKSizeI</c> type.
+/// An integer (width, height) size.
 /// </summary>
 public struct DrawingSizeI : IEquatable<DrawingSizeI>
 {

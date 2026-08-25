@@ -9,8 +9,8 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>Represents a compiled SVG scene graph with spatial indexing, resource management, and mutation support.</summary>
-public sealed class SvgSceneDocument
+// <summary>Represents a compiled SVG scene graph with spatial indexing, resource management, and mutation support.</summary>
+internal sealed class SvgSceneDocument
 {
     private readonly Dictionary<string, List<SvgSceneNode>> _nodesByAddress = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SvgSceneNode> _nodesById = new(StringComparer.Ordinal);
@@ -42,22 +42,22 @@ public sealed class SvgSceneDocument
         RebuildIndexesAndDependencies();
     }
 
-    /// <summary>Gets the source SVG document.</summary>
+    // <summary>Gets the source SVG document.</summary>
     public SvgDocument SourceDocument { get; }
 
-    /// <summary>Gets the cull rectangle of the scene.</summary>
+    // <summary>Gets the cull rectangle of the scene.</summary>
     public SKRect CullRect { get; }
 
-    /// <summary>Gets the root node of the scene graph.</summary>
+    // <summary>Gets the root node of the scene graph.</summary>
     public SvgSceneNode Root { get; }
 
-    /// <summary>Gets the scene nodes indexed by their element identifier.</summary>
+    // <summary>Gets the scene nodes indexed by their element identifier.</summary>
     public IReadOnlyDictionary<string, SvgSceneNode> NodesById => _readOnlyNodesById;
 
-    /// <summary>Gets the scene resources indexed by their element identifier.</summary>
+    // <summary>Gets the scene resources indexed by their element identifier.</summary>
     public IReadOnlyDictionary<string, SvgSceneResource> ResourcesById => _readOnlyResourcesById;
 
-    /// <summary>Gets the revision number, incremented on each structural change.</summary>
+    // <summary>Gets the revision number, incremented on each structural change.</summary>
     public long Revision { get; private set; }
 
     internal SKRect CompilationViewport { get; }
@@ -66,17 +66,17 @@ public sealed class SvgSceneDocument
 
     internal DrawAttributes IgnoreAttributes { get; }
 
-    /// <summary>Traverses all nodes in the scene graph starting from the root.</summary>
-    /// <returns>An enumerable sequence of all scene nodes.</returns>
+    // <summary>Traverses all nodes in the scene graph starting from the root.</summary>
+    // <returns>An enumerable sequence of all scene nodes.</returns>
     public IEnumerable<SvgSceneNode> Traverse()
     {
         return Traverse(Root);
     }
 
-    /// <summary>Tries to get all scene nodes matching the specified address key.</summary>
-    /// <param name="addressKey">The element address key to search for.</param>
-    /// <param name="nodes">When this method returns, contains the matching nodes.</param>
-    /// <returns><c>true</c> if matching nodes were found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get all scene nodes matching the specified address key.</summary>
+    // <param name="addressKey">The element address key to search for.</param>
+    // <param name="nodes">When this method returns, contains the matching nodes.</param>
+    // <returns><c>true</c> if matching nodes were found; otherwise, <c>false</c>.</returns>
     public bool TryGetNodes(string addressKey, out IReadOnlyList<SvgSceneNode> nodes)
     {
         if (_nodesByAddress.TryGetValue(addressKey, out var sceneNodes))
@@ -89,10 +89,10 @@ public sealed class SvgSceneDocument
         return false;
     }
 
-    /// <summary>Tries to get the first scene node matching the specified address key.</summary>
-    /// <param name="addressKey">The element address key to search for.</param>
-    /// <param name="node">When this method returns, contains the matching node.</param>
-    /// <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get the first scene node matching the specified address key.</summary>
+    // <param name="addressKey">The element address key to search for.</param>
+    // <param name="node">When this method returns, contains the matching node.</param>
+    // <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
     public bool TryGetNode(string addressKey, out SvgSceneNode node)
     {
         if (_nodesByAddress.TryGetValue(addressKey, out var sceneNodes) &&
@@ -106,10 +106,10 @@ public sealed class SvgSceneDocument
         return false;
     }
 
-    /// <summary>Tries to get the scene node for the specified SVG element.</summary>
-    /// <param name="element">The SVG element to look up.</param>
-    /// <param name="node">When this method returns, contains the matching node.</param>
-    /// <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get the scene node for the specified SVG element.</summary>
+    // <param name="element">The SVG element to look up.</param>
+    // <param name="node">When this method returns, contains the matching node.</param>
+    // <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
     public bool TryGetNode(SvgElement element, out SvgSceneNode node)
     {
         if (element is null)
@@ -120,10 +120,10 @@ public sealed class SvgSceneDocument
         return TryGetNode(SvgSceneCompiler.TryGetElementAddressKey(element) ?? string.Empty, out node);
     }
 
-    /// <summary>Tries to get a scene node by its SVG element identifier.</summary>
-    /// <param name="id">The SVG element identifier.</param>
-    /// <param name="node">When this method returns, contains the matching node.</param>
-    /// <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get a scene node by its SVG element identifier.</summary>
+    // <param name="id">The SVG element identifier.</param>
+    // <param name="node">When this method returns, contains the matching node.</param>
+    // <returns><c>true</c> if a matching node was found; otherwise, <c>false</c>.</returns>
     public bool TryGetNodeById(string id, out SvgSceneNode node)
     {
         if (_nodesById.TryGetValue(id, out node))
@@ -135,10 +135,10 @@ public sealed class SvgSceneDocument
         return false;
     }
 
-    /// <summary>Tries to get a scene resource by its SVG element identifier.</summary>
-    /// <param name="id">The SVG element identifier.</param>
-    /// <param name="resource">When this method returns, contains the matching resource.</param>
-    /// <returns><c>true</c> if a matching resource was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get a scene resource by its SVG element identifier.</summary>
+    // <param name="id">The SVG element identifier.</param>
+    // <param name="resource">When this method returns, contains the matching resource.</param>
+    // <returns><c>true</c> if a matching resource was found; otherwise, <c>false</c>.</returns>
     public bool TryGetResourceById(string id, out SvgSceneResource resource)
     {
         if (_resourcesById.TryGetValue(id, out resource))
@@ -150,10 +150,10 @@ public sealed class SvgSceneDocument
         return false;
     }
 
-    /// <summary>Tries to get a scene resource by its address key.</summary>
-    /// <param name="addressKey">The resource address key.</param>
-    /// <param name="resource">When this method returns, contains the matching resource.</param>
-    /// <returns><c>true</c> if a matching resource was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get a scene resource by its address key.</summary>
+    // <param name="addressKey">The resource address key.</param>
+    // <param name="resource">When this method returns, contains the matching resource.</param>
+    // <returns><c>true</c> if a matching resource was found; otherwise, <c>false</c>.</returns>
     public bool TryGetResource(string addressKey, out SvgSceneResource resource)
     {
         if (_resourcesByKey.TryGetValue(addressKey, out resource))
@@ -165,19 +165,19 @@ public sealed class SvgSceneDocument
         return false;
     }
 
-    /// <summary>Tries to get an SVG element by its address key.</summary>
-    /// <param name="addressKey">The element address key.</param>
-    /// <param name="element">When this method returns, contains the matching element.</param>
-    /// <returns><c>true</c> if a matching element was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get an SVG element by its address key.</summary>
+    // <param name="addressKey">The element address key.</param>
+    // <param name="element">When this method returns, contains the matching element.</param>
+    // <returns><c>true</c> if a matching element was found; otherwise, <c>false</c>.</returns>
     public bool TryGetElement(string addressKey, out SvgElement element)
     {
         return TryResolveElement(addressKey, out element);
     }
 
-    /// <summary>Tries to get an SVG element by its identifier.</summary>
-    /// <param name="id">The SVG element identifier.</param>
-    /// <param name="element">When this method returns, contains the matching element.</param>
-    /// <returns><c>true</c> if a matching element was found; otherwise, <c>false</c>.</returns>
+    // <summary>Tries to get an SVG element by its identifier.</summary>
+    // <param name="id">The SVG element identifier.</param>
+    // <param name="element">When this method returns, contains the matching element.</param>
+    // <returns><c>true</c> if a matching element was found; otherwise, <c>false</c>.</returns>
     public bool TryGetElementById(string id, out SvgElement element)
     {
         element = null;
@@ -190,10 +190,10 @@ public sealed class SvgSceneDocument
         return element is not null;
     }
 
-    /// <summary>Marks all nodes at the specified address key as dirty.</summary>
-    /// <param name="addressKey">The element address key.</param>
-    /// <param name="includeDescendants">Whether to also mark descendant nodes.</param>
-    /// <returns>The number of nodes marked dirty.</returns>
+    // <summary>Marks all nodes at the specified address key as dirty.</summary>
+    // <param name="addressKey">The element address key.</param>
+    // <param name="includeDescendants">Whether to also mark descendant nodes.</param>
+    // <returns>The number of nodes marked dirty.</returns>
     public int MarkDirty(string addressKey, bool includeDescendants = false)
     {
         if (!_nodesByAddress.TryGetValue(addressKey, out var nodes))
@@ -217,10 +217,10 @@ public sealed class SvgSceneDocument
         return nodes.Count;
     }
 
-    /// <summary>Applies a mutation to the scene graph for the specified SVG element.</summary>
-    /// <param name="element">The SVG element that was mutated.</param>
-    /// <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
-    /// <returns>The result of the mutation operation.</returns>
+    // <summary>Applies a mutation to the scene graph for the specified SVG element.</summary>
+    // <param name="element">The SVG element that was mutated.</param>
+    // <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
+    // <returns>The result of the mutation operation.</returns>
     public SvgSceneMutationResult ApplyMutation(SvgElement element, IReadOnlyCollection<string> changedAttributes = null)
     {
         if (element is null)
@@ -231,10 +231,10 @@ public sealed class SvgSceneDocument
         return SvgSceneCompiler.ApplyMutation(this, element, changedAttributes);
     }
 
-    /// <summary>Applies a mutation to the scene graph for the element at the specified address key.</summary>
-    /// <param name="addressKey">The element address key.</param>
-    /// <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
-    /// <returns>The result of the mutation operation.</returns>
+    // <summary>Applies a mutation to the scene graph for the element at the specified address key.</summary>
+    // <param name="addressKey">The element address key.</param>
+    // <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
+    // <returns>The result of the mutation operation.</returns>
     public SvgSceneMutationResult ApplyMutation(string addressKey, IReadOnlyCollection<string> changedAttributes = null)
     {
         return TryResolveElement(addressKey, out var element) && element is not null
@@ -242,10 +242,10 @@ public sealed class SvgSceneDocument
             : new SvgSceneMutationResult(false, 0, 0);
     }
 
-    /// <summary>Applies a mutation to the scene graph for the element with the specified identifier.</summary>
-    /// <param name="id">The SVG element identifier.</param>
-    /// <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
-    /// <returns>The result of the mutation operation.</returns>
+    // <summary>Applies a mutation to the scene graph for the element with the specified identifier.</summary>
+    // <param name="id">The SVG element identifier.</param>
+    // <param name="changedAttributes">The names of the changed attributes, or <c>null</c> to recompile fully.</param>
+    // <returns>The result of the mutation operation.</returns>
     public SvgSceneMutationResult ApplyMutationById(string id, IReadOnlyCollection<string> changedAttributes = null)
     {
         return TryGetElementById(id, out var element) && element is not null
@@ -253,47 +253,47 @@ public sealed class SvgSceneDocument
             : new SvgSceneMutationResult(false, 0, 0);
     }
 
-    /// <summary>Clears the dirty flag on all nodes in the scene graph.</summary>
+    // <summary>Clears the dirty flag on all nodes in the scene graph.</summary>
     public void ClearDirty()
     {
         Root.ClearDirty();
     }
 
-    /// <summary>Performs a hit test at the specified point.</summary>
-    /// <param name="point">The point in picture coordinates.</param>
-    /// <returns>An enumerable of scene nodes that intersect the point.</returns>
+    // <summary>Performs a hit test at the specified point.</summary>
+    // <param name="point">The point in picture coordinates.</param>
+    // <returns>An enumerable of scene nodes that intersect the point.</returns>
     public IEnumerable<SvgSceneNode> HitTest(SKPoint point)
     {
         return SvgSceneHitTestService.HitTest(this, point);
     }
 
-    /// <summary>Performs a hit test within the specified rectangle.</summary>
-    /// <param name="rect">The rectangle in picture coordinates.</param>
-    /// <returns>An enumerable of scene nodes that intersect the rectangle.</returns>
+    // <summary>Performs a hit test within the specified rectangle.</summary>
+    // <param name="rect">The rectangle in picture coordinates.</param>
+    // <returns>An enumerable of scene nodes that intersect the rectangle.</returns>
     public IEnumerable<SvgSceneNode> HitTest(SKRect rect)
     {
         return SvgSceneHitTestService.HitTest(this, rect);
     }
 
-    /// <summary>Performs a hit test and returns the topmost node at the specified point.</summary>
-    /// <param name="point">The point in picture coordinates.</param>
-    /// <returns>The topmost scene node, or <c>null</c> if none.</returns>
+    // <summary>Performs a hit test and returns the topmost node at the specified point.</summary>
+    // <param name="point">The point in picture coordinates.</param>
+    // <returns>The topmost scene node, or <c>null</c> if none.</returns>
     public SvgSceneNode HitTestTopmostNode(SKPoint point)
     {
         return SvgSceneHitTestService.HitTestTopmostNode(this, point);
     }
 
-    /// <summary>Creates a drawing model from the current scene graph state.</summary>
-    /// <returns>The rendered picture model.</returns>
+    // <summary>Creates a drawing model from the current scene graph state.</summary>
+    // <returns>The rendered picture model.</returns>
     public SKPicture CreateModel()
     {
         return SvgSceneRenderer.Render(this);
     }
 
-    /// <summary>Creates a drawing model for a specific scene node.</summary>
-    /// <param name="node">The scene node to render.</param>
-    /// <param name="clip">An optional clip rectangle.</param>
-    /// <returns>The rendered picture model for the node.</returns>
+    // <summary>Creates a drawing model for a specific scene node.</summary>
+    // <param name="node">The scene node to render.</param>
+    // <param name="clip">An optional clip rectangle.</param>
+    // <returns>The rendered picture model for the node.</returns>
     public SKPicture CreateNodeModel(SvgSceneNode node, SKRect? clip = null)
     {
         if (node is null)

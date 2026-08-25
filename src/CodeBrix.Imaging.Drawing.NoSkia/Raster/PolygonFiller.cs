@@ -330,7 +330,7 @@ internal static class PolygonFiller
     /// <summary>
     /// Composites one straight-alpha source color onto one pixel with an arbitrary blend
     /// mode, honoring partial coverage by interpolating between the destination and the
-    /// fully blended result (Skia's anti-aliased blending model).
+    /// fully blended result - the standard anti-aliased blending model.
     /// </summary>
     /// <param name="pixels">The target pixel buffer.</param>
     /// <param name="offset">The byte offset of the target pixel.</param>

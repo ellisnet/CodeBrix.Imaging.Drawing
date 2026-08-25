@@ -7,16 +7,16 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services; //Was previously: namespace Svg.Model.Services;
 
-/// <summary>
-/// Provides conversion helpers for <see cref="GradientMesh"/> instances.
-/// </summary>
-public static class GradientMeshService
+// <summary>
+// Provides conversion helpers for <see cref="GradientMesh"/> instances.
+// </summary>
+internal static class GradientMeshService
 {
-    /// <summary>
-    /// Convert gradient mesh points to a mesh shader if supported. Currently this
-    /// implementation falls back to a linear gradient created between the first
-    /// and last mesh points when mesh shaders are not available.
-    /// </summary>
+    // <summary>
+    // Convert gradient mesh points to a mesh shader if supported. Currently this
+    // implementation falls back to a linear gradient created between the first
+    // and last mesh points when mesh shaders are not available.
+    // </summary>
     public static SKShader ToShader(GradientMesh mesh)
     {
         if (mesh.Points.Count < 2)

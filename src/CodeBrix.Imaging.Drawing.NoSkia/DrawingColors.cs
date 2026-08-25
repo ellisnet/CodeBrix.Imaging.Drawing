@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The standard named colors, API-compatible with SkiaSharp's <c>SKColors</c> class.
-/// Values match the HTML/.NET named-color palette that SkiaSharp uses (for example
+/// The standard named colors. Values follow the HTML/.NET named-color palette (for example
 /// <see cref="Green"/> is <c>#FF008000</c>, not <c>#FF00FF00</c> - that is <see cref="Lime"/>).
 /// </summary>
 public static class DrawingColors

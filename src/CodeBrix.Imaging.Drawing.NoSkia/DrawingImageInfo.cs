@@ -3,8 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// Describes the pixel dimensions and format of a bitmap or surface, API-compatible with
-/// the SkiaSharp <c>SKImageInfo</c> type.
+/// Describes the pixel dimensions and format of a bitmap or surface.
 /// </summary>
 public struct DrawingImageInfo : IEquatable<DrawingImageInfo>
 {

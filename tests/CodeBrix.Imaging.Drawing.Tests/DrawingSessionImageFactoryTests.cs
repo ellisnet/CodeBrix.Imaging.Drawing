@@ -86,7 +86,11 @@ public class DrawingSessionImageFactoryTests
             EncodePng(200, 100, SKColors.Gray), new SKSizeI(2000, 1000));
 
         //Assert
+#if NOSKIA
+        session.GetCalibrationSizeAsDrawing().Should().Be(new SKSizeI(2000, 1000));
+#else
         session.GetCalibrationSizeAsSkia().Should().Be(new SKSizeI(2000, 1000));
+#endif
     }
 
     [Fact]

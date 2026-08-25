@@ -6,9 +6,9 @@ using CodeBrix.Imaging.Drawing.NoSkia.Raster;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// Draws geometry and bitmaps onto a target <see cref="DrawingBitmap"/>, API-compatible
-/// with the SkiaSharp <c>SKCanvas</c> type (reduced to the drawing operations this managed
-/// implementation renders). All rendering happens on the CPU through an anti-aliased
+/// Draws geometry and bitmaps onto a target <see cref="DrawingBitmap"/>, supporting the
+/// drawing operations this managed implementation renders. All rendering happens on the
+/// CPU through an anti-aliased
 /// scanline rasterizer: curves are flattened adaptively, strokes are converted to filled
 /// outlines, clips become coverage masks, save-layers render to offscreen buffers, and
 /// pixels are composited with straight-alpha blending in any <see cref="DrawingBlendMode"/>.
@@ -23,6 +23,7 @@ public sealed class DrawingCanvas : IDisposable
         public float[] Clip;
         public DrawingBitmap LayerBitmap; //Non-null when this state opened a save-layer
         public DrawingPaint LayerPaint;
+        public float LayerScale; //The CTM scale when the layer opened - what its image filter is evaluated at
     }
 
     private readonly DrawingBitmap _baseBitmap;
@@ -69,8 +70,8 @@ public sealed class DrawingCanvas : IDisposable
     /// Saves the current state and redirects subsequent drawing into a transparent
     /// offscreen layer. When the matching <see cref="Restore"/> runs, the layer is
     /// composited onto the surface below it using the given paint's alpha, color filter,
-    /// blend mode, and image filter - exactly the mechanism SkiaSharp uses for group
-    /// opacity, masks, and filter effects.
+    /// blend mode, and image filter - the mechanism behind group opacity, masks, and
+    /// filter effects.
     /// </summary>
     /// <param name="paint">
     /// The paint applied when the layer is composited; or <c>null</c> for a plain layer.
@@ -86,6 +87,7 @@ public sealed class DrawingCanvas : IDisposable
             Clip = _clip,
             LayerBitmap = layer,
             LayerPaint = paint?.Clone(),
+            LayerScale = MaxScale(),
         });
         _layerTargets.Add(layer);
         return _stack.Count - 1;
@@ -114,7 +116,7 @@ public sealed class DrawingCanvas : IDisposable
         if (state.LayerBitmap != null)
         {
             _layerTargets.Remove(state.LayerBitmap);
-            CompositeLayer(state.LayerBitmap, state.LayerPaint);
+            CompositeLayer(state.LayerBitmap, state.LayerPaint, state.LayerScale);
             state.LayerBitmap.Dispose();
         }
     }
@@ -240,8 +242,8 @@ public sealed class DrawingCanvas : IDisposable
     }
 
     /// <summary>
-    /// Draws a straight line, always stroked with the paint's stroke geometry (matching
-    /// SkiaSharp, regardless of the paint's style).
+    /// Draws a straight line, always stroked with the paint's stroke geometry, regardless
+    /// of the paint's style.
     /// </summary>
     /// <param name="x1">The horizontal position of the start point.</param>
     /// <param name="y1">The vertical position of the start point.</param>
@@ -517,6 +519,28 @@ public sealed class DrawingCanvas : IDisposable
     }
 
     /// <summary>
+    /// Replays a recorded display list onto this canvas, honoring whatever transform and
+    /// clip the canvas already carries - the picture's own
+    /// <see cref="SetMatrixCommand"/> commands concatenate onto it rather than replacing
+    /// it. Nested pictures are replayed in place.
+    /// <para>
+    /// <see cref="DrawTextOnPathCommand"/> is skipped without drawing (laying glyphs along
+    /// a path is not implemented); every other command kind draws. Replaying a picture is
+    /// exactly equivalent to making the same canvas calls by hand.
+    /// </para>
+    /// </summary>
+    /// <param name="picture">The picture to replay; ignored when <c>null</c>.</param>
+    public void DrawPicture(DrawingPicture picture)
+    {
+        if (picture == null) { return; }
+
+        foreach (DrawingCommand command in picture.Commands)
+        {
+            ReplayCommand(command);
+        }
+    }
+
+    /// <summary>
     /// Completes any pending drawing. The managed implementation draws synchronously, so
     /// this is a no-op kept for API compatibility.
     /// </summary>
@@ -538,13 +562,13 @@ public sealed class DrawingCanvas : IDisposable
         _stack.Clear();
     }
 
-    private void CompositeLayer(DrawingBitmap layer, DrawingPaint paint)
+    private void CompositeLayer(DrawingBitmap layer, DrawingPaint paint, float deviceScale)
     {
         DrawingBitmap content = layer;
         DrawingBitmap filtered = null;
         if (paint?.ImageFilter != null)
         {
-            filtered = paint.ImageFilter.Apply(layer);
+            filtered = paint.ImageFilter.Apply(layer, deviceScale);
             content = filtered;
         }
 
@@ -598,6 +622,85 @@ public sealed class DrawingCanvas : IDisposable
         }
     }
 
+    private void ReplayCommand(DrawingCommand command)
+    {
+        switch (command)
+        {
+            case SaveCommand _:
+                Save();
+                break;
+
+            case RestoreCommand _:
+                Restore();
+                break;
+
+            case SaveLayerCommand saveLayerCommand:
+                if (saveLayerCommand.Paint != null) { SaveLayer(saveLayerCommand.Paint); }
+                else { SaveLayer(); }
+                break;
+
+            case SetMatrixCommand setMatrixCommand:
+                //The recorded DELTA, never the recorded total, so a transform already on
+                //  the canvas - output scaling, placement - survives the replay
+                Concat(setMatrixCommand.Delta);
+                break;
+
+            case ClipRectCommand clipRectCommand:
+                ClipRect(clipRectCommand.Rect, clipRectCommand.Operation, clipRectCommand.Antialias);
+                break;
+
+            case ClipPathCommand clipPathCommand:
+                if (clipPathCommand.Path != null)
+                {
+                    ClipPath(clipPathCommand.Path, clipPathCommand.Operation, clipPathCommand.Antialias);
+                }
+                break;
+
+            case DrawPathCommand drawPathCommand:
+                if (drawPathCommand.Path != null && drawPathCommand.Paint != null)
+                {
+                    DrawPath(drawPathCommand.Path, drawPathCommand.Paint);
+                }
+                break;
+
+            case DrawImageCommand drawImageCommand:
+                if (drawImageCommand.Image != null)
+                {
+                    DrawBitmap(drawImageCommand.Image, drawImageCommand.Source, drawImageCommand.Dest,
+                        drawImageCommand.Sampling, drawImageCommand.Paint);
+                }
+                break;
+
+            case DrawPictureCommand drawPictureCommand:
+                DrawPicture(drawPictureCommand.Picture);
+                break;
+
+            case DrawTextCommand drawTextCommand:
+                ReplayTextOutline(drawTextCommand.GetOutline(), drawTextCommand.Paint);
+                break;
+
+            case DrawPositionedTextCommand drawPositionedTextCommand:
+                //Each code point fills on its own - merging them into one path would
+                //  composite overlapping anti-aliased glyph edges differently
+                foreach (DrawingPath outline in drawPositionedTextCommand.GetOutlines())
+                {
+                    ReplayTextOutline(outline, drawPositionedTextCommand.Paint);
+                }
+                break;
+
+            default:
+                //DrawTextOnPathCommand, and any command a future release adds that this
+                //  canvas cannot draw, is skipped rather than throwing
+                break;
+        }
+    }
+
+    private void ReplayTextOutline(DrawingPath outline, DrawingPaint paint)
+    {
+        if (outline == null || outline.IsEmpty || paint == null) { return; }
+        DrawPath(outline, paint);
+    }
+
     private FillContext CreateFillContext(DrawingPaint paint)
     {
         PaintSource source;
@@ -606,7 +709,10 @@ public sealed class DrawingCanvas : IDisposable
         {
             Matrix3x2 localToDevice = (paint.Shader.LocalMatrix ?? Matrix3x2.Identity) * _matrix;
             Matrix3x2.Invert(localToDevice, out Matrix3x2 deviceToLocal);
-            source = new ShaderPaintSource(paint.Shader, deviceToLocal, alphaScale);
+            //A shader that rasterizes content (a pattern tile) needs the scale it will be
+            //  painted at before it can pick a resolution; every other shader returns itself
+            DrawingShader shader = paint.Shader.PrepareForDevice(localToDevice);
+            source = new ShaderPaintSource(shader, deviceToLocal, alphaScale);
         }
         else
         {

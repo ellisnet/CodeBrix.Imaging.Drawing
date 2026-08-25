@@ -5,45 +5,45 @@ using System;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>
-/// Represents a positioned text blob containing text or glyphs at specified positions.
-/// </summary>
-public sealed class SKTextBlob : ICloneable, IDeepCloneable<SKTextBlob>
+// <summary>
+// Represents a positioned text blob containing text or glyphs at specified positions.
+// </summary>
+internal sealed class SKTextBlob : ICloneable, IDeepCloneable<SKTextBlob>
 {
-    /// <summary>Gets the text content, or <c>null</c> if glyphs are used.</summary>
+    // <summary>Gets the text content, or <c>null</c> if glyphs are used.</summary>
     public string Text { get; private set; }
-    /// <summary>Gets the glyph identifiers, or <c>null</c> if text is used.</summary>
+    // <summary>Gets the glyph identifiers, or <c>null</c> if text is used.</summary>
     public ushort[] Glyphs { get; private set; }
-    /// <summary>Gets the positions for each character or glyph.</summary>
+    // <summary>Gets the positions for each character or glyph.</summary>
     public SKPoint[] Points { get; private set; }
 
     private SKTextBlob()
     {
     }
 
-    /// <summary>
-    /// Creates a positioned text blob from text and point positions.
-    /// </summary>
-    /// <param name="text">The text content.</param>
-    /// <param name="points">The position of each character.</param>
-    /// <returns>A new <see cref="SKTextBlob"/>.</returns>
+    // <summary>
+    // Creates a positioned text blob from text and point positions.
+    // </summary>
+    // <param name="text">The text content.</param>
+    // <param name="points">The position of each character.</param>
+    // <returns>A new <see cref="SKTextBlob"/>.</returns>
     public static SKTextBlob CreatePositioned(string text, SKPoint[] points)
         => new() { Text = text, Points = points };
 
-    /// <summary>
-    /// Creates a positioned text blob from glyph identifiers and point positions.
-    /// </summary>
-    /// <param name="glyphs">The glyph identifiers.</param>
-    /// <param name="points">The position of each glyph.</param>
-    /// <returns>A new <see cref="SKTextBlob"/>.</returns>
+    // <summary>
+    // Creates a positioned text blob from glyph identifiers and point positions.
+    // </summary>
+    // <param name="glyphs">The glyph identifiers.</param>
+    // <param name="points">The position of each glyph.</param>
+    // <returns>A new <see cref="SKTextBlob"/>.</returns>
     public static SKTextBlob CreatePositionedGlyphs(ushort[] glyphs, SKPoint[] points)
         => new() { Glyphs = glyphs, Points = points };
 
-    /// <summary>Creates a deep clone of this text blob.</summary>
-    /// <returns>A new <see cref="SKTextBlob"/> that is a deep copy.</returns>
+    // <summary>Creates a deep clone of this text blob.</summary>
+    // <returns>A new <see cref="SKTextBlob"/> that is a deep copy.</returns>
     public SKTextBlob Clone() => DeepClone(new CloneContext());
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKTextBlob DeepClone() => Clone();
 
     object ICloneable.Clone() => Clone();

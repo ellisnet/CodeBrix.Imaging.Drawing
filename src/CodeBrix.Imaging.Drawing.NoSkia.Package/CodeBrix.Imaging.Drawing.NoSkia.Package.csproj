@@ -54,8 +54,14 @@
   <ItemGroup>
     <None Include="..\..\icon-codebrix-128.png" Pack="true" PackagePath="" />
     <None Include="..\..\README.md" Pack="true" PackagePath="" />
-    <None Include="..\..\AGENT-README.txt" Pack="true" PackagePath="" />
+    <None Include="..\..\AGENT-README-NOSKIA.txt" Pack="true" PackagePath="AGENT-README.txt" />
     <None Include="..\..\THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="" />
+    <!--
+      The opt-in Skia type-name aliases. NuGet imports build\$(PackageId).props into every
+      consuming project automatically; the aliases inside it only take effect when the
+      consumer sets CodeBrixUseSkiaTypeNames.
+    -->
+    <None Include="build\*.props" Pack="true" PackagePath="build" />
   </ItemGroup>
 
   <!--
@@ -82,10 +88,13 @@
       <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)"
                               PackagePath="lib/$(TargetFramework)"
                               Condition="'%(_NoSkiaPackFile.Extension)' == '.dll' or '%(_NoSkiaPackFile.Extension)' == '.xml'" />
-      <!-- The core assembly's IntelliSense documentation (not part of copy-local paths) -->
+      <!-- Both assemblies' IntelliSense documentation (not part of copy-local paths) -->
       <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml"
                               PackagePath="lib/$(TargetFramework)"
                               Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml')" />
+      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml"
+                              PackagePath="lib/$(TargetFramework)"
+                              Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml')" />
     </ItemGroup>
   </Target>
 

@@ -3,9 +3,8 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A drawable raster surface that owns a pixel buffer and the canvas that draws onto it,
-/// API-compatible with the SkiaSharp <c>SKSurface</c> type (CPU raster surfaces only -
-/// there is no GPU in this fully managed implementation).
+/// A drawable raster surface that owns a pixel buffer and the canvas that draws onto it
+/// (CPU raster surfaces only - there is no GPU in this fully managed implementation).
 /// </summary>
 public sealed class DrawingSurface : IDisposable
 {

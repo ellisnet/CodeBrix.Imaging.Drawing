@@ -364,9 +364,15 @@ public class DrawingSessionTests
             .SetSurfaceClearColor(SKColors.Black));
 
         //Assert - readable back as SkiaSharp values, too
+#if NOSKIA
+        session.GetCalibrationSizeAsDrawing().Should().Be(new SKSizeI(1600, 900));
+        session.GetBackgroundFillColorAsDrawing().Should().Be(SKColors.White);
+        session.GetSurfaceClearColorAsDrawing().Should().Be(SKColors.Black);
+#else
         session.GetCalibrationSizeAsSkia().Should().Be(new SKSizeI(1600, 900));
         session.GetBackgroundFillColorAsSkia().Should().Be(SKColors.White);
         session.GetSurfaceClearColorAsSkia().Should().Be(SKColors.Black);
+#endif
     }
 
     [Fact]

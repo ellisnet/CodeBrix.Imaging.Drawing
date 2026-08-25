@@ -1,8 +1,8 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The kinds of segment a path is built from, API-compatible with the SkiaSharp
-/// <c>DrawingPathVerb</c> enumeration (reduced to the verbs this managed implementation stores).
+/// The kinds of segment a path is built from (reduced to the verbs this managed
+/// implementation stores).
 /// </summary>
 public enum DrawingPathVerb
 {

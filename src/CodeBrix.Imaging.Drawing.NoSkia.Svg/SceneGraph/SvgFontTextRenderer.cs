@@ -12,10 +12,10 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>
-/// Provides repo-owned SVG font rendering on top of the parsed Svg.Custom model so Skia text can
-/// consume embedded/external SVG glyph outlines without modifying the upstream externals/SVG sources.
-/// </summary>
+// <summary>
+// Provides repo-owned SVG font rendering on top of the parsed Svg.Custom model so Skia text can
+// consume embedded/external SVG glyph outlines without modifying the upstream externals/SVG sources.
+// </summary>
 internal static class SvgFontTextRenderer
 {
     private static readonly ConditionalWeakTable<SvgDocument, SvgFontRegistry> s_registryCache = new();

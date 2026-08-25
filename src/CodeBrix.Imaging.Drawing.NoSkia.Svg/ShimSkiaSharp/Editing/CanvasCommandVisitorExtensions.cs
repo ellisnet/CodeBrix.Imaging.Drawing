@@ -5,16 +5,16 @@ using System;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp.Editing; //Was previously: namespace ShimSkiaSharp.Editing;
 
-/// <summary>
-/// Provides extension methods for dispatching <see cref="CanvasCommand"/> instances to an <see cref="ICanvasCommandVisitor"/>.
-/// </summary>
-public static class CanvasCommandVisitorExtensions
+// <summary>
+// Provides extension methods for dispatching <see cref="CanvasCommand"/> instances to an <see cref="ICanvasCommandVisitor"/>.
+// </summary>
+internal static class CanvasCommandVisitorExtensions
 {
-    /// <summary>
-    /// Dispatches the canvas command to the appropriate visitor method.
-    /// </summary>
-    /// <param name="command">The canvas command to dispatch.</param>
-    /// <param name="visitor">The visitor to receive the command.</param>
+    // <summary>
+    // Dispatches the canvas command to the appropriate visitor method.
+    // </summary>
+    // <param name="command">The canvas command to dispatch.</param>
+    // <param name="visitor">The visitor to receive the command.</param>
     public static void Accept(this CanvasCommand command, ICanvasCommandVisitor visitor)
     {
         if (command is null)

@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How a bitmap's alpha channel is interpreted, API-compatible with the SkiaSharp
-/// <c>DrawingAlphaType</c> enumeration. This managed implementation stores pixels with
+/// How a bitmap's alpha channel is interpreted. This managed implementation stores pixels with
 /// straight (unpremultiplied) alpha internally and honors the declared type at its
 /// interop boundaries (<c>DrawingImage.ReadPixels</c> and encoded exports).
 /// </summary>

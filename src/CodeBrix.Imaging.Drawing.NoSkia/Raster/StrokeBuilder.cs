@@ -7,8 +7,8 @@ namespace CodeBrix.Imaging.Drawing.NoSkia.Raster;
 /// <summary>
 /// Builds the filled outline of a stroked polyline as a set of consistently wound polygons
 /// (per-segment rectangles plus cap and join geometry). Filling the set with the non-zero
-/// winding rule produces their union, so overlapping pieces never double-blend - which is
-/// exactly Skia's stroke compositing behavior.
+/// winding rule produces their union, so overlapping pieces never double-blend - the
+/// standard stroke compositing behavior.
 /// </summary>
 internal static class StrokeBuilder
 {

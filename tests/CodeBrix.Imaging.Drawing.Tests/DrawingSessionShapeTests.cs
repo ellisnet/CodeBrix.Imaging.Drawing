@@ -134,7 +134,11 @@ public class DrawingSessionShapeTests
         Color original = Color.FromRgba(12, 34, 56, 200);
 
         //Act
+#if NOSKIA
+        SKColor skColor = original.ToDrawingColor();
+#else
         SKColor skColor = original.ToSKColor();
+#endif
         Color roundTripped = skColor.ToImagingColor();
 
         //Assert

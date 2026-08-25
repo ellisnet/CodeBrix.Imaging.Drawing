@@ -58,8 +58,8 @@ internal sealed class SolidPaintSource : PaintSource
 /// A paint source that samples a bitmap: each device pixel is mapped through an inverse
 /// transform into the bitmap's coordinate space and sampled with nearest or bilinear
 /// filtering (bilinear interpolates premultiplied components so transparent texels never
-/// bleed dark fringes). The paint alpha modulates the sampled alpha, matching how a
-/// SkiaSharp paint's color alpha modulates a bitmap draw.
+/// bleed dark fringes). The paint alpha modulates the sampled alpha, exactly as a paint's
+/// color alpha modulates a bitmap draw.
 /// </summary>
 internal sealed class BitmapPaintSource : PaintSource
 {

@@ -9,12 +9,12 @@ using CodeBrix.Imaging.Processing.Processors.Transforms;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A mutable 32-bit raster pixel buffer, API-compatible with the SkiaSharp <c>SKBitmap</c>
-/// type. Pixels are stored in managed memory with straight (unpremultiplied) alpha, in the
+/// A mutable 32-bit raster pixel buffer. Pixels are stored in managed memory with straight
+/// (unpremultiplied) alpha, in the
 /// byte order declared by the bitmap's <see cref="DrawingColorType"/>
 /// (<see cref="DrawingColorType.Rgba8888"/> or <see cref="DrawingColorType.Bgra8888"/>).
 /// <see cref="GetPixels"/> pins the buffer so callers can fill it with
-/// <see cref="Marshal"/> operations exactly as they would a SkiaSharp bitmap.
+/// <see cref="Marshal"/> operations.
 /// </summary>
 public sealed class DrawingBitmap : IDisposable
 {
@@ -229,7 +229,7 @@ public sealed class DrawingBitmap : IDisposable
     /// CodeBrix.Imaging decodes) into a new <see cref="DrawingColorType.Rgba8888"/> bitmap.
     /// </summary>
     /// <param name="encodedBytes">The encoded image bytes.</param>
-    /// <returns>The decoded bitmap; or <c>null</c> when the bytes cannot be decoded (matching SkiaSharp).</returns>
+    /// <returns>The decoded bitmap; or <c>null</c> when the bytes cannot be decoded.</returns>
     public static DrawingBitmap Decode(byte[] encodedBytes)
     {
         if (encodedBytes == null || encodedBytes.Length == 0) { return null; }

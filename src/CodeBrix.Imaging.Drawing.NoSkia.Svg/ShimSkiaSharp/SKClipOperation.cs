@@ -3,13 +3,13 @@
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>
-/// Specifies the operation used when applying a clip.
-/// </summary>
-public enum SKClipOperation
+// <summary>
+// Specifies the operation used when applying a clip.
+// </summary>
+internal enum SKClipOperation
 {
-    /// <summary>Subtract the clip region from the current clip.</summary>
+    // <summary>Subtract the clip region from the current clip.</summary>
     Difference = 0,
-    /// <summary>Intersect the clip region with the current clip.</summary>
+    // <summary>Intersect the clip region with the current clip.</summary>
     Intersect = 1
 }

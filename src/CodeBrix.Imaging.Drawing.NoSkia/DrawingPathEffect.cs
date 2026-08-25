@@ -4,8 +4,7 @@ namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
 /// A modification applied to a path before it is stroked, assigned to
-/// <see cref="DrawingPaint.PathEffect"/> - API-compatible with the SkiaSharp
-/// <c>SKPathEffect</c> factory surface this managed implementation supports (dashing).
+/// <see cref="DrawingPaint.PathEffect"/>. This managed implementation supports dashing.
 /// </summary>
 public sealed class DrawingPathEffect
 {

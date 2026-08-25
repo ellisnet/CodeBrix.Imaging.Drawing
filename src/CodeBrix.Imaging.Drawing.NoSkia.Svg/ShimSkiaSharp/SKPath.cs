@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>Represents an abstract path drawing command.</summary>
-public abstract record PathCommand : IDeepCloneable<PathCommand>
+// <summary>Represents an abstract path drawing command.</summary>
+internal abstract record PathCommand : IDeepCloneable<PathCommand>
 {
-    /// <inheritdoc />
+    // <inheritdoc />
     public PathCommand DeepClone() => DeepClone(new CloneContext());
 
     internal PathCommand DeepClone(CloneContext context)
@@ -48,96 +48,96 @@ public abstract record PathCommand : IDeepCloneable<PathCommand>
     }
 }
 
-/// <summary>A path command that adds a circle.</summary>
-/// <param name="X">The X coordinate of the center.</param>
-/// <param name="Y">The Y coordinate of the center.</param>
-/// <param name="Radius">The radius of the circle.</param>
-public record AddCirclePathCommand(float X, float Y, float Radius) : PathCommand;
+// <summary>A path command that adds a circle.</summary>
+// <param name="X">The X coordinate of the center.</param>
+// <param name="Y">The Y coordinate of the center.</param>
+// <param name="Radius">The radius of the circle.</param>
+internal record AddCirclePathCommand(float X, float Y, float Radius) : PathCommand;
 
-/// <summary>A path command that adds an oval inscribed in the specified rectangle.</summary>
-/// <param name="Rect">The bounding rectangle of the oval.</param>
-public record AddOvalPathCommand(SKRect Rect) : PathCommand;
+// <summary>A path command that adds an oval inscribed in the specified rectangle.</summary>
+// <param name="Rect">The bounding rectangle of the oval.</param>
+internal record AddOvalPathCommand(SKRect Rect) : PathCommand;
 
-/// <summary>A path command that adds a polygon from a list of points.</summary>
-/// <param name="Points">The points defining the polygon.</param>
-/// <param name="Close">Whether to close the polygon.</param>
-public record AddPolyPathCommand(IList<SKPoint> Points, bool Close) : PathCommand;
+// <summary>A path command that adds a polygon from a list of points.</summary>
+// <param name="Points">The points defining the polygon.</param>
+// <param name="Close">Whether to close the polygon.</param>
+internal record AddPolyPathCommand(IList<SKPoint> Points, bool Close) : PathCommand;
 
-/// <summary>A path command that adds a rectangle.</summary>
-/// <param name="Rect">The rectangle to add.</param>
-public record AddRectPathCommand(SKRect Rect) : PathCommand;
+// <summary>A path command that adds a rectangle.</summary>
+// <param name="Rect">The rectangle to add.</param>
+internal record AddRectPathCommand(SKRect Rect) : PathCommand;
 
-/// <summary>A path command that adds a rounded rectangle.</summary>
-/// <param name="Rect">The rectangle to round.</param>
-/// <param name="Rx">The X-axis corner radius.</param>
-/// <param name="Ry">The Y-axis corner radius.</param>
-public record AddRoundRectPathCommand(SKRect Rect, float Rx, float Ry) : PathCommand;
+// <summary>A path command that adds a rounded rectangle.</summary>
+// <param name="Rect">The rectangle to round.</param>
+// <param name="Rx">The X-axis corner radius.</param>
+// <param name="Ry">The Y-axis corner radius.</param>
+internal record AddRoundRectPathCommand(SKRect Rect, float Rx, float Ry) : PathCommand;
 
-/// <summary>A path command that adds an arc.</summary>
-/// <param name="Rx">The X-axis radius of the arc ellipse.</param>
-/// <param name="Ry">The Y-axis radius of the arc ellipse.</param>
-/// <param name="XAxisRotate">The rotation angle of the arc ellipse X axis.</param>
-/// <param name="LargeArc">Whether to use the large arc.</param>
-/// <param name="Sweep">The sweep direction of the arc.</param>
-/// <param name="X">The X coordinate of the arc endpoint.</param>
-/// <param name="Y">The Y coordinate of the arc endpoint.</param>
-public record ArcToPathCommand(float Rx, float Ry, float XAxisRotate, SKPathArcSize LargeArc, SKPathDirection Sweep, float X, float Y) : PathCommand;
+// <summary>A path command that adds an arc.</summary>
+// <param name="Rx">The X-axis radius of the arc ellipse.</param>
+// <param name="Ry">The Y-axis radius of the arc ellipse.</param>
+// <param name="XAxisRotate">The rotation angle of the arc ellipse X axis.</param>
+// <param name="LargeArc">Whether to use the large arc.</param>
+// <param name="Sweep">The sweep direction of the arc.</param>
+// <param name="X">The X coordinate of the arc endpoint.</param>
+// <param name="Y">The Y coordinate of the arc endpoint.</param>
+internal record ArcToPathCommand(float Rx, float Ry, float XAxisRotate, SKPathArcSize LargeArc, SKPathDirection Sweep, float X, float Y) : PathCommand;
 
-/// <summary>A path command that closes the current contour.</summary>
-public record ClosePathCommand : PathCommand;
+// <summary>A path command that closes the current contour.</summary>
+internal record ClosePathCommand : PathCommand;
 
-/// <summary>A path command that adds a cubic Bézier curve.</summary>
-/// <param name="X0">The X coordinate of the first control point.</param>
-/// <param name="Y0">The Y coordinate of the first control point.</param>
-/// <param name="X1">The X coordinate of the second control point.</param>
-/// <param name="Y1">The Y coordinate of the second control point.</param>
-/// <param name="X2">The X coordinate of the endpoint.</param>
-/// <param name="Y2">The Y coordinate of the endpoint.</param>
-public record CubicToPathCommand(float X0, float Y0, float X1, float Y1, float X2, float Y2) : PathCommand;
+// <summary>A path command that adds a cubic Bézier curve.</summary>
+// <param name="X0">The X coordinate of the first control point.</param>
+// <param name="Y0">The Y coordinate of the first control point.</param>
+// <param name="X1">The X coordinate of the second control point.</param>
+// <param name="Y1">The Y coordinate of the second control point.</param>
+// <param name="X2">The X coordinate of the endpoint.</param>
+// <param name="Y2">The Y coordinate of the endpoint.</param>
+internal record CubicToPathCommand(float X0, float Y0, float X1, float Y1, float X2, float Y2) : PathCommand;
 
-/// <summary>A path command that adds a line to a point.</summary>
-/// <param name="X">The X coordinate of the endpoint.</param>
-/// <param name="Y">The Y coordinate of the endpoint.</param>
-public record LineToPathCommand(float X, float Y) : PathCommand;
+// <summary>A path command that adds a line to a point.</summary>
+// <param name="X">The X coordinate of the endpoint.</param>
+// <param name="Y">The Y coordinate of the endpoint.</param>
+internal record LineToPathCommand(float X, float Y) : PathCommand;
 
-/// <summary>A path command that moves the current position to a point.</summary>
-/// <param name="X">The X coordinate to move to.</param>
-/// <param name="Y">The Y coordinate to move to.</param>
-public record MoveToPathCommand(float X, float Y) : PathCommand;
+// <summary>A path command that moves the current position to a point.</summary>
+// <param name="X">The X coordinate to move to.</param>
+// <param name="Y">The Y coordinate to move to.</param>
+internal record MoveToPathCommand(float X, float Y) : PathCommand;
 
-/// <summary>A path command that adds a quadratic Bézier curve.</summary>
-/// <param name="X0">The X coordinate of the control point.</param>
-/// <param name="Y0">The Y coordinate of the control point.</param>
-/// <param name="X1">The X coordinate of the endpoint.</param>
-/// <param name="Y1">The Y coordinate of the endpoint.</param>
-public record QuadToPathCommand(float X0, float Y0, float X1, float Y1) : PathCommand;
+// <summary>A path command that adds a quadratic Bézier curve.</summary>
+// <param name="X0">The X coordinate of the control point.</param>
+// <param name="Y0">The Y coordinate of the control point.</param>
+// <param name="X1">The X coordinate of the endpoint.</param>
+// <param name="Y1">The Y coordinate of the endpoint.</param>
+internal record QuadToPathCommand(float X0, float Y0, float X1, float Y1) : PathCommand;
 
-/// <summary>Represents a geometric path composed of drawing commands.</summary>
-public class SKPath : ICloneable, IDeepCloneable<SKPath>
+// <summary>Represents a geometric path composed of drawing commands.</summary>
+internal class SKPath : ICloneable, IDeepCloneable<SKPath>
 {
-    /// <summary>Gets or sets the fill type for the path.</summary>
+    // <summary>Gets or sets the fill type for the path.</summary>
     public SKPathFillType FillType { get; set; }
 
-    /// <summary>Gets the list of path commands.</summary>
+    // <summary>Gets the list of path commands.</summary>
     public IList<PathCommand> Commands { get; private set; }
 
-    /// <summary>Gets a value indicating whether the path contains no commands.</summary>
+    // <summary>Gets a value indicating whether the path contains no commands.</summary>
     public bool IsEmpty => Commands is null || Commands.Count == 0;
 
-    /// <summary>Gets the bounding rectangle of the path.</summary>
+    // <summary>Gets the bounding rectangle of the path.</summary>
     public SKRect Bounds => GetBounds();
 
-    /// <summary>Initializes a new empty path.</summary>
+    // <summary>Initializes a new empty path.</summary>
     public SKPath()
     {
         Commands = new List<PathCommand>();
     }
 
-    /// <summary>Creates a deep clone of this path.</summary>
-    /// <returns>A new <see cref="SKPath"/> instance.</returns>
+    // <summary>Creates a deep clone of this path.</summary>
+    // <returns>A new <see cref="SKPath"/> instance.</returns>
     public SKPath Clone() => DeepClone(new CloneContext());
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKPath DeepClone() => Clone();
 
     object ICloneable.Clone() => Clone();
@@ -313,78 +313,78 @@ public class SKPath : ICloneable, IDeepCloneable<SKPath>
         return bounds;
     }
 
-    /// <summary>Moves the current position to the specified point.</summary>
-    /// <param name="x">The X coordinate.</param>
-    /// <param name="y">The Y coordinate.</param>
+    // <summary>Moves the current position to the specified point.</summary>
+    // <param name="x">The X coordinate.</param>
+    // <param name="y">The Y coordinate.</param>
     public void MoveTo(float x, float y)
         => Commands?.Add(new MoveToPathCommand(x, y));
 
-    /// <summary>Adds a line from the current position to the specified point.</summary>
-    /// <param name="x">The X coordinate of the endpoint.</param>
-    /// <param name="y">The Y coordinate of the endpoint.</param>
+    // <summary>Adds a line from the current position to the specified point.</summary>
+    // <param name="x">The X coordinate of the endpoint.</param>
+    // <param name="y">The Y coordinate of the endpoint.</param>
     public void LineTo(float x, float y)
         => Commands?.Add(new LineToPathCommand(x, y));
 
-    /// <summary>Adds an arc from the current position to the specified point.</summary>
-    /// <param name="rx">The X-axis radius of the arc ellipse.</param>
-    /// <param name="ry">The Y-axis radius of the arc ellipse.</param>
-    /// <param name="xAxisRotate">The rotation angle of the arc ellipse X axis.</param>
-    /// <param name="largeArc">Whether to use the large arc.</param>
-    /// <param name="sweep">The sweep direction of the arc.</param>
-    /// <param name="x">The X coordinate of the endpoint.</param>
-    /// <param name="y">The Y coordinate of the endpoint.</param>
+    // <summary>Adds an arc from the current position to the specified point.</summary>
+    // <param name="rx">The X-axis radius of the arc ellipse.</param>
+    // <param name="ry">The Y-axis radius of the arc ellipse.</param>
+    // <param name="xAxisRotate">The rotation angle of the arc ellipse X axis.</param>
+    // <param name="largeArc">Whether to use the large arc.</param>
+    // <param name="sweep">The sweep direction of the arc.</param>
+    // <param name="x">The X coordinate of the endpoint.</param>
+    // <param name="y">The Y coordinate of the endpoint.</param>
     public void ArcTo(float rx, float ry, float xAxisRotate, SKPathArcSize largeArc, SKPathDirection sweep, float x, float y)
         => Commands?.Add(new ArcToPathCommand(rx, ry, xAxisRotate, largeArc, sweep, x, y));
 
-    /// <summary>Adds a quadratic Bézier curve from the current position.</summary>
-    /// <param name="x0">The X coordinate of the control point.</param>
-    /// <param name="y0">The Y coordinate of the control point.</param>
-    /// <param name="x1">The X coordinate of the endpoint.</param>
-    /// <param name="y1">The Y coordinate of the endpoint.</param>
+    // <summary>Adds a quadratic Bézier curve from the current position.</summary>
+    // <param name="x0">The X coordinate of the control point.</param>
+    // <param name="y0">The Y coordinate of the control point.</param>
+    // <param name="x1">The X coordinate of the endpoint.</param>
+    // <param name="y1">The Y coordinate of the endpoint.</param>
     public void QuadTo(float x0, float y0, float x1, float y1)
         => Commands?.Add(new QuadToPathCommand(x0, y0, x1, y1));
 
-    /// <summary>Adds a cubic Bézier curve from the current position.</summary>
-    /// <param name="x0">The X coordinate of the first control point.</param>
-    /// <param name="y0">The Y coordinate of the first control point.</param>
-    /// <param name="x1">The X coordinate of the second control point.</param>
-    /// <param name="y1">The Y coordinate of the second control point.</param>
-    /// <param name="x2">The X coordinate of the endpoint.</param>
-    /// <param name="y2">The Y coordinate of the endpoint.</param>
+    // <summary>Adds a cubic Bézier curve from the current position.</summary>
+    // <param name="x0">The X coordinate of the first control point.</param>
+    // <param name="y0">The Y coordinate of the first control point.</param>
+    // <param name="x1">The X coordinate of the second control point.</param>
+    // <param name="y1">The Y coordinate of the second control point.</param>
+    // <param name="x2">The X coordinate of the endpoint.</param>
+    // <param name="y2">The Y coordinate of the endpoint.</param>
     public void CubicTo(float x0, float y0, float x1, float y1, float x2, float y2)
         => Commands?.Add(new CubicToPathCommand(x0, y0, x1, y1, x2, y2));
 
-    /// <summary>Closes the current contour.</summary>
+    // <summary>Closes the current contour.</summary>
     public void Close()
         => Commands?.Add(new ClosePathCommand());
 
-    /// <summary>Adds a rectangle to the path.</summary>
-    /// <param name="rect">The rectangle to add.</param>
+    // <summary>Adds a rectangle to the path.</summary>
+    // <param name="rect">The rectangle to add.</param>
     public void AddRect(SKRect rect)
         => Commands?.Add(new AddRectPathCommand(rect));
 
-    /// <summary>Adds a rounded rectangle to the path.</summary>
-    /// <param name="rect">The rectangle to round.</param>
-    /// <param name="rx">The X-axis corner radius.</param>
-    /// <param name="ry">The Y-axis corner radius.</param>
+    // <summary>Adds a rounded rectangle to the path.</summary>
+    // <param name="rect">The rectangle to round.</param>
+    // <param name="rx">The X-axis corner radius.</param>
+    // <param name="ry">The Y-axis corner radius.</param>
     public void AddRoundRect(SKRect rect, float rx, float ry)
         => Commands?.Add(new AddRoundRectPathCommand(rect, rx, ry));
 
-    /// <summary>Adds an oval inscribed in the specified rectangle.</summary>
-    /// <param name="rect">The bounding rectangle of the oval.</param>
+    // <summary>Adds an oval inscribed in the specified rectangle.</summary>
+    // <param name="rect">The bounding rectangle of the oval.</param>
     public void AddOval(SKRect rect)
         => Commands?.Add(new AddOvalPathCommand(rect));
 
-    /// <summary>Adds a circle to the path.</summary>
-    /// <param name="x">The X coordinate of the center.</param>
-    /// <param name="y">The Y coordinate of the center.</param>
-    /// <param name="radius">The radius of the circle.</param>
+    // <summary>Adds a circle to the path.</summary>
+    // <param name="x">The X coordinate of the center.</param>
+    // <param name="y">The Y coordinate of the center.</param>
+    // <param name="radius">The radius of the circle.</param>
     public void AddCircle(float x, float y, float radius)
         => Commands?.Add(new AddCirclePathCommand(x, y, radius));
 
-    /// <summary>Adds a polygon defined by an array of points.</summary>
-    /// <param name="points">The points defining the polygon.</param>
-    /// <param name="close">Whether to close the polygon.</param>
+    // <summary>Adds a polygon defined by an array of points.</summary>
+    // <param name="points">The points defining the polygon.</param>
+    // <param name="close">Whether to close the polygon.</param>
     public void AddPoly(SKPoint[] points, bool close = true)
         => Commands?.Add(new AddPolyPathCommand(points, close));
 }

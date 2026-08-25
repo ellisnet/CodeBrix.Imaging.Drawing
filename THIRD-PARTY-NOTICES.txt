@@ -42,7 +42,11 @@ CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package)
    https://skia.org), so that code written against SkiaSharp can be
    retargeted mechanically. The implementation is original managed code
    built on the CodeBrix.Imaging library; no SkiaSharp or Skia source code
-   is incorporated into that assembly.
+   is incorporated into that assembly. That includes the parts with no
+   counterpart in the vendored SVG pipeline - the rasterizer, the stroker,
+   the clipping and blend stack, the picture-backed pattern shader and its
+   tile sampler, and the DrawingPicture display-list model and its visitor -
+   all of which are original to this repository.
 
 2. Vendored SVG pipeline. The CodeBrix.Imaging.Drawing.NoSkia.Svg assembly
    incorporates source code vendored from the CodeBrix.SkiaSvg library

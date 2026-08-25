@@ -5,16 +5,16 @@ using System;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp.Editing; //Was previously: namespace ShimSkiaSharp.Editing;
 
-/// <summary>
-/// Provides extension methods for editing <see cref="SKPaint"/> properties.
-/// </summary>
-public static class SKPaintEditingExtensions
+// <summary>
+// Provides extension methods for editing <see cref="SKPaint"/> properties.
+// </summary>
+internal static class SKPaintEditingExtensions
 {
-    /// <summary>
-    /// Applies a color transformation to the paint's color value.
-    /// </summary>
-    /// <param name="paint">The paint to modify.</param>
-    /// <param name="transform">A function that transforms the current color to a new color.</param>
+    // <summary>
+    // Applies a color transformation to the paint's color value.
+    // </summary>
+    // <param name="paint">The paint to modify.</param>
+    // <param name="transform">A function that transforms the current color to a new color.</param>
     public static void ApplyColorTransform(this SKPaint paint, Func<SKColor, SKColor> transform)
     {
         if (paint is null)
@@ -33,11 +33,11 @@ public static class SKPaintEditingExtensions
         }
     }
 
-    /// <summary>
-    /// Applies a shader transformation to the paint's shader value.
-    /// </summary>
-    /// <param name="paint">The paint to modify.</param>
-    /// <param name="transform">A function that transforms the current shader to a new shader.</param>
+    // <summary>
+    // Applies a shader transformation to the paint's shader value.
+    // </summary>
+    // <param name="paint">The paint to modify.</param>
+    // <param name="transform">A function that transforms the current shader to a new shader.</param>
     public static void ApplyShaderTransform(this SKPaint paint, Func<SKShader, SKShader> transform)
     {
         if (paint is null)

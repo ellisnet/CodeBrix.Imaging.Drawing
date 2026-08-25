@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// How a gradient behaves outside its defined range, API-compatible with the SkiaSharp
-/// <c>SKShaderTileMode</c> enumeration.
+/// How a gradient behaves outside its defined range.
 /// </summary>
 public enum DrawingShaderTileMode
 {

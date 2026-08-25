@@ -4,10 +4,8 @@ using System.Collections.Generic;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// An immutable sequence of path segments (moves, lines, and Bezier curves), API-compatible
-/// with the SkiaSharp <c>SKPath</c> type as consumed through <see cref="DrawingPathBuilder"/>.
-/// Build paths with <see cref="DrawingPathBuilder"/> and detach them, mirroring the modern
-/// SkiaSharp 4.x pattern.
+/// An immutable sequence of path segments (moves, lines, and Bezier curves). Build paths
+/// with <see cref="DrawingPathBuilder"/> and detach them as immutable instances.
 /// </summary>
 public sealed class DrawingPath : IDisposable
 {
@@ -54,13 +52,45 @@ public sealed class DrawingPath : IDisposable
         }
     }
 
+    /// <summary>
+    /// Walks the path's segments in order, so a consumer can re-emit the geometry into its
+    /// own model - a PDF content stream, another path builder, a hit-test - instead of
+    /// rasterizing it. Together with <see cref="FillType"/> and <see cref="Bounds"/> this
+    /// is everything the path holds.
+    /// </summary>
+    /// <returns>The segments, in order; empty for an empty path.</returns>
+    public IEnumerable<DrawingPathSegment> GetVerbs()
+    {
+        var pointIndex = 0;
+        foreach (DrawingPathVerb verb in _verbs)
+        {
+            int count = verb switch
+            {
+                DrawingPathVerb.Move => 1,
+                DrawingPathVerb.Line => 1,
+                DrawingPathVerb.Quad => 2,
+                DrawingPathVerb.Cubic => 3,
+                _ => 0,
+            };
+
+            var points = new DrawingPoint[count];
+            for (int i = 0; i < count; i++)
+            {
+                points[i] = _points[pointIndex + i];
+            }
+            pointIndex += count;
+
+            yield return new DrawingPathSegment(verb, points);
+        }
+    }
+
     internal IReadOnlyList<DrawingPathVerb> Verbs => _verbs;
 
     internal IReadOnlyList<DrawingPoint> Points => _points;
 
     /// <summary>
     /// Releases the path. The managed implementation holds no unmanaged resources; this
-    /// exists for API compatibility with SkiaSharp's disposable paths.
+    /// exists so callers can treat the path as disposable.
     /// </summary>
     public void Dispose()
     {

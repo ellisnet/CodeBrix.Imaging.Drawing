@@ -1,6 +1,15 @@
 The code in this folder is vendored from the CodeBrix.SkiaSvg project (MIT-licensed, Svg.Skia lineage).
 The original third-party notices for that project follow below.
 
+TWO MECHANICAL CHANGES ARE APPLIED TO THE VENDORED SOURCES, and to nothing else about them.
+Their namespaces are renamed to CodeBrix.Imaging.Drawing.NoSkia.Svg.*, and the script
+internalize-surface.sh (beside this file) makes every top-level type internal and demotes its
+XML doc comments ("///") to plain comments ("//"). Neither change alters any code: the types,
+their members and their behavior are byte-faithful to upstream, the comments stay in the files
+for maintainers, and the pass is idempotent - re-run it after any refresh from upstream. It
+exists because this package promises a consumer never meets a Skia-named type or a Skia mention
+in its documentation, and the compiler emits documentation entries for internal types too.
+
 THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
 
 CodeBrix.SkiaSvg incorporates material from the project(s) listed below

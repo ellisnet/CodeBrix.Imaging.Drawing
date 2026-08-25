@@ -11,7 +11,7 @@ using SkiaSharp;
 namespace CodeBrix.Imaging.Drawing.Rendering;
 
 /// <summary>
-/// Renders <see cref="DrawingLayer"/> collections onto SkiaSharp canvases with the
+/// Renders <see cref="DrawingLayer"/> collections onto a <see cref="SKCanvas"/> with the
 /// "highlighter" compositing model: each layer's strokes are drawn fully opaque onto a
 /// private, transparent cache bitmap, and the whole cache is then composited over the
 /// background at the layer opacity. Overlapping strokes within one layer therefore never
@@ -67,11 +67,21 @@ public sealed class DrawingRenderer : IDisposable
     /// <summary>
     /// The size of the calibrated drawing space that all strokes are expressed in.
     /// </summary>
-    public Size CalibrationSize => SkiaInterop.ToImaging(_calibrationSize);
+    public Size CalibrationSize => GraphicsInterop.ToImaging(_calibrationSize);
 
+    //The name-neutral accessors that DrawingSession reads, so the public accessors can carry
+    //  a different name in each package without an #if at any call site
+    internal SKSizeI CalibrationSizeValue => _calibrationSize;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="CalibrationSize"/> as a <see cref="DrawingSizeI"/>.</summary>
+    /// <returns>The calibration size as a backend size.</returns>
+    public DrawingSizeI GetCalibrationSizeAsDrawing() => _calibrationSize;
+#else
     /// <summary>Gets <see cref="CalibrationSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
     /// <returns>The calibration size as a SkiaSharp size.</returns>
     public SKSizeI GetCalibrationSizeAsSkia() => _calibrationSize;
+#endif
 
     /// <summary>
     /// An optional background image drawn behind the layers, scaled (aspect-fit) into the
@@ -104,17 +114,25 @@ public sealed class DrawingRenderer : IDisposable
     /// </summary>
     public Color BackgroundFillColor
     {
-        get => SkiaInterop.ToImaging(_backgroundFillColor);
-        set => _backgroundFillColor = SkiaInterop.ToSK(value);
+        get => GraphicsInterop.ToImaging(_backgroundFillColor);
+        set => _backgroundFillColor = GraphicsInterop.ToGraphics(value);
     }
 
-    /// <summary>Sets <see cref="BackgroundFillColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <summary>Sets <see cref="BackgroundFillColor"/> from a <see cref="SKColor"/>.</summary>
     /// <param name="color">The background fill color.</param>
     public void SetBackgroundFillColor(SKColor color) => _backgroundFillColor = color;
 
+    internal SKColor BackgroundFillColorValue => _backgroundFillColor;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="BackgroundFillColor"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The background fill color as a backend color.</returns>
+    public DrawingColor GetBackgroundFillColorAsDrawing() => _backgroundFillColor;
+#else
     /// <summary>Gets <see cref="BackgroundFillColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The background fill color as a SkiaSharp color.</returns>
     public SKColor GetBackgroundFillColorAsSkia() => _backgroundFillColor;
+#endif
 
     /// <summary>
     /// The color that the whole canvas is cleared to at the start of every render.
@@ -122,17 +140,25 @@ public sealed class DrawingRenderer : IDisposable
     /// </summary>
     public Color SurfaceClearColor
     {
-        get => SkiaInterop.ToImaging(_surfaceClearColor);
-        set => _surfaceClearColor = SkiaInterop.ToSK(value);
+        get => GraphicsInterop.ToImaging(_surfaceClearColor);
+        set => _surfaceClearColor = GraphicsInterop.ToGraphics(value);
     }
 
-    /// <summary>Sets <see cref="SurfaceClearColor"/> from a SkiaSharp <see cref="SKColor"/>.</summary>
+    /// <summary>Sets <see cref="SurfaceClearColor"/> from a <see cref="SKColor"/>.</summary>
     /// <param name="color">The surface clear color.</param>
     public void SetSurfaceClearColor(SKColor color) => _surfaceClearColor = color;
 
+    internal SKColor SurfaceClearColorValue => _surfaceClearColor;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="SurfaceClearColor"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The surface clear color as a backend color.</returns>
+    public DrawingColor GetSurfaceClearColorAsDrawing() => _surfaceClearColor;
+#else
     /// <summary>Gets <see cref="SurfaceClearColor"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The surface clear color as a SkiaSharp color.</returns>
     public SKColor GetSurfaceClearColorAsSkia() => _surfaceClearColor;
+#endif
 
     /// <summary>
     /// The alpha (0-255) that completed layers are composited with; the default of 100
@@ -150,21 +176,35 @@ public sealed class DrawingRenderer : IDisposable
     /// The drawing rectangle, in canvas pixel coordinates, computed by the most recent
     /// <see cref="Render"/> call; an empty rectangle before the first render.
     /// </summary>
-    public RectangleF LastDrawingRect => SkiaInterop.ToImaging(_lastDrawingRect);
+    public RectangleF LastDrawingRect => GraphicsInterop.ToImaging(_lastDrawingRect);
 
+#if NOSKIA
+    /// <summary>Gets <see cref="LastDrawingRect"/> as a <see cref="DrawingRect"/>.</summary>
+    /// <returns>The last drawing rectangle as a backend rectangle.</returns>
+    public DrawingRect GetLastDrawingRectAsDrawing() => _lastDrawingRect;
+#else
     /// <summary>Gets <see cref="LastDrawingRect"/> as a SkiaSharp <see cref="SKRect"/>.</summary>
     /// <returns>The last drawing rectangle as a SkiaSharp rectangle.</returns>
     public SKRect GetLastDrawingRectAsSkia() => _lastDrawingRect;
+#endif
 
     /// <summary>
     /// The canvas pixel size seen by the most recent <see cref="Render"/> call;
     /// an empty size before the first render.
     /// </summary>
-    public Size LastCanvasSize => SkiaInterop.ToImaging(_lastCanvasSize);
+    public Size LastCanvasSize => GraphicsInterop.ToImaging(_lastCanvasSize);
 
+    internal SKSizeI LastCanvasSizeValue => _lastCanvasSize;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="LastCanvasSize"/> as a <see cref="DrawingSizeI"/>.</summary>
+    /// <returns>The last canvas size as a backend size.</returns>
+    public DrawingSizeI GetLastCanvasSizeAsDrawing() => _lastCanvasSize;
+#else
     /// <summary>Gets <see cref="LastCanvasSize"/> as a SkiaSharp <see cref="SKSizeI"/>.</summary>
     /// <returns>The last canvas size as a SkiaSharp size.</returns>
     public SKSizeI GetLastCanvasSizeAsSkia() => _lastCanvasSize;
+#endif
 
     /// <summary>
     /// Indicates whether this renderer has been disposed.
@@ -199,7 +239,7 @@ public sealed class DrawingRenderer : IDisposable
     /// Thrown when either dimension of <paramref name="calibrationSize"/> is less than 1.
     /// </exception>
     public DrawingRenderer(Size calibrationSize)
-        : this(SkiaInterop.ToSK(calibrationSize))
+        : this(GraphicsInterop.ToGraphics(calibrationSize))
     {
     }
 
@@ -359,7 +399,7 @@ public sealed class DrawingRenderer : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="layers"/> is null.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the renderer has been disposed.</exception>
     public SKImage RenderToImage(Size outputSize, IReadOnlyList<DrawingLayer> layers, bool includeBackground = true)
-        => RenderToImage(SkiaInterop.ToSK(outputSize), layers, includeBackground);
+        => RenderToImage(GraphicsInterop.ToGraphics(outputSize), layers, includeBackground);
 
     private void EnsureScaledBackground(SKSizeI cacheSize)
     {
@@ -539,7 +579,7 @@ public sealed class DrawingRenderer : IDisposable
             using var cacheCanvas = new SKCanvas(cache.Bitmap);
             for (int i = cache.DrawnElementCount; i < elements.Length; i++)
             {
-                DrawElement(cacheCanvas, elements[i], cacheRect, layer.GetColorAsSkia());
+                DrawElement(cacheCanvas, elements[i], cacheRect, layer.ColorValue);
             }
             cache.DrawnElementCount = elements.Length;
         }
@@ -556,7 +596,7 @@ public sealed class DrawingRenderer : IDisposable
 
         foreach (DrawingElement element in elements)
         {
-            DrawElement(canvas, element, drawingRect, layer.GetColorAsSkia());
+            DrawElement(canvas, element, drawingRect, layer.ColorValue);
         }
 
         return bitmap;
@@ -570,7 +610,7 @@ public sealed class DrawingRenderer : IDisposable
         }
         else if (element is DrawingShape shape)
         {
-            DrawShape(canvas, shape, drawingRect, shape.GetColorAsSkia() ?? layerColor);
+            DrawShape(canvas, shape, drawingRect, shape.ColorValue ?? layerColor);
         }
     }
 

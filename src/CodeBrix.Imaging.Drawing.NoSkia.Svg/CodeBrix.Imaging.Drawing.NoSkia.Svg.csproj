@@ -5,13 +5,14 @@
     <AssemblyName>CodeBrix.Imaging.Drawing.NoSkia.Svg</AssemblyName>
     <RootNamespace>CodeBrix.Imaging.Drawing.NoSkia.Svg</RootNamespace>
     <!--
-      Unlike the repository's own code, most of this assembly is VENDORED from
-      CodeBrix.SkiaSvg (Svg.Skia lineage), which does not carry complete XML documentation.
-      Documentation-file generation is therefore off for this one assembly - the
-      alternative would be suppressing CS1591, which this repository never does. New code
-      written for this assembly still documents every public member.
+      Most of this assembly is VENDORED from CodeBrix.SkiaSvg (Svg.Skia lineage) and none of
+      it is exported: internalize-surface.sh (beside this file) makes every type outside the
+      assembly root internal and demotes their doc comments to plain comments. What is left
+      to document is the DrawingSvg facade and the font registry, all of it written here and
+      all of it documented - so the documentation file is generated, and CS1591 is fixed at
+      source rather than suppressed. Re-run that script after any re-vendor.
     -->
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!--
       This assembly ships INSIDE the CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
       package (see that project's packaging targets); it is never packed on its own.

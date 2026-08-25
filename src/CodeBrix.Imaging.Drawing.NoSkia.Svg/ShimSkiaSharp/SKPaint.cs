@@ -5,76 +5,76 @@ using System;
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>
-/// Represents paint settings used when drawing shapes, text, and images.
-/// </summary>
-public sealed class SKPaint : ICloneable, IDeepCloneable<SKPaint>
+// <summary>
+// Represents paint settings used when drawing shapes, text, and images.
+// </summary>
+internal sealed class SKPaint : ICloneable, IDeepCloneable<SKPaint>
 {
-    /// <summary>Gets or sets whether to fill, stroke, or both.</summary>
+    // <summary>Gets or sets whether to fill, stroke, or both.</summary>
     public SKPaintStyle Style { get; set; } = SKPaintStyle.Fill;
 
-    /// <summary>Gets or sets whether anti-aliasing is enabled.</summary>
+    // <summary>Gets or sets whether anti-aliasing is enabled.</summary>
     public bool IsAntialias { get; set; } = false;
 
-    /// <summary>Gets or sets whether dithering is enabled.</summary>
+    // <summary>Gets or sets whether dithering is enabled.</summary>
     public bool IsDither { get; set; } = false;
 
-    /// <summary>Gets or sets the stroke width.</summary>
+    // <summary>Gets or sets the stroke width.</summary>
     public float StrokeWidth { get; set; } = 0;
 
-    /// <summary>Gets or sets the stroke cap style.</summary>
+    // <summary>Gets or sets the stroke cap style.</summary>
     public SKStrokeCap StrokeCap { get; set; } = SKStrokeCap.Butt;
 
-    /// <summary>Gets or sets the stroke join style.</summary>
+    // <summary>Gets or sets the stroke join style.</summary>
     public SKStrokeJoin StrokeJoin { get; set; } = SKStrokeJoin.Miter;
 
-    /// <summary>Gets or sets the stroke miter limit.</summary>
+    // <summary>Gets or sets the stroke miter limit.</summary>
     public float StrokeMiter { get; set; } = 4;
 
-    /// <summary>Gets or sets the typeface used for text rendering.</summary>
+    // <summary>Gets or sets the typeface used for text rendering.</summary>
     public SKTypeface Typeface { get; set; } = null;
 
-    /// <summary>Gets or sets the text size in points.</summary>
+    // <summary>Gets or sets the text size in points.</summary>
     public float TextSize { get; set; } = 12;
 
-    /// <summary>Gets or sets the text alignment.</summary>
+    // <summary>Gets or sets the text alignment.</summary>
     public SKTextAlign TextAlign { get; set; } = SKTextAlign.Left;
 
-    /// <summary>Gets or sets whether LCD text rendering is enabled.</summary>
+    // <summary>Gets or sets whether LCD text rendering is enabled.</summary>
     public bool LcdRenderText { get; set; } = false;
 
-    /// <summary>Gets or sets whether sub-pixel text positioning is enabled.</summary>
+    // <summary>Gets or sets whether sub-pixel text positioning is enabled.</summary>
     public bool SubpixelText { get; set; } = false;
 
-    /// <summary>Gets or sets the text encoding.</summary>
+    // <summary>Gets or sets the text encoding.</summary>
     public SKTextEncoding TextEncoding { get; set; } = SKTextEncoding.Utf8;
 
-    /// <summary>Gets or sets the paint color.</summary>
+    // <summary>Gets or sets the paint color.</summary>
     public SKColor? Color { get; set; } = new SKColor(0x00, 0x00, 0x00, 0xFF);
 
-    /// <summary>Gets or sets the shader used for filling.</summary>
+    // <summary>Gets or sets the shader used for filling.</summary>
     public SKShader Shader { get; set; } = null;
 
-    /// <summary>Gets or sets the color filter applied to colors.</summary>
+    // <summary>Gets or sets the color filter applied to colors.</summary>
     public SKColorFilter ColorFilter { get; set; } = null;
 
-    /// <summary>Gets or sets the image filter applied during drawing.</summary>
+    // <summary>Gets or sets the image filter applied during drawing.</summary>
     public SKImageFilter ImageFilter { get; set; } = null;
 
-    /// <summary>Gets or sets the path effect applied to strokes.</summary>
+    // <summary>Gets or sets the path effect applied to strokes.</summary>
     public SKPathEffect PathEffect { get; set; } = null;
 
-    /// <summary>Gets or sets the blend mode used for compositing.</summary>
+    // <summary>Gets or sets the blend mode used for compositing.</summary>
     public SKBlendMode BlendMode { get; set; } = SKBlendMode.SrcOver;
 
-    /// <summary>Gets or sets the filter quality for image scaling.</summary>
+    // <summary>Gets or sets the filter quality for image scaling.</summary>
     public SKFilterQuality FilterQuality { get; set; } = SKFilterQuality.None;
 
-    /// <summary>Creates a deep clone of this paint.</summary>
-    /// <returns>A new <see cref="SKPaint"/> that is a deep copy.</returns>
+    // <summary>Creates a deep clone of this paint.</summary>
+    // <returns>A new <see cref="SKPaint"/> that is a deep copy.</returns>
     public SKPaint Clone() => DeepClone(new CloneContext());
 
-    /// <inheritdoc />
+    // <inheritdoc />
     public SKPaint DeepClone() => Clone();
 
     object ICloneable.Clone() => Clone();

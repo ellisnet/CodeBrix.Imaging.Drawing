@@ -8,8 +8,8 @@ namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering;
 /// <summary>
 /// A registry of fonts, loaded from files, byte arrays, or streams, that supplies typefaces to
 /// <see cref="ImagingSvgAssetLoader"/> for fully managed (no native code) SVG text rendering.
-/// Mirrors the role that a custom typeface provider plays in the Skia-based stack: fonts are
-/// registered explicitly for headless determinism instead of being discovered from the system.
+/// Fonts are registered explicitly, for headless determinism, instead of being discovered
+/// from the system.
 /// </summary>
 public sealed class NoSkiaFontRegistry
 {
@@ -21,6 +21,7 @@ public sealed class NoSkiaFontRegistry
     {
         public string OverrideFamilyName;
         public FontFamily Family;
+        public byte[] Data;
     }
 
     /// <summary>Gets the number of fonts that have been registered.</summary>
@@ -58,11 +59,7 @@ public sealed class NoSkiaFontRegistry
             throw new ArgumentNullException(nameof(path));
         }
 
-        lock (_syncRoot)
-        {
-            var family = _fontCollection.Add(path);
-            return AddEntry(family, familyNameOverride);
-        }
+        return RegisterFontData(File.ReadAllBytes(path), familyNameOverride);
     }
 
     /// <summary>
@@ -88,10 +85,7 @@ public sealed class NoSkiaFontRegistry
             throw new ArgumentNullException(nameof(data));
         }
 
-        using (var stream = new MemoryStream(data, writable: false))
-        {
-            return RegisterFont(stream, familyNameOverride);
-        }
+        return RegisterFontData((byte[])data.Clone(), familyNameOverride);
     }
 
     /// <summary>
@@ -117,10 +111,10 @@ public sealed class NoSkiaFontRegistry
             throw new ArgumentNullException(nameof(stream));
         }
 
-        lock (_syncRoot)
+        using (var buffer = new MemoryStream())
         {
-            var family = _fontCollection.Add(stream);
-            return AddEntry(family, familyNameOverride);
+            stream.CopyTo(buffer);
+            return RegisterFontData(buffer.ToArray(), familyNameOverride);
         }
     }
 
@@ -154,38 +148,87 @@ public sealed class NoSkiaFontRegistry
     /// <returns><c>true</c> if a registered family matched; otherwise, <c>false</c>.</returns>
     public bool TryFindFamily(string familyName, out FontFamily family)
     {
-        family = default;
+        lock (_syncRoot)
+        {
+            var entry = FindEntry(familyName);
+            if (entry is null)
+            {
+                family = default;
+                return false;
+            }
+
+            family = entry.Family;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Gets the font file a family name resolves to, following exactly the rules rendering
+    /// follows: the requested name (or comma-separated family list) is matched against the
+    /// override names first and the embedded family names second, and when nothing matches
+    /// the first registered font is used as the fallback. A consumer that re-emits a
+    /// picture into a container with its own font support - a PDF writer embedding the
+    /// face, for example - gets back the very bytes the outlines were measured from.
+    /// </summary>
+    /// <param name="familyName">
+    /// The family name (or comma-separated family list) to resolve; <c>null</c> or empty
+    /// resolves straight to the fallback.
+    /// </param>
+    /// <param name="data">
+    /// When this method returns <c>true</c>, receives a copy of the registered font file's
+    /// bytes.
+    /// </param>
+    /// <param name="resolvedFamilyName">
+    /// When this method returns <c>true</c>, receives the family name embedded in the font
+    /// that was resolved - the same name the display list records in a text command's style.
+    /// </param>
+    /// <returns><c>true</c> when a font was resolved; <c>false</c> when nothing is registered.</returns>
+    public bool TryGetFontData(string familyName, out byte[] data, out string resolvedFamilyName)
+    {
+        lock (_syncRoot)
+        {
+            var entry = FindEntry(familyName) ?? (_entries.Count > 0 ? _entries[0] : null);
+            if (entry is null)
+            {
+                data = null;
+                resolvedFamilyName = null;
+                return false;
+            }
+
+            data = (byte[])entry.Data.Clone();
+            resolvedFamilyName = entry.Family.Name;
+            return true;
+        }
+    }
+
+    private RegistryEntry FindEntry(string familyName)
+    {
         if (string.IsNullOrWhiteSpace(familyName))
         {
-            return false;
+            return null;
         }
 
         foreach (var candidate in SplitFamilyCandidates(familyName))
         {
-            lock (_syncRoot)
+            foreach (var entry in _entries)
             {
-                foreach (var entry in _entries)
+                if (entry.OverrideFamilyName is { } overrideName &&
+                    string.Equals(overrideName, candidate, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (entry.OverrideFamilyName is { } overrideName &&
-                        string.Equals(overrideName, candidate, StringComparison.OrdinalIgnoreCase))
-                    {
-                        family = entry.Family;
-                        return true;
-                    }
+                    return entry;
                 }
+            }
 
-                foreach (var entry in _entries)
+            foreach (var entry in _entries)
+            {
+                if (string.Equals(entry.Family.Name, candidate, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.Equals(entry.Family.Name, candidate, StringComparison.OrdinalIgnoreCase))
-                    {
-                        family = entry.Family;
-                        return true;
-                    }
+                    return entry;
                 }
             }
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>
@@ -227,12 +270,24 @@ public sealed class NoSkiaFontRegistry
         }
     }
 
-    private string AddEntry(FontFamily family, string familyNameOverride)
+    private string RegisterFontData(byte[] data, string familyNameOverride)
+    {
+        lock (_syncRoot)
+        {
+            //Every entry point funnels through one buffer, so the registry can hand the
+            //  original font file back later (TryGetFontData) as well as render from it
+            using var stream = new MemoryStream(data, writable: false);
+            var family = _fontCollection.Add(stream);
+            return AddEntry(family, familyNameOverride, data);
+        }
+    }
+
+    private string AddEntry(FontFamily family, string familyNameOverride, byte[] data)
     {
         var overrideName = string.IsNullOrWhiteSpace(familyNameOverride)
             ? null
             : familyNameOverride.Trim();
-        _entries.Add(new RegistryEntry { OverrideFamilyName = overrideName, Family = family });
+        _entries.Add(new RegistryEntry { OverrideFamilyName = overrideName, Family = family, Data = data });
         return overrideName ?? family.Name;
     }
 

@@ -5,16 +5,16 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering;
 
-/// <summary>
-/// Maps the shim (ShimSkiaSharp) intermediate-representation types produced by the SVG
-/// scene compiler onto the managed CodeBrix.Imaging.Drawing.NoSkia drawing types, and
-/// replays compiled display lists (<see cref="SKPicture"/>) onto a
-/// <see cref="DrawingCanvas"/> - the SkiaSharp-free counterpart of CodeBrix.SkiaSvg's
-/// <c>SkiaModel</c>. Features the managed canvas cannot express (picture/pattern shaders,
-/// Perlin-noise shaders, color spaces, filter quality on paints) degrade gracefully and
-/// are noted at their conversion sites.
-/// </summary>
-public class NoSkiaModel
+// <summary>
+// Maps the shim (ShimSkiaSharp) intermediate-representation types produced by the SVG
+// scene compiler onto the managed CodeBrix.Imaging.Drawing.NoSkia drawing types, and
+// replays compiled display lists (<see cref="SKPicture"/>) onto a
+// <see cref="DrawingCanvas"/> - the SkiaSharp-free counterpart of CodeBrix.SkiaSvg's
+// <c>SkiaModel</c>. Features the managed canvas cannot express (Perlin-noise shaders,
+// color spaces, filter quality on paints) degrade gracefully and are noted at their
+// conversion sites.
+// </summary>
+internal class NoSkiaModel
 {
     private const float Kappa = 0.5522847498f; //Cubic-Bezier circle-quadrant constant
 
@@ -22,46 +22,75 @@ public class NoSkiaModel
     private readonly INoSkiaImageFilterFactory _imageFilterFactory;
     private readonly Dictionary<SKImage, DrawingBitmap> _imageCache = new Dictionary<SKImage, DrawingBitmap>();
 
-    /// <summary>
-    /// Initializes a new <see cref="NoSkiaModel"/>.
-    /// </summary>
-    /// <param name="textRenderer">
-    /// The renderer for text commands; or <c>null</c> to skip text commands.
-    /// </param>
-    /// <param name="imageFilterFactory">
-    /// The factory that builds <see cref="DrawingImageFilter"/> evaluators from shim
-    /// image-filter graphs; or <c>null</c> to render save-layers without image filters.
-    /// </param>
+    // <summary>
+    // Initializes a new <see cref="NoSkiaModel"/>.
+    // </summary>
+    // <param name="textRenderer">
+    // The renderer for text commands; or <c>null</c> to skip text commands.
+    // </param>
+    // <param name="imageFilterFactory">
+    // The factory that builds <see cref="DrawingImageFilter"/> evaluators from shim
+    // image-filter graphs; or <c>null</c> to render save-layers without image filters.
+    // </param>
     public NoSkiaModel(INoSkiaTextRenderer textRenderer = null, INoSkiaImageFilterFactory imageFilterFactory = null)
     {
         _textRenderer = textRenderer;
         _imageFilterFactory = imageFilterFactory;
     }
 
-    /// <summary>Converts a shim <see cref="SKPoint"/> to a drawing point.</summary>
-    /// <param name="point">The shim point.</param>
-    /// <returns>The corresponding drawing point.</returns>
+    // <summary>
+    // An optional callback invoked with each shim shader this model cannot express, at the
+    // moment the paint carrying it is converted (or, for a shader used as a filter source,
+    // at the moment the filter is evaluated). The shader instance is passed rather than a
+    // message so that the caller can tell WHY the paint degraded - a
+    // Perlin-noise shader is a dropped <c>feTurbulence</c> - and report it in its own
+    // vocabulary.
+    // </summary>
+    public Action<SKShader> UnsupportedShader { get; set; }
+
+    // <summary>
+    // Converts a shim picture into a drawing picture - the hook a pattern fill needs,
+    // because its tile is itself a compiled display list. Set by whoever owns the
+    // conversion, so that the tile a pattern paints comes from the same converter (and the
+    // same identity cache) as the picture carrying it. While it is unset a pattern fill
+    // cannot be tiled and degrades to the paint's plain color.
+    // </summary>
+    public Func<SKPicture, DrawingPicture> ConvertPicture { get; set; }
+
+    // <summary>
+    // Reports a shader that could not be expressed through <see cref="UnsupportedShader"/>.
+    // </summary>
+    // <param name="shader">The shader that degraded; ignored when <c>null</c>.</param>
+    public void ReportUnsupportedShader(SKShader shader)
+    {
+        if (shader == null) { return; }
+        UnsupportedShader?.Invoke(shader);
+    }
+
+    // <summary>Converts a shim <see cref="SKPoint"/> to a drawing point.</summary>
+    // <param name="point">The shim point.</param>
+    // <returns>The corresponding drawing point.</returns>
     public DrawingPoint ToDrawingPoint(SKPoint point)
     {
         return new DrawingPoint(point.X, point.Y);
     }
 
-    /// <summary>Converts a shim <see cref="SKRect"/> to a drawing rectangle.</summary>
-    /// <param name="rect">The shim rectangle.</param>
-    /// <returns>The corresponding drawing rectangle.</returns>
+    // <summary>Converts a shim <see cref="SKRect"/> to a drawing rectangle.</summary>
+    // <param name="rect">The shim rectangle.</param>
+    // <returns>The corresponding drawing rectangle.</returns>
     public DrawingRect ToDrawingRect(SKRect rect)
     {
         return new DrawingRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
     }
 
-    /// <summary>
-    /// Converts a shim <see cref="SKMatrix"/> (Skia field convention: ScaleX/SkewX/TransX,
-    /// SkewY/ScaleY/TransY) to a row-vector <see cref="Matrix3x2"/>, so that a shim
-    /// translate(10, 0) moves points +10 in x. The shim's perspective values have no
-    /// affine counterpart and are dropped (SVG transforms never carry perspective).
-    /// </summary>
-    /// <param name="matrix">The shim matrix.</param>
-    /// <returns>The corresponding affine matrix.</returns>
+    // <summary>
+    // Converts a shim <see cref="SKMatrix"/> (Skia field convention: ScaleX/SkewX/TransX,
+    // SkewY/ScaleY/TransY) to a row-vector <see cref="Matrix3x2"/>, so that a shim
+    // translate(10, 0) moves points +10 in x. The shim's perspective values have no
+    // affine counterpart and are dropped (SVG transforms never carry perspective).
+    // </summary>
+    // <param name="matrix">The shim matrix.</param>
+    // <returns>The corresponding affine matrix.</returns>
     public Matrix3x2 ToMatrix(SKMatrix matrix)
     {
         //Shim maps points as x' = x*ScaleX + y*SkewX + TransX; Matrix3x2 (row vector)
@@ -72,17 +101,17 @@ public class NoSkiaModel
             matrix.TransX, matrix.TransY);
     }
 
-    /// <summary>Converts a shim <see cref="SKColor"/> to a drawing color.</summary>
-    /// <param name="color">The shim color.</param>
-    /// <returns>The corresponding drawing color.</returns>
+    // <summary>Converts a shim <see cref="SKColor"/> to a drawing color.</summary>
+    // <param name="color">The shim color.</param>
+    // <returns>The corresponding drawing color.</returns>
     public DrawingColor ToDrawingColor(SKColor color)
     {
         return new DrawingColor(color.Red, color.Green, color.Blue, color.Alpha);
     }
 
-    /// <summary>Converts a shim <see cref="SKColorF"/> to a drawing color.</summary>
-    /// <param name="color">The shim floating-point color.</param>
-    /// <returns>The corresponding drawing color.</returns>
+    // <summary>Converts a shim <see cref="SKColorF"/> to a drawing color.</summary>
+    // <param name="color">The shim floating-point color.</param>
+    // <returns>The corresponding drawing color.</returns>
     public DrawingColor ToDrawingColor(SKColorF color)
     {
         return new DrawingColor(
@@ -92,9 +121,9 @@ public class NoSkiaModel
             (byte)Math.Clamp((int)((color.Alpha * 255f) + 0.5f), 0, 255));
     }
 
-    /// <summary>Converts an array of shim colors to an array of drawing colors.</summary>
-    /// <param name="colors">The shim colors.</param>
-    /// <returns>An array of corresponding drawing colors.</returns>
+    // <summary>Converts an array of shim colors to an array of drawing colors.</summary>
+    // <param name="colors">The shim colors.</param>
+    // <returns>An array of corresponding drawing colors.</returns>
     public DrawingColor[] ToDrawingColors(SKColor[] colors)
     {
         var drawingColors = new DrawingColor[colors.Length];
@@ -105,9 +134,9 @@ public class NoSkiaModel
         return drawingColors;
     }
 
-    /// <summary>Converts an array of shim floating-point colors to an array of drawing colors.</summary>
-    /// <param name="colors">The shim floating-point colors.</param>
-    /// <returns>An array of corresponding drawing colors.</returns>
+    // <summary>Converts an array of shim floating-point colors to an array of drawing colors.</summary>
+    // <param name="colors">The shim floating-point colors.</param>
+    // <returns>An array of corresponding drawing colors.</returns>
     public DrawingColor[] ToDrawingColors(SKColorF[] colors)
     {
         var drawingColors = new DrawingColor[colors.Length];
@@ -118,9 +147,9 @@ public class NoSkiaModel
         return drawingColors;
     }
 
-    /// <summary>Converts a shim <see cref="SKPaintStyle"/> to a drawing paint style.</summary>
-    /// <param name="paintStyle">The shim paint style.</param>
-    /// <returns>The corresponding drawing paint style.</returns>
+    // <summary>Converts a shim <see cref="SKPaintStyle"/> to a drawing paint style.</summary>
+    // <param name="paintStyle">The shim paint style.</param>
+    // <returns>The corresponding drawing paint style.</returns>
     public DrawingPaintStyle ToDrawingPaintStyle(SKPaintStyle paintStyle)
     {
         return paintStyle switch
@@ -132,9 +161,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKStrokeCap"/> to a drawing stroke cap.</summary>
-    /// <param name="strokeCap">The shim stroke cap.</param>
-    /// <returns>The corresponding drawing stroke cap.</returns>
+    // <summary>Converts a shim <see cref="SKStrokeCap"/> to a drawing stroke cap.</summary>
+    // <param name="strokeCap">The shim stroke cap.</param>
+    // <returns>The corresponding drawing stroke cap.</returns>
     public DrawingStrokeCap ToDrawingStrokeCap(SKStrokeCap strokeCap)
     {
         return strokeCap switch
@@ -146,9 +175,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKStrokeJoin"/> to a drawing stroke join.</summary>
-    /// <param name="strokeJoin">The shim stroke join.</param>
-    /// <returns>The corresponding drawing stroke join.</returns>
+    // <summary>Converts a shim <see cref="SKStrokeJoin"/> to a drawing stroke join.</summary>
+    // <param name="strokeJoin">The shim stroke join.</param>
+    // <returns>The corresponding drawing stroke join.</returns>
     public DrawingStrokeJoin ToDrawingStrokeJoin(SKStrokeJoin strokeJoin)
     {
         return strokeJoin switch
@@ -160,9 +189,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKShaderTileMode"/> to a drawing shader tile mode.</summary>
-    /// <param name="shaderTileMode">The shim shader tile mode.</param>
-    /// <returns>The corresponding drawing shader tile mode.</returns>
+    // <summary>Converts a shim <see cref="SKShaderTileMode"/> to a drawing shader tile mode.</summary>
+    // <param name="shaderTileMode">The shim shader tile mode.</param>
+    // <returns>The corresponding drawing shader tile mode.</returns>
     public DrawingShaderTileMode ToDrawingShaderTileMode(SKShaderTileMode shaderTileMode)
     {
         return shaderTileMode switch
@@ -175,9 +204,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKBlendMode"/> to a drawing blend mode.</summary>
-    /// <param name="blendMode">The shim blend mode.</param>
-    /// <returns>The corresponding drawing blend mode.</returns>
+    // <summary>Converts a shim <see cref="SKBlendMode"/> to a drawing blend mode.</summary>
+    // <param name="blendMode">The shim blend mode.</param>
+    // <returns>The corresponding drawing blend mode.</returns>
     public DrawingBlendMode ToDrawingBlendMode(SKBlendMode blendMode)
     {
         return blendMode switch
@@ -215,9 +244,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKClipOperation"/> to a drawing clip operation.</summary>
-    /// <param name="clipOperation">The shim clip operation.</param>
-    /// <returns>The corresponding drawing clip operation.</returns>
+    // <summary>Converts a shim <see cref="SKClipOperation"/> to a drawing clip operation.</summary>
+    // <param name="clipOperation">The shim clip operation.</param>
+    // <returns>The corresponding drawing clip operation.</returns>
     public DrawingClipOperation ToDrawingClipOperation(SKClipOperation clipOperation)
     {
         return clipOperation switch
@@ -228,9 +257,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKPathFillType"/> to a drawing path fill type.</summary>
-    /// <param name="pathFillType">The shim path fill type.</param>
-    /// <returns>The corresponding drawing path fill type.</returns>
+    // <summary>Converts a shim <see cref="SKPathFillType"/> to a drawing path fill type.</summary>
+    // <param name="pathFillType">The shim path fill type.</param>
+    // <returns>The corresponding drawing path fill type.</returns>
     public DrawingPathFillType ToDrawingPathFillType(SKPathFillType pathFillType)
     {
         return pathFillType switch
@@ -241,9 +270,9 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKFilterQuality"/> to drawing sampling options.</summary>
-    /// <param name="filterQuality">The shim filter quality.</param>
-    /// <returns>The corresponding drawing sampling options.</returns>
+    // <summary>Converts a shim <see cref="SKFilterQuality"/> to drawing sampling options.</summary>
+    // <param name="filterQuality">The shim filter quality.</param>
+    // <returns>The corresponding drawing sampling options.</returns>
     public DrawingSamplingOptions ToDrawingSamplingOptions(SKFilterQuality filterQuality)
     {
         return filterQuality switch
@@ -256,13 +285,13 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>
-    /// Decodes a shim <see cref="SKImage"/>'s encoded bytes into a drawing bitmap. Decoded
-    /// bitmaps are cached per shim image instance, so a picture drawn repeatedly decodes
-    /// each embedded image only once.
-    /// </summary>
-    /// <param name="image">The shim image.</param>
-    /// <returns>The decoded bitmap; or <c>null</c> when the image carries no decodable bytes.</returns>
+    // <summary>
+    // Decodes a shim <see cref="SKImage"/>'s encoded bytes into a drawing bitmap. Decoded
+    // bitmaps are cached per shim image instance, so a picture drawn repeatedly decodes
+    // each embedded image only once.
+    // </summary>
+    // <param name="image">The shim image.</param>
+    // <returns>The decoded bitmap; or <c>null</c> when the image carries no decodable bytes.</returns>
     public DrawingBitmap ToDrawingBitmap(SKImage image)
     {
         if (image?.Data == null)
@@ -283,14 +312,15 @@ public class NoSkiaModel
         return decoded;
     }
 
-    /// <summary>Converts a shim <see cref="SKShader"/> to a drawing shader.</summary>
-    /// <param name="shader">The shim shader.</param>
-    /// <returns>
-    /// The corresponding drawing shader; or <c>null</c> for shader kinds the managed
-    /// canvas cannot express (picture/pattern shaders and Perlin-noise shaders), in which
-    /// case the paint falls back to its plain color. Shim color spaces are dropped - the
-    /// managed canvas always works in sRGB.
-    /// </returns>
+    // <summary>Converts a shim <see cref="SKShader"/> to a drawing shader.</summary>
+    // <param name="shader">The shim shader.</param>
+    // <returns>
+    // The corresponding drawing shader; or <c>null</c> for shader kinds the managed
+    // canvas cannot express (Perlin-noise shaders, and pattern fills while
+    // <see cref="ConvertPicture"/> is unset), in which case the paint falls back to its
+    // plain color. Shim color spaces are dropped - the managed canvas always works in
+    // sRGB.
+    // </returns>
     public DrawingShader ToDrawingShader(SKShader shader)
     {
         switch (shader)
@@ -350,17 +380,38 @@ public class NoSkiaModel
                         ToDrawingShaderTileMode(twoPointConicalGradientShader.Mode),
                         twoPointConicalGradientShader.LocalMatrix is { } conicalLocal ? ToMatrix(conicalLocal) : (Matrix3x2?)null);
                 }
-            case PictureShader _:
+            case PictureShader pictureShader:
                 {
-                    //The managed canvas has no bitmap/picture-tiling shader, so SVG
-                    //<pattern> fills cannot be replayed; returning null leaves the paint
-                    //on its plain color (graceful degradation).
-                    return null;
+                    DrawingPicture tile = pictureShader.Src != null
+                        ? ConvertPicture?.Invoke(pictureShader.Src)
+                        : null;
+                    if (tile == null)
+                    {
+                        //Nothing to tile - the pattern compiled to no content, or no
+                        //converter is wired. The paint falls back to its plain color; this
+                        //is not reported, because a pattern that reaches the display list
+                        //from a document always carries content and a converter.
+                        return null;
+                    }
+
+                    DrawingRect tileRect = ToDrawingRect(pictureShader.Tile);
+                    if (tileRect.Width <= 0 || tileRect.Height <= 0)
+                    {
+                        //A tile with no area covers nothing, so there is no tiling to do
+                        return null;
+                    }
+
+                    Matrix3x2 localMatrix = ToMatrix(pictureShader.LocalMatrix);
+                    return DrawingShader.CreatePicture(tile, tileRect,
+                        ToDrawingShaderTileMode(pictureShader.TmX),
+                        ToDrawingShaderTileMode(pictureShader.TmY),
+                        localMatrix.IsIdentity ? (Matrix3x2?)null : localMatrix);
                 }
             case PerlinNoiseFractalNoiseShader _:
             case PerlinNoiseTurbulenceShader _:
                 {
                     //Perlin-noise shaders (SVG feTurbulence) are not supported - dropped
+                    ReportUnsupportedShader(shader);
                     return null;
                 }
             default:
@@ -368,9 +419,9 @@ public class NoSkiaModel
         }
     }
 
-    /// <summary>Converts a shim <see cref="SKColorFilter"/> to a drawing color filter.</summary>
-    /// <param name="colorFilter">The shim color filter.</param>
-    /// <returns>The corresponding drawing color filter, or <c>null</c>.</returns>
+    // <summary>Converts a shim <see cref="SKColorFilter"/> to a drawing color filter.</summary>
+    // <param name="colorFilter">The shim color filter.</param>
+    // <returns>The corresponding drawing color filter, or <c>null</c>.</returns>
     public DrawingColorFilter ToDrawingColorFilter(SKColorFilter colorFilter)
     {
         switch (colorFilter)
@@ -415,15 +466,15 @@ public class NoSkiaModel
         }
     }
 
-    /// <summary>
-    /// Converts a shim <see cref="SKImageFilter"/> graph through the optional
-    /// <see cref="INoSkiaImageFilterFactory"/>.
-    /// </summary>
-    /// <param name="imageFilter">The shim image filter.</param>
-    /// <returns>
-    /// The built evaluator; or <c>null</c> when no factory was provided or the factory
-    /// cannot evaluate the graph (the save-layer then composites without the filter).
-    /// </returns>
+    // <summary>
+    // Converts a shim <see cref="SKImageFilter"/> graph through the optional
+    // <see cref="INoSkiaImageFilterFactory"/>.
+    // </summary>
+    // <param name="imageFilter">The shim image filter.</param>
+    // <returns>
+    // The built evaluator; or <c>null</c> when no factory was provided or the factory
+    // cannot evaluate the graph (the save-layer then composites without the filter).
+    // </returns>
     public DrawingImageFilter ToDrawingImageFilter(SKImageFilter imageFilter)
     {
         if (imageFilter == null || _imageFilterFactory == null)
@@ -433,9 +484,9 @@ public class NoSkiaModel
         return _imageFilterFactory.Create(imageFilter);
     }
 
-    /// <summary>Converts a shim <see cref="SKPathEffect"/> to a drawing path effect (dashing only).</summary>
-    /// <param name="pathEffect">The shim path effect.</param>
-    /// <returns>The corresponding drawing path effect, or <c>null</c>.</returns>
+    // <summary>Converts a shim <see cref="SKPathEffect"/> to a drawing path effect (dashing only).</summary>
+    // <param name="pathEffect">The shim path effect.</param>
+    // <returns>The corresponding drawing path effect, or <c>null</c>.</returns>
     public DrawingPathEffect ToDrawingPathEffect(SKPathEffect pathEffect)
     {
         switch (pathEffect)
@@ -466,9 +517,9 @@ public class NoSkiaModel
         }
     }
 
-    /// <summary>Converts a shim <see cref="SKPaint"/> to a drawing paint.</summary>
-    /// <param name="paint">The shim paint.</param>
-    /// <returns>The corresponding drawing paint, or <c>null</c>.</returns>
+    // <summary>Converts a shim <see cref="SKPaint"/> to a drawing paint.</summary>
+    // <param name="paint">The shim paint.</param>
+    // <returns>The corresponding drawing paint, or <c>null</c>.</returns>
     public DrawingPaint ToDrawingPaint(SKPaint paint)
     {
         if (paint == null)
@@ -496,23 +547,23 @@ public class NoSkiaModel
         };
     }
 
-    /// <summary>Converts a shim <see cref="SKPath"/> to a drawing path.</summary>
-    /// <param name="path">The shim path.</param>
-    /// <returns>The corresponding drawing path.</returns>
+    // <summary>Converts a shim <see cref="SKPath"/> to a drawing path.</summary>
+    // <param name="path">The shim path.</param>
+    // <returns>The corresponding drawing path.</returns>
     public DrawingPath ToDrawingPath(SKPath path)
     {
         return ToDrawingPath(path, null);
     }
 
-    /// <summary>
-    /// Converts a shim <see cref="SKPath"/> to a drawing path, optionally transforming
-    /// every point. Endpoint arcs are converted to cubic Béziers, and
-    /// oval/circle/round-rect contours become cubic approximations, since the managed path
-    /// carries only move/line/quad/cubic/close verbs.
-    /// </summary>
-    /// <param name="path">The shim path.</param>
-    /// <param name="transform">An optional transform applied to every emitted point.</param>
-    /// <returns>The corresponding drawing path.</returns>
+    // <summary>
+    // Converts a shim <see cref="SKPath"/> to a drawing path, optionally transforming
+    // every point. Endpoint arcs are converted to cubic Béziers, and
+    // oval/circle/round-rect contours become cubic approximations, since the managed path
+    // carries only move/line/quad/cubic/close verbs.
+    // </summary>
+    // <param name="path">The shim path.</param>
+    // <param name="transform">An optional transform applied to every emitted point.</param>
+    // <returns>The corresponding drawing path.</returns>
     public DrawingPath ToDrawingPath(SKPath path, Matrix3x2? transform)
     {
         var builder = new DrawingPathBuilder();
@@ -521,16 +572,16 @@ public class NoSkiaModel
         return builder.Detach();
     }
 
-    /// <summary>
-    /// Converts a shim <see cref="ClipPath"/> to a single drawing path holding the union
-    /// of its member clips (each transformed by its own transform composed with the clip
-    /// path's transform). The union is approximated by appending every member's contours
-    /// under a nonzero-winding fill - exact for the single-member clips SVG produces
-    /// almost exclusively. Nested intersect-clips are not merged here; the replayer
-    /// applies them as additional canvas clips.
-    /// </summary>
-    /// <param name="clipPath">The shim clip path.</param>
-    /// <returns>The corresponding drawing path, or <c>null</c>.</returns>
+    // <summary>
+    // Converts a shim <see cref="ClipPath"/> to a single drawing path holding the union
+    // of its member clips (each transformed by its own transform composed with the clip
+    // path's transform). The union is approximated by appending every member's contours
+    // under a nonzero-winding fill - exact for the single-member clips SVG produces
+    // almost exclusively. Nested intersect-clips are not merged here; the replayer
+    // applies them as additional canvas clips.
+    // </summary>
+    // <param name="clipPath">The shim clip path.</param>
+    // <returns>The corresponding drawing path, or <c>null</c>.</returns>
     public DrawingPath ToDrawingPath(ClipPath clipPath)
     {
         if (clipPath?.Clips == null)
@@ -542,9 +593,9 @@ public class NoSkiaModel
         return BuildClipUnionPath(clipPath, outer, null);
     }
 
-    /// <summary>Replays a single canvas command onto a drawing canvas.</summary>
-    /// <param name="command">The canvas command to replay.</param>
-    /// <param name="canvas">The target drawing canvas.</param>
+    // <summary>Replays a single canvas command onto a drawing canvas.</summary>
+    // <param name="command">The canvas command to replay.</param>
+    // <param name="canvas">The target drawing canvas.</param>
     public void Draw(CanvasCommand command, DrawingCanvas canvas)
     {
         switch (command)
@@ -681,9 +732,9 @@ public class NoSkiaModel
         }
     }
 
-    /// <summary>Replays a shim picture's display list onto a drawing canvas.</summary>
-    /// <param name="picture">The shim picture to replay.</param>
-    /// <param name="canvas">The target drawing canvas.</param>
+    // <summary>Replays a shim picture's display list onto a drawing canvas.</summary>
+    // <param name="picture">The shim picture to replay.</param>
+    // <param name="canvas">The target drawing canvas.</param>
     public void Draw(SKPicture picture, DrawingCanvas canvas)
     {
         if (picture?.Commands == null)
@@ -697,8 +748,23 @@ public class NoSkiaModel
         }
     }
 
-    private void ApplyClipPath(ClipPath clipPath, Matrix3x2 outerTransform, DrawingCanvas canvas,
-        DrawingClipOperation operation, bool antialias)
+    // <summary>
+    // Flattens a shim <see cref="ClipPath"/> into the sequence of canvas clips that
+    // reproduce it - the union of its own members first, then one clip per nested
+    // intersect-clip. The managed path type has no boolean operations, so intersect-clips
+    // nested under a clip path become additional canvas clips instead of being merged.
+    // This is exact for single-member clip paths (what SVG produces almost exclusively);
+    // for multi-member unions it over-restricts slightly, because the nested clip
+    // constrains every member rather than only its own. Nested clips are meaningful only
+    // for intersect semantics, so they are skipped for
+    // <see cref="DrawingClipOperation.Difference"/>.
+    // </summary>
+    // <param name="clipPath">The shim clip path to flatten.</param>
+    // <param name="outerTransform">The transform the clip path's own transform composes onto.</param>
+    // <param name="operation">The operation the first (union) clip combines with.</param>
+    // <param name="results">The list the flattened clips are appended to, in application order.</param>
+    internal void CollectClipPaths(ClipPath clipPath, Matrix3x2 outerTransform, DrawingClipOperation operation,
+        List<(DrawingPath Path, DrawingClipOperation Operation)> results)
     {
         if (clipPath?.Clips == null || clipPath.Clips.Count == 0)
         {
@@ -715,26 +781,33 @@ public class NoSkiaModel
             return;
         }
 
-        using (unionPath)
-        {
-            canvas.ClipPath(unionPath, operation, antialias);
-        }
+        results.Add((unionPath, operation));
 
-        //The managed path type has no boolean operations, so intersect-clips nested under
-        //this clip path are applied as additional canvas clips instead. This is exact for
-        //single-member clip paths; for multi-member unions it over-restricts slightly
-        //(the nested clip constrains every member, not just its own). Nested clips are
-        //only meaningful for intersect semantics, so they are skipped for Difference.
         if (operation == DrawingClipOperation.Intersect)
         {
             if (clipPath.Clip?.Clips != null && clipPath.Clip.Clips.Count > 0)
             {
-                ApplyClipPath(clipPath.Clip, clipPathTransform, canvas, DrawingClipOperation.Intersect, antialias);
+                CollectClipPaths(clipPath.Clip, clipPathTransform, DrawingClipOperation.Intersect, results);
             }
 
             foreach ((ClipPath nested, Matrix3x2 nestedTransform) in nestedClips)
             {
-                ApplyClipPath(nested, nestedTransform, canvas, DrawingClipOperation.Intersect, antialias);
+                CollectClipPaths(nested, nestedTransform, DrawingClipOperation.Intersect, results);
+            }
+        }
+    }
+
+    private void ApplyClipPath(ClipPath clipPath, Matrix3x2 outerTransform, DrawingCanvas canvas,
+        DrawingClipOperation operation, bool antialias)
+    {
+        var clips = new List<(DrawingPath Path, DrawingClipOperation Operation)>();
+        CollectClipPaths(clipPath, outerTransform, operation, clips);
+
+        foreach ((DrawingPath path, DrawingClipOperation clipOperation) in clips)
+        {
+            using (path)
+            {
+                canvas.ClipPath(path, clipOperation, antialias);
             }
         }
     }

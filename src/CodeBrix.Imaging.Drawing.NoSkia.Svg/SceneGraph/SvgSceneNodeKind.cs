@@ -2,34 +2,34 @@ using CodeBrix.SvgParse;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>Identifies the kind of SVG scene node.</summary>
-public enum SvgSceneNodeKind
+// <summary>Identifies the kind of SVG scene node.</summary>
+internal enum SvgSceneNodeKind
 {
-    /// <summary>An unknown node type.</summary>
+    // <summary>An unknown node type.</summary>
     Unknown,
-    /// <summary>An SVG fragment (root) element.</summary>
+    // <summary>An SVG fragment (root) element.</summary>
     Fragment,
-    /// <summary>A group element.</summary>
+    // <summary>A group element.</summary>
     Group,
-    /// <summary>An anchor element.</summary>
+    // <summary>An anchor element.</summary>
     Anchor,
-    /// <summary>A use (reference) element.</summary>
+    // <summary>A use (reference) element.</summary>
     Use,
-    /// <summary>A switch element.</summary>
+    // <summary>A switch element.</summary>
     Switch,
-    /// <summary>An image element.</summary>
+    // <summary>An image element.</summary>
     Image,
-    /// <summary>A text element.</summary>
+    // <summary>A text element.</summary>
     Text,
-    /// <summary>A marker element.</summary>
+    // <summary>A marker element.</summary>
     Marker,
-    /// <summary>A path element.</summary>
+    // <summary>A path element.</summary>
     Path,
-    /// <summary>A geometric shape element.</summary>
+    // <summary>A geometric shape element.</summary>
     Shape,
-    /// <summary>A mask element.</summary>
+    // <summary>A mask element.</summary>
     Mask,
-    /// <summary>A generic container element.</summary>
+    // <summary>A generic container element.</summary>
     Container
 }
 

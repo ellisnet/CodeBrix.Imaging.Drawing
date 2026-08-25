@@ -9,7 +9,7 @@ namespace CodeBrix.Imaging.Drawing.Rendering;
 
 /// <summary>
 /// Coordinate-mapping helpers that translate between view coordinates (the size of the
-/// on-screen control), canvas pixel coordinates (the size of the Skia surface), and
+/// on-screen control), canvas pixel coordinates (the size of the rendering surface), and
 /// calibrated drawing coordinates (the fixed logical space that strokes are stored in).
 /// Because strokes live in the calibrated space, a drawing survives any change of control
 /// size, pixel density, or window orientation.
@@ -91,7 +91,7 @@ public static class CanvasCalibration
     /// has a zero or negative dimension.
     /// </returns>
     public static RectangleF GetDrawingRect(SizeF viewSize, Size calibrationSize)
-        => SkiaInterop.ToImaging(GetDrawingRect(SkiaInterop.ToSK(viewSize), SkiaInterop.ToSK(calibrationSize)));
+        => GraphicsInterop.ToImaging(GetDrawingRect(GraphicsInterop.ToGraphics(viewSize), GraphicsInterop.ToGraphics(calibrationSize)));
 
     /// <summary>
     /// Maps a point in view coordinates (relative to an on-screen control of the given
@@ -99,7 +99,7 @@ public static class CanvasCalibration
     /// </summary>
     /// <param name="viewPoint">The point, in the control's logical coordinates.</param>
     /// <param name="viewSize">The logical size of the control.</param>
-    /// <param name="canvasSize">The pixel size of the Skia canvas that the control hosts.</param>
+    /// <param name="canvasSize">The pixel size of the canvas that the control hosts.</param>
     /// <param name="calibrationSize">The size of the calibrated drawing space.</param>
     /// <param name="clampToDrawingArea">
     /// When <c>true</c>, a point outside the drawing rectangle is clamped to its nearest
@@ -199,7 +199,7 @@ public static class CanvasCalibration
     /// a zero or negative dimension.
     /// </returns>
     public static RectangleF GetDrawingRect(Size canvasSize, Size calibrationSize)
-        => SkiaInterop.ToImaging(GetDrawingRect(SkiaInterop.ToSK(canvasSize), SkiaInterop.ToSK(calibrationSize)));
+        => GraphicsInterop.ToImaging(GetDrawingRect(GraphicsInterop.ToGraphics(canvasSize), GraphicsInterop.ToGraphics(calibrationSize)));
 
     /// <summary>
     /// Maps a point in view coordinates to calibrated drawing coordinates - the
@@ -208,7 +208,7 @@ public static class CanvasCalibration
     /// </summary>
     /// <param name="viewPoint">The point, in the control's logical coordinates.</param>
     /// <param name="viewSize">The logical size of the control.</param>
-    /// <param name="canvasSize">The pixel size of the Skia canvas that the control hosts.</param>
+    /// <param name="canvasSize">The pixel size of the canvas that the control hosts.</param>
     /// <param name="calibrationSize">The size of the calibrated drawing space.</param>
     /// <param name="clampToDrawingArea">
     /// When <c>true</c>, a point outside the drawing rectangle is clamped to its nearest edge;
@@ -226,9 +226,9 @@ public static class CanvasCalibration
         bool clampToDrawingArea = false)
     {
         SKPointI? calibrated = ViewPointToCalibrated(
-            SkiaInterop.ToSK(viewPoint), SkiaInterop.ToSK(viewSize),
-            SkiaInterop.ToSK(canvasSize), SkiaInterop.ToSK(calibrationSize), clampToDrawingArea);
-        return calibrated.HasValue ? SkiaInterop.ToImaging(calibrated.Value) : (Point?)null;
+            GraphicsInterop.ToGraphics(viewPoint), GraphicsInterop.ToGraphics(viewSize),
+            GraphicsInterop.ToGraphics(canvasSize), GraphicsInterop.ToGraphics(calibrationSize), clampToDrawingArea);
+        return calibrated.HasValue ? GraphicsInterop.ToImaging(calibrated.Value) : (Point?)null;
     }
 
     /// <summary>
@@ -246,8 +246,8 @@ public static class CanvasCalibration
     /// Thrown when <paramref name="calibrationSize"/> has a zero or negative dimension.
     /// </exception>
     public static PointF CalibratedToCanvas(Point calibratedPoint, Size calibrationSize, RectangleF drawingRect)
-        => SkiaInterop.ToImaging(CalibratedToCanvas(
-            SkiaInterop.ToSK(calibratedPoint), SkiaInterop.ToSK(calibrationSize), SkiaInterop.ToSK(drawingRect)));
+        => GraphicsInterop.ToImaging(CalibratedToCanvas(
+            GraphicsInterop.ToGraphics(calibratedPoint), GraphicsInterop.ToGraphics(calibrationSize), GraphicsInterop.ToGraphics(drawingRect)));
 
     /// <summary>
     /// Scales a stroke width from calibrated drawing units to canvas pixels - the
@@ -259,5 +259,5 @@ public static class CanvasCalibration
     /// <param name="drawingRect">The drawing rectangle, in canvas pixel coordinates.</param>
     /// <returns>The stroke width in canvas pixels; never less than 1 pixel for a positive input width.</returns>
     public static float ScaleStrokeWidth(float calibratedWidth, Size calibrationSize, RectangleF drawingRect)
-        => ScaleStrokeWidth(calibratedWidth, SkiaInterop.ToSK(calibrationSize), SkiaInterop.ToSK(drawingRect));
+        => ScaleStrokeWidth(calibratedWidth, GraphicsInterop.ToGraphics(calibrationSize), GraphicsInterop.ToGraphics(drawingRect));
 }

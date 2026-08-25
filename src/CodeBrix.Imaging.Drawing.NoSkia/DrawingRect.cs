@@ -3,8 +3,7 @@ using System;
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// A floating-point rectangle stored as left/top/right/bottom edges, API-compatible with
-/// the SkiaSharp <c>SKRect</c> type.
+/// A floating-point rectangle stored as left/top/right/bottom edges.
 /// </summary>
 public struct DrawingRect : IEquatable<DrawingRect>
 {
@@ -51,8 +50,8 @@ public struct DrawingRect : IEquatable<DrawingRect>
     public readonly float MidY => Top + (Height / 2f);
 
     /// <summary>
-    /// Indicates whether the rectangle is empty - mirroring SkiaSharp, a rectangle is
-    /// empty when its width or height is zero or negative.
+    /// Indicates whether the rectangle is empty - a rectangle is empty when its width or
+    /// height is zero or negative.
     /// </summary>
     public readonly bool IsEmpty => Right <= Left || Bottom <= Top;
 
@@ -77,7 +76,7 @@ public struct DrawingRect : IEquatable<DrawingRect>
 
     /// <summary>
     /// Determines whether the given point lies inside this rectangle (left/top inclusive,
-    /// right/bottom exclusive, matching SkiaSharp).
+    /// right/bottom exclusive).
     /// </summary>
     /// <param name="point">The point to test.</param>
     /// <returns><c>true</c> when the point is inside the rectangle.</returns>
@@ -86,7 +85,7 @@ public struct DrawingRect : IEquatable<DrawingRect>
 
     /// <summary>
     /// Determines whether the given position lies inside this rectangle (left/top
-    /// inclusive, right/bottom exclusive, matching SkiaSharp).
+    /// inclusive, right/bottom exclusive).
     /// </summary>
     /// <param name="x">The horizontal position to test.</param>
     /// <param name="y">The vertical position to test.</param>

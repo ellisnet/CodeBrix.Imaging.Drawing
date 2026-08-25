@@ -36,13 +36,13 @@ public sealed class DrawingLayer
     /// </summary>
     public Color Color
     {
-        get => SkiaInterop.ToImaging(_color);
-        set => SetColor(SkiaInterop.ToSK(value));
+        get => GraphicsInterop.ToImaging(_color);
+        set => SetColor(GraphicsInterop.ToGraphics(value));
     }
 
     /// <summary>
-    /// Sets <see cref="Color"/> from a SkiaSharp <see cref="SKColor"/>, for callers working
-    /// in SkiaSharp types.
+    /// Sets <see cref="Color"/> from a <see cref="SKColor"/>, for callers working
+    /// in the rendering backend's value types.
     /// </summary>
     /// <param name="color">The color that the layer's elements are drawn with.</param>
     public void SetColor(SKColor color)
@@ -54,9 +54,19 @@ public sealed class DrawingLayer
         }
     }
 
+    //The name-neutral accessor that this library's own rendering code reads, so the public
+    //  accessor below can carry a different name in each package without an #if at any call site
+    internal SKColor ColorValue => _color;
+
+#if NOSKIA
+    /// <summary>Gets <see cref="Color"/> as a <see cref="DrawingColor"/>.</summary>
+    /// <returns>The layer color as a backend color.</returns>
+    public DrawingColor GetColorAsDrawing() => _color;
+#else
     /// <summary>Gets <see cref="Color"/> as a SkiaSharp <see cref="SKColor"/>.</summary>
     /// <returns>The layer color as a SkiaSharp color.</returns>
     public SKColor GetColorAsSkia() => _color;
+#endif
 
     /// <summary>
     /// The total number of completed elements (strokes and shapes) currently on the layer.
@@ -97,7 +107,7 @@ public sealed class DrawingLayer
     /// <param name="color">The color that the layer's elements are drawn with.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
     public DrawingLayer(string name, Color color)
-        : this(name, SkiaInterop.ToSK(color))
+        : this(name, GraphicsInterop.ToGraphics(color))
     {
     }
 

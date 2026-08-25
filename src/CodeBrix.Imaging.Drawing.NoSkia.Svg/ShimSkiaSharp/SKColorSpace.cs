@@ -3,13 +3,13 @@
 using CodeBrix.SvgParse;
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg.ShimSkiaSharp; //Was previously: namespace ShimSkiaSharp;
 
-/// <summary>
-/// Specifies the color space used for color interpretation.
-/// </summary>
-public enum SKColorSpace
+// <summary>
+// Specifies the color space used for color interpretation.
+// </summary>
+internal enum SKColorSpace
 {
-    /// <summary>The standard sRGB color space.</summary>
+    // <summary>The standard sRGB color space.</summary>
     Srgb = 0,
-    /// <summary>The linear sRGB color space.</summary>
+    // <summary>The linear sRGB color space.</summary>
     SrgbLinear = 1
 }

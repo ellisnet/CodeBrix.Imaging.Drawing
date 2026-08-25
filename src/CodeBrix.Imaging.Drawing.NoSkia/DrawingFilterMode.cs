@@ -1,8 +1,7 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The pixel filtering used when sampling a bitmap, API-compatible with the SkiaSharp
-/// <c>DrawingFilterMode</c> enumeration.
+/// The pixel filtering used when sampling a bitmap.
 /// </summary>
 public enum DrawingFilterMode
 {

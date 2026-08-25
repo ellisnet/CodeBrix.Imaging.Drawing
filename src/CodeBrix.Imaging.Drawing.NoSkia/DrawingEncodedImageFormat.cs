@@ -1,9 +1,8 @@
 namespace CodeBrix.Imaging.Drawing.NoSkia;
 
 /// <summary>
-/// The encoded image formats that <c>DrawingImage.Encode</c> can produce, API-compatible with
-/// the SkiaSharp <c>SKEncodedImageFormat</c> enumeration (reduced to the formats this
-/// managed implementation encodes through CodeBrix.Imaging).
+/// The encoded image formats that <c>DrawingImage.Encode</c> can produce (reduced to the
+/// formats this managed implementation encodes through CodeBrix.Imaging).
 /// </summary>
 public enum DrawingEncodedImageFormat
 {

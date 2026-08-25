@@ -17,14 +17,23 @@
     <Project Path="samples/PainDiagram/CodeBrixPlatform/PainDiagram.WinWpfSkia/PainDiagram.WinWpfSkia.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
-    <File Path="AGENT-README.txt" />
+    <File Path="AGENT-README-NOSKIA.txt" />
+    <File Path="AGENT-README-SKIA.txt" />
+    <File Path="EXTRAS-README.txt" />
     <File Path="icon-codebrix-128.png" />
     <File Path="LICENSE" />
+    <File Path="MAINTAINER-README.txt" />
+    <File Path="README-INDEX.txt" />
     <File Path="README.md" />
     <File Path="THIRD-PARTY-NOTICES.txt" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/CodeBrix.Imaging.Drawing.Tests/CodeBrix.Imaging.Drawing.Tests.csproj" />
+    <Project Path="tests/CodeBrix.Imaging.Drawing.NoSkia.Tests/CodeBrix.Imaging.Drawing.NoSkia.Tests.csproj" />
+    <Project Path="tests/CodeBrix.Imaging.Drawing.ParityTests/CodeBrix.Imaging.Drawing.ParityTests.csproj" />
   </Folder>
   <Project Path="src/CodeBrix.Imaging.Drawing/CodeBrix.Imaging.Drawing.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia/CodeBrix.Imaging.Drawing.NoSkia.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia.Svg/CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj" />
+  <Project Path="src/CodeBrix.Imaging.Drawing.NoSkia.Package/CodeBrix.Imaging.Drawing.NoSkia.Package.csproj" />
 </Solution>

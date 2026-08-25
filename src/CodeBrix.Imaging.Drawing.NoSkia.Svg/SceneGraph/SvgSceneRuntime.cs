@@ -6,19 +6,19 @@ using CodeBrix.Imaging.Drawing.NoSkia.Svg.Model.Services;
 
 namespace CodeBrix.Imaging.Drawing.NoSkia.Svg; //Was previously: namespace Svg.Skia;
 
-/// <summary>
-/// Provides high-level methods for compiling SVG fragments into scene documents and picture models.
-/// </summary>
-public static class SvgSceneRuntime
+// <summary>
+// Provides high-level methods for compiling SVG fragments into scene documents and picture models.
+// </summary>
+internal static class SvgSceneRuntime
 {
-    /// <summary>
-    /// Attempts to compile an SVG fragment into a scene document.
-    /// </summary>
-    /// <param name="sourceFragment">The SVG fragment to compile.</param>
-    /// <param name="assetLoader">The asset loader for resolving external resources.</param>
-    /// <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
-    /// <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
-    /// <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
+    // <summary>
+    // Attempts to compile an SVG fragment into a scene document.
+    // </summary>
+    // <param name="sourceFragment">The SVG fragment to compile.</param>
+    // <param name="assetLoader">The asset loader for resolving external resources.</param>
+    // <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
+    // <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
+    // <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
     public static bool TryCompile(
         SvgFragment sourceFragment,
         ISvgAssetLoader assetLoader,
@@ -28,15 +28,15 @@ public static class SvgSceneRuntime
         return TryCompile(sourceFragment, assetLoader, ignoreAttributes, SKRect.Empty, out sceneDocument);
     }
 
-    /// <summary>
-    /// Attempts to compile an SVG fragment into a scene document using the specified viewport.
-    /// </summary>
-    /// <param name="sourceFragment">The SVG fragment to compile.</param>
-    /// <param name="assetLoader">The asset loader for resolving external resources.</param>
-    /// <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
-    /// <param name="standaloneDocumentViewport">The viewport rectangle for standalone document rendering.</param>
-    /// <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
-    /// <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
+    // <summary>
+    // Attempts to compile an SVG fragment into a scene document using the specified viewport.
+    // </summary>
+    // <param name="sourceFragment">The SVG fragment to compile.</param>
+    // <param name="assetLoader">The asset loader for resolving external resources.</param>
+    // <param name="ignoreAttributes">The draw attributes to ignore during compilation.</param>
+    // <param name="standaloneDocumentViewport">The viewport rectangle for standalone document rendering.</param>
+    // <param name="sceneDocument">When this method returns, contains the compiled scene document if successful.</param>
+    // <returns><see langword="true"/> if compilation succeeded; otherwise, <see langword="false"/>.</returns>
     public static bool TryCompile(
         SvgFragment sourceFragment,
         ISvgAssetLoader assetLoader,
@@ -97,13 +97,13 @@ public static class SvgSceneRuntime
         return SvgSceneCompiler.TryCompileFragment(sourceFragment, renderableBounds, renderableBounds, assetLoader, ignoreAttributes, out sceneDocument);
     }
 
-    /// <summary>
-    /// Creates an <see cref="SKPicture"/> model from the specified SVG fragment.
-    /// </summary>
-    /// <param name="sourceFragment">The SVG fragment to render.</param>
-    /// <param name="assetLoader">The asset loader for resolving external resources.</param>
-    /// <param name="ignoreAttributes">The draw attributes to ignore during rendering.</param>
-    /// <returns>An <see cref="SKPicture"/> representing the rendered SVG, or <see langword="null"/> if compilation fails.</returns>
+    // <summary>
+    // Creates an <see cref="SKPicture"/> model from the specified SVG fragment.
+    // </summary>
+    // <param name="sourceFragment">The SVG fragment to render.</param>
+    // <param name="assetLoader">The asset loader for resolving external resources.</param>
+    // <param name="ignoreAttributes">The draw attributes to ignore during rendering.</param>
+    // <returns>An <see cref="SKPicture"/> representing the rendered SVG, or <see langword="null"/> if compilation fails.</returns>
     public static SKPicture CreateModel(
         SvgFragment sourceFragment,
         ISvgAssetLoader assetLoader,
@@ -112,14 +112,14 @@ public static class SvgSceneRuntime
         return CreateModel(sourceFragment, assetLoader, ignoreAttributes, SKRect.Empty);
     }
 
-    /// <summary>
-    /// Creates an <see cref="SKPicture"/> model from the specified SVG fragment using the given viewport.
-    /// </summary>
-    /// <param name="sourceFragment">The SVG fragment to render.</param>
-    /// <param name="assetLoader">The asset loader for resolving external resources.</param>
-    /// <param name="ignoreAttributes">The draw attributes to ignore during rendering.</param>
-    /// <param name="standaloneDocumentViewport">The viewport rectangle for standalone document rendering.</param>
-    /// <returns>An <see cref="SKPicture"/> representing the rendered SVG, or <see langword="null"/> if compilation fails.</returns>
+    // <summary>
+    // Creates an <see cref="SKPicture"/> model from the specified SVG fragment using the given viewport.
+    // </summary>
+    // <param name="sourceFragment">The SVG fragment to render.</param>
+    // <param name="assetLoader">The asset loader for resolving external resources.</param>
+    // <param name="ignoreAttributes">The draw attributes to ignore during rendering.</param>
+    // <param name="standaloneDocumentViewport">The viewport rectangle for standalone document rendering.</param>
+    // <returns>An <see cref="SKPicture"/> representing the rendered SVG, or <see langword="null"/> if compilation fails.</returns>
     public static SKPicture CreateModel(
         SvgFragment sourceFragment,
         ISvgAssetLoader assetLoader,
