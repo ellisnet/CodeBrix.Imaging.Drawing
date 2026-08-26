@@ -75,7 +75,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.238.44" />
+    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.238.393" />
     <PackageReference Include="SkiaSharp" Version="4.151.0" />
   </ItemGroup>
 
