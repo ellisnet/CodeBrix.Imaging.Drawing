@@ -70,31 +70,23 @@
     genuinely depend on are declared explicitly so consumers restore them.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj"
-                      PrivateAssets="all" />
-    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia.Svg\CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj"
-                      PrivateAssets="all" />
+    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\CodeBrix.Imaging.Drawing.NoSkia.Svg\CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.233.968" />
-    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.165.135" />
+    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.238.44" />
+    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.238.103" />
   </ItemGroup>
 
   <Target Name="IncludeNoSkiaAssembliesInPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
       <!-- The two referenced projects' assemblies (and XML docs), but not their package dependencies -->
-      <_NoSkiaPackFile Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
-      <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)"
-                              PackagePath="lib/$(TargetFramework)"
-                              Condition="'%(_NoSkiaPackFile.Extension)' == '.dll' or '%(_NoSkiaPackFile.Extension)' == '.xml'" />
+      <_NoSkiaPackFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+      <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)" PackagePath="lib/$(TargetFramework)" Condition="'%(_NoSkiaPackFile.Extension)' == '.dll' or '%(_NoSkiaPackFile.Extension)' == '.xml'" />
       <!-- Both assemblies' IntelliSense documentation (not part of copy-local paths) -->
-      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml"
-                              PackagePath="lib/$(TargetFramework)"
-                              Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml')" />
-      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml"
-                              PackagePath="lib/$(TargetFramework)"
-                              Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml')" />
+      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml" PackagePath="lib/$(TargetFramework)" Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml')" />
+      <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml" PackagePath="lib/$(TargetFramework)" Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml')" />
     </ItemGroup>
   </Target>
 

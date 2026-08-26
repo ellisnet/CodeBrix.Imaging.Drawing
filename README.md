@@ -1,7 +1,7 @@
 # CodeBrix.Imaging.Drawing
 
 A stroke-based drawing, painting and highlighting library for SkiaSharp canvases in .NET applications. CodeBrix.Imaging.Drawing captures pointer (mouse, pen, or touch) input as resolution-independent calibrated strokes on named, colored layers, renders them with translucent "highlighter" compositing over a background image — or over a transparent canvas above live content such as a webcam video feed — and exports finished drawings as PNG/JPEG images or CodeBrix.Imaging images. It works with any UI framework that can host a SkiaSharp drawing surface, including CodeBrix.Platform (all Skia heads), native WinUI 3, WPF, and .NET MAUI.
-CodeBrix.Imaging.Drawing depends only on SkiaSharp and the CodeBrix.Imaging package, and is provided as a .NET 10 library and associated `CodeBrix.Imaging.Drawing.ApacheLicenseForever` NuGet package.
+Both packages described below are .NET 10 libraries. The SkiaSharp-backed package, `CodeBrix.Imaging.Drawing.ApacheLicenseForever`, depends only on SkiaSharp and the CodeBrix.Imaging package; the managed `CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever` package has no SkiaSharp dependency at all.
 
 This repository produces **two** NuGet packages that are either/or alternatives — never reference both from one application, because they compile the same drawing-session sources into the same namespaces:
 
@@ -11,6 +11,26 @@ This repository produces **two** NuGet packages that are either/or alternatives 
 CodeBrix.Imaging.Drawing supports applications and assemblies that target Microsoft .NET version 10.0 and later.
 Microsoft .NET version 10.0 is a Long-Term Supported (LTS) version of .NET, and was released on Nov 11, 2025; and will be actively supported by Microsoft until Nov 14, 2028.
 Please update your C#/.NET code and projects to the latest LTS version of Microsoft .NET.
+
+## Installation
+
+Reference **one** of the two packages - never both, since they declare the same types in the same namespaces:
+
+```
+dotnet add package CodeBrix.Imaging.Drawing.ApacheLicenseForever
+```
+
+```
+dotnet add package CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
+```
+
+Note that the NuGet package IDs and the namespaces are different - there is no package named plain `CodeBrix.Imaging.Drawing`:
+
+* SkiaSharp-backed package ID: `CodeBrix.Imaging.Drawing.ApacheLicenseForever`
+* Fully managed package ID: `CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever`
+* Namespaces in both: `CodeBrix.Imaging.Drawing` for the drawing session and `CodeBrix.Imaging.Drawing.Models` for `DrawingLayer`, `Stroke` and the other model types
+
+XML documentation (IntelliSense) ships alongside the assemblies in both packages.
 
 ## CodeBrix.Imaging.Drawing supports:
 
@@ -29,8 +49,9 @@ Please update your C#/.NET code and projects to the latest LTS version of Micros
 ### Drawing on a SkiaSharp canvas with highlighter layers
 
 ```csharp
-using CodeBrix.Imaging;          // Color, Size
-using CodeBrix.Imaging.Drawing;  // DrawingSession, DrawingLayer
+using CodeBrix.Imaging;                 // Color, Size
+using CodeBrix.Imaging.Drawing;         // DrawingSession
+using CodeBrix.Imaging.Drawing.Models;  // DrawingLayer
 
 var session = new DrawingSession();
 session.SetBackgroundImage(File.ReadAllBytes("body_map.png"));
@@ -71,8 +92,19 @@ session.AddLayer("Damage", Color.Red);
 File.WriteAllBytes("car_photo_annotated.png", session.ExportPng());
 ```
 
+The samples above are written against the SkiaSharp-backed package. On the NoSkia package the same code compiles with the SkiaSharp-typed touchpoints renamed mechanically - `SKSurface` becomes `DrawingSurface`, `SKImageInfo` becomes `DrawingImageInfo`, `SKPoint` becomes `DrawingPoint`, `SKSize` becomes `DrawingSize` - or unchanged if you set `<CodeBrixUseSkiaTypeNames>true</CodeBrixUseSkiaTypeNames>` in the consuming project, which adds the Skia names as global using aliases.
+
 The `samples/PainDiagram` folder of this repository contains a complete reference application that runs on every CodeBrix.Platform Skia head (Windows Win32 and WPF-hosted, Linux X11 / Wayland / framebuffer, macOS) plus native WinUI 3 and WPF heads, all sharing one view model.
+
+## Documentation
+
+Each NuGet package includes an `AGENT-README.txt` - a complete API reference and usage guide written for AI coding agents, specific to the package you referenced. Point your agent at that file when it is writing code against this library.
+
+Additional sample code and usage examples are available in the test projects:
+https://github.com/ellisnet/CodeBrix.Imaging.Drawing/tree/main/tests
 
 ## License
 
 The project is licensed under the Apache 2.0 License. see: https://en.wikipedia.org/wiki/Apache_License
+
+`THIRD-PARTY-NOTICES.txt`, which ships inside both NuGet packages, records the SkiaSharp API-compatibility notice for the NoSkia workalike types, the vendored SVG pipeline used by `CodeBrix.Imaging.Drawing.NoSkia.Svg`, and the fonts used as test assets.

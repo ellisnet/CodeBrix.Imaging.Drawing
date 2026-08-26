@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.165.135" />
+    <PackageReference Include="CodeBrix.SvgParse.MsplLicenseForever" Version="1.0.238.103" />
   </ItemGroup>
 
   <ItemGroup>

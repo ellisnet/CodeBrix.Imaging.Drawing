@@ -11,7 +11,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="xunit.v3" Version="4.0.0" />
-    <PackageReference Include="SilverAssertions.ApacheLicenseForever" Version="1.0.164.180" />
+    <PackageReference Include="SilverAssertions.ApacheLicenseForever" Version="1.0.237.1200" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.151.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.151.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.151.0" />
@@ -19,7 +19,7 @@
       The SkiaSharp-based SVG stack, used ONLY to generate (and A/B-verify against) the
       reference images that the NoSkia SVG renderer is compared with.
     -->
-    <PackageReference Include="CodeBrix.SkiaSvg.MitLicenseForever" Version="1.0.214.1201" />
+    <PackageReference Include="CodeBrix.SkiaSvg.MitLicenseForever" Version="1.0.238.140" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,10 +34,8 @@
     outputs are near-identical.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing\CodeBrix.Imaging.Drawing.csproj"
-                      Aliases="skia" />
-    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj"
-                      Aliases="noskia" />
+    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing\CodeBrix.Imaging.Drawing.csproj" Aliases="skia" />
+    <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing.NoSkia\CodeBrix.Imaging.Drawing.NoSkia.csproj" Aliases="noskia" />
     <!--
       The NoSkia SVG assembly's namespaces collide with nothing, so it needs no alias -
       but the workalike types its API exposes still resolve through the noskia alias.

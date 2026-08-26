@@ -44,13 +44,11 @@
     symbol (above) retargets their SkiaSharp using directives to the workalike types.
   -->
   <ItemGroup>
-    <Compile Include="..\CodeBrix.Imaging.Drawing\**\*.cs"
-             Exclude="..\CodeBrix.Imaging.Drawing\bin\**;..\CodeBrix.Imaging.Drawing\obj\**"
-             LinkBase="Shared" />
+    <Compile Include="..\CodeBrix.Imaging.Drawing\**\*.cs" Exclude="..\CodeBrix.Imaging.Drawing\bin\**;..\CodeBrix.Imaging.Drawing\obj\**" LinkBase="Shared" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.233.968" />
+    <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.238.44" />
   </ItemGroup>
 
 </Project>
