@@ -5,8 +5,10 @@
 # Run this ONCE after re-vendoring the SVG scene compiler (and after adding any file to the
 # folders listed below). It does two things to every type this assembly does not publish:
 #
-#   1. Top-level "public" type declarations become "internal". Only the eight types listed
-#      in KEEP_PUBLIC stay public - the DrawingSvg facade and the font registry. Nested and
+#   1. Top-level "public" type declarations become "internal". Only the one file listed in
+#      KEEP_PUBLIC stays public - the font registry. The DrawingSvg facade and its six
+#      companion types live in the assembly root, which this pass never walks; together with
+#      the font registry they are this assembly's eight public types. Nested and
 #      member accessibility is left alone: a public member of an internal type is not
 #      exported, so there is nothing to change and the diff against upstream stays small.
 #

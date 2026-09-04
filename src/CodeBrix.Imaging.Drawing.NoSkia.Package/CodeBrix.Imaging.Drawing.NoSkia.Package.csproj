@@ -81,10 +81,10 @@
 
   <Target Name="IncludeNoSkiaAssembliesInPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
-      <!-- The two referenced projects' assemblies (and XML docs), but not their package dependencies -->
+      <!-- The two referenced projects' assemblies, but not their package dependencies -->
       <_NoSkiaPackFile Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
-      <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)" PackagePath="lib/$(TargetFramework)" Condition="'%(_NoSkiaPackFile.Extension)' == '.dll' or '%(_NoSkiaPackFile.Extension)' == '.xml'" />
-      <!-- Both assemblies' IntelliSense documentation (not part of copy-local paths) -->
+      <TfmSpecificPackageFile Include="@(_NoSkiaPackFile)" PackagePath="lib/$(TargetFramework)" Condition="'%(_NoSkiaPackFile.Extension)' == '.dll'" />
+      <!-- Both assemblies' IntelliSense documentation, packed from the projects' build output (the .dll item above deliberately does not carry it, so each .xml is packed exactly once) -->
       <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml" PackagePath="lib/$(TargetFramework)" Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.xml')" />
       <TfmSpecificPackageFile Include="$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml" PackagePath="lib/$(TargetFramework)" Condition="Exists('$(MSBuildThisFileDirectory)..\CodeBrix.Imaging.Drawing.NoSkia.Svg\bin\$(Configuration)\$(TargetFramework)\CodeBrix.Imaging.Drawing.NoSkia.Svg.xml')" />
     </ItemGroup>

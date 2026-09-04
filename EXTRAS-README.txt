@@ -152,7 +152,21 @@ agents do not need the sample itself.
 TOOLS
 =====
 
-There is no tools/ folder in this repository.
+There is no tools/ folder in this repository. The repository does carry one
+maintenance script, next to the code it operates on:
+
+  src/CodeBrix.Imaging.Drawing.NoSkia.Svg/internalize-surface.sh
+      The re-vendor pass for the managed SVG assembly. It makes every
+      top-level type in ShimSkiaSharp/, Model/, SceneGraph/ and Rendering/
+      internal (NoSkiaFontRegistry is the one exception) and demotes their
+      "///" doc comments to "//", so the packaged documentation file cannot
+      leak vendored type names. It is idempotent. The full recipe for using
+      it - and the test that guards the result - is in MAINTAINER-README.txt
+      under PROVENANCE AND VENDORED SOURCES.
+
+  src/CodeBrix.Imaging.Drawing.NoSkia.Svg/VENDORED-NOTICES.txt
+      The notices carried forward with that vendored code. It is not a tool,
+      but it lives in the same folder and is maintained with it.
 
 OPTIONAL TEST DATA
 ==================

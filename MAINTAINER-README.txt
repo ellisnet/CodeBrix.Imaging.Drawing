@@ -63,6 +63,16 @@ src/CodeBrix.Imaging.Drawing.NoSkia/   the managed workalike engine plus the
   Drawing*.cs                          the SkiaSharp-shaped public types
                                        (DrawingCanvas, DrawingBitmap,
                                        DrawingPaint, DrawingPath, ... )
+  Pictures/                            the public display-list surface:
+                                       DrawingPicture, DrawingCommand and its
+                                       11 command records, DrawingTextStyle,
+                                       IDrawingCommandVisitor,
+                                       IDrawingTextOutliner,
+                                       DrawingFontSlant/Weight/Width,
+                                       DrawingTextAlign - a grouping folder
+                                       whose files stay in the root
+                                       CodeBrix.Imaging.Drawing.NoSkia
+                                       namespace
   Raster/                              internal rasterizer: Bezier flattening,
                                        stroke outlining, dash splitting,
                                        scanline polygon filling, blending,
@@ -131,12 +141,19 @@ anything under src/.
    assembly. Because that Svg assembly references the core assembly, neither
    project can pack the pair on its own - hence the packaging-only project.
 
-5. GenerateDocumentationFile is OFF for
-   src/CodeBrix.Imaging.Drawing.NoSkia.Svg only, because the vendored code
-   does not carry complete XML documentation. The alternative - suppressing
-   CS1591 - is never done in this repository. New code written for that
-   assembly still documents every public member. The other three projects
-   generate documentation files and must stay CS1591-clean.
+5. GenerateDocumentationFile is ON for every project that has code,
+   including src/CodeBrix.Imaging.Drawing.NoSkia.Svg
+   (CodeBrix.Imaging.Drawing.NoSkia.Svg.csproj sets it to true, and the
+   packaging project packs the resulting
+   CodeBrix.Imaging.Drawing.NoSkia.Svg.xml). The vendored code does not
+   carry complete XML documentation, and suppressing CS1591 is never done
+   in this repository - what keeps that assembly CS1591-clean is the
+   internalize pass (internalize-surface.sh, see the re-vendoring recipe):
+   it makes the vendored types internal and demotes their "///" doc
+   comments to "//", so only the documented facade remains public. New code
+   written for that assembly still documents every public member. The
+   fourth project, CodeBrix.Imaging.Drawing.NoSkia.Package, has no code of
+   its own and therefore generates no documentation file.
 
 BUILDING
 ========
@@ -169,11 +186,23 @@ Three test projects, plus a folder of linked helper sources:
       anywhere. Contains the pixel-level rendering assertions.
 
   tests/CodeBrix.Imaging.Drawing.NoSkia.Tests
-      The SAME suite - linked sources, NOSKIA symbol, plus a link to
+      The SAME session suite - linked sources, NOSKIA symbol, plus a link to
       NoSkiaTypeAliases.cs - run against the managed backend, so both
       backends must satisfy every behavioral guarantee. Needs NO native
-      library. Adds SvgReferenceTests.cs, which renders every sample SVG
-      through DrawingSvg and compares against the committed reference PNGs.
+      library. On top of the linked session suite it carries its own
+      authored files:
+        - the engine suite: DrawingPathTests, DrawingShaderTests,
+          DrawingShaderPatternTests, DrawingColorFilterTests,
+          DrawingBlendModeExtensionsTests, DrawingImageFilterScaleTests,
+          SvgFilterScaleTests
+        - Pictures/: DrawingCanvasPictureTests, DrawingPictureTests
+        - Svg/: DrawingSvgTests, DrawingSvgSceneTests, DrawingSvgSurfaceTests,
+          DrawingSvgFixtureTests, DrawingSvgWarningTests,
+          DrawingPictureConverterTests, NoSkiaFontRegistryTests
+        - NoSkiaPublicSurfaceTests.cs, the exported-surface guard described
+          under the re-vendoring recipe
+        - SvgReferenceTests.cs, which renders every sample SVG through
+          DrawingSvg and compares against the committed reference PNGs.
 
   tests/CodeBrix.Imaging.Drawing.ParityTests
       References BOTH drawing libraries at once through extern aliases
@@ -356,7 +385,11 @@ CodeBrix family conventions, all of which apply here:
   never hardcode <Version>.
 - Source organization: entry-point types at the project root, everything else
   in sub-folders whose names match their namespace suffix (Models, Shapes,
-  Rendering, Extensions, Raster).
+  Rendering, Extensions, Raster). The one deliberate exception is
+  src/CodeBrix.Imaging.Drawing.NoSkia/Pictures/, a grouping folder for the
+  display-list types: all of its files declare the root
+  CodeBrix.Imaging.Drawing.NoSkia namespace, because the display list is
+  part of the engine's top-level surface.
 
 SkiaSharp API notes for code in src/CodeBrix.Imaging.Drawing (and therefore
 for the workalike engine that has to match it): SKPath.MoveTo/LineTo are
@@ -368,10 +401,12 @@ NOTES
 =====
 
 - Both root .slnx solutions list the repository's plain-text documents under
-  a "Solution Items" folder. After the AGENT-README split those entries
-  should name AGENT-README-SKIA.txt, AGENT-README-NOSKIA.txt,
-  MAINTAINER-README.txt, EXTRAS-README.txt and README-INDEX.txt instead of
-  the old combined AGENT-README.txt.
+  a "Solution Items" folder, and both already name the split files:
+  AGENT-README-SKIA.txt, AGENT-README-NOSKIA.txt, MAINTAINER-README.txt,
+  EXTRAS-README.txt, README-INDEX.txt, README.md, THIRD-PARTY-NOTICES.txt,
+  LICENSE and icon-codebrix-128.png (the cross-platform solution adds
+  .gitignore and global.json). There is no combined AGENT-README.txt in this
+  repository. Add any new root document to both lists.
 - The eight AI-agent pointer files at the root (AGENTS.md, CLAUDE.md,
   .clinerules, .cursorrules, .cursor/rules/agent-readme.mdc, .windsurfrules,
   .github/copilot-instructions.md, .junie/guidelines.md) are pointer-only

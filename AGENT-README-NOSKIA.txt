@@ -69,6 +69,8 @@ NuGet Package: CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
 
     dotnet add package CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
 
+- NOT YET PUBLISHED. This package is not on nuget.org, so the command above
+  does not restore today. Consume the library from source until it ships.
 - The package ID carries the ".ApacheLicenseForever" suffix - a permanent
   guarantee that this package ID will only ever be published under the
   Apache-2.0 license. Namespaces do NOT carry the suffix.
@@ -111,12 +113,15 @@ KEY NAMESPACES / USINGS
 
 CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering holds the font registry type
 (NoSkiaFontRegistry) that DrawingSvg.Fonts returns; you normally reach it
-through that property without a using. Those two namespaces plus
+through that property without a using. That namespace plus
 CodeBrix.Imaging.Drawing.NoSkia.Svg are the ENTIRE public surface of the SVG
-assembly - eight types. CodeBrix.Imaging.Drawing.NoSkia.Raster (the
-rasterizer) and the vendored scene compiler under
-CodeBrix.Imaging.Drawing.NoSkia.Svg.* are internal, so there is nothing
-there to reference even by accident.
+assembly - eight types: seven in CodeBrix.Imaging.Drawing.NoSkia.Svg
+(DrawingSvg, DrawingSvgNode, DrawingSvgNodeKind, DrawingSvgScene,
+DrawingSvgTextEmission, DrawingSvgWarning, DrawingSvgWarningKind), and
+NoSkiaFontRegistry in CodeBrix.Imaging.Drawing.NoSkia.Svg.Rendering.
+CodeBrix.Imaging.Drawing.NoSkia.Raster (the rasterizer) and the vendored
+scene compiler under CodeBrix.Imaging.Drawing.NoSkia.Svg.* are internal, so
+there is nothing there to reference even by accident.
 
 As in the Skia package, the CodeBrix.Imaging `Color` type resolves as just
 `Color` inside code using these namespaces; add `using CodeBrix.Imaging;`
@@ -273,7 +278,10 @@ package's IntelliSense XML documentation for exact signatures:
                      (build with DrawingPathBuilder, then detach the path)
     DrawingShader    CreateColor / CreateLinearGradient /
                      CreateRadialGradient / CreateTwoPointConicalGradient
-                     (tile modes Clamp/Repeat/Mirror/Decal, local matrix)
+                     (tile modes Clamp/Repeat/Mirror/Decal, local matrix) /
+                     CreatePicture (pattern fill tiled from a DrawingPicture;
+                     read back through TileModeX, TileModeY, Picture and
+                     TileRect)
     DrawingColorFilter  CreateColorMatrix / CreateTable / CreateBlendMode /
                      CreateLumaColor (SVG luminance masks)
     DrawingBlendMode all 12 Porter-Duff operators + the W3C separable and
@@ -424,7 +432,9 @@ feColorMatrix, feComponentTransfer, feBlend, feComposite (incl.
 arithmetic), and feImage evaluate fully; exotic primitives (lighting,
 displacement, morphology, convolution, turbulence, feTile) degrade
 gracefully - the element still renders, minus that effect - and report
-through DrawingSvg.Warnings. Also degraded: text-on-path and
+through DrawingSvg.Warnings AFTER A RENDER: a filter's primitives are
+evaluated at render time, so a filter's warning is not yet in Warnings
+immediately after Load. Also degraded: text-on-path and
 glyph-id-positioned runs.
 
 THE DISPLAY LIST (DrawingSvg.Picture)
@@ -606,6 +616,7 @@ A console app that rasterizes an SVG - no UI framework, no native assets:
         <TargetFramework>net10.0</TargetFramework>
       </PropertyGroup>
       <ItemGroup>
+        <!-- not yet published to nuget.org; consume from source until it ships -->
         <PackageReference Include="CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever" Version="..." />
       </ItemGroup>
     </Project>
@@ -655,7 +666,10 @@ COMMON PITFALLS TO AVOID
 - Porting a custom DrawingShape from the Skia package: the override is
   Draw(DrawingCanvas canvas, DrawingColor color); the body is unchanged.
 - Assuming every SVG filter renders: exotic primitives, text-on-path and
-  glyph-id runs degrade - check DrawingSvg.Warnings.
+  glyph-id runs degrade - check DrawingSvg.Warnings, and check it AFTER
+  rendering. A filter's primitives are evaluated at render time, so its
+  warning is absent from Warnings immediately after Load; the load-time
+  warnings (fonts, unsupported elements) are there right away.
 - Treating Accept() as a deep walk: it visits the TOP LEVEL only. A visitor
   that does not call command.Picture?.Accept(this) from Visit(DrawPictureCommand)
   silently misses everything inside a group or a <use>.
@@ -688,9 +702,19 @@ WORKING EXAMPLES ON GITHUB
   https://github.com/ellisnet/CodeBrix.Imaging.Drawing/tree/main/tests/CodeBrix.Imaging.Drawing.NoSkia.Tests
       The complete session test suite of the Skia package compiled against
       this package (linked sources), so every behavioral guarantee holds
-      here too; plus SvgReferenceTests.cs - DrawingSvg rendering every
-      sample SVG and comparing against committed reference images, with no
-      Skia present.
+      here too. On top of that it carries 18 authored test files, none of
+      which needs Skia present:
+        - the engine suite: DrawingPathTests, DrawingShaderTests,
+          DrawingShaderPatternTests, DrawingColorFilterTests,
+          DrawingBlendModeExtensionsTests, DrawingImageFilterScaleTests,
+          SvgFilterScaleTests
+        - Pictures/: DrawingCanvasPictureTests, DrawingPictureTests
+        - Svg/: DrawingSvgTests, DrawingSvgSceneTests, DrawingSvgSurfaceTests,
+          DrawingSvgFixtureTests, DrawingSvgWarningTests,
+          DrawingPictureConverterTests, NoSkiaFontRegistryTests
+        - NoSkiaPublicSurfaceTests.cs, the exported-surface guard
+        - SvgReferenceTests.cs - DrawingSvg rendering every sample SVG and
+          comparing against the committed reference images.
   https://github.com/ellisnet/CodeBrix.Imaging.Drawing/tree/main/tests/CodeBrix.Imaging.Drawing.ParityTests
       Both packages side by side: SessionParityTests.cs renders identical
       drawings through both and asserts near-identical pixels;
