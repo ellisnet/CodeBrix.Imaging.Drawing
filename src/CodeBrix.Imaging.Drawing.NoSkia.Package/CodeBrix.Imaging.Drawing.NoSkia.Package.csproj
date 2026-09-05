@@ -37,7 +37,7 @@
     <Product>CodeBrix.Imaging.Drawing.NoSkia</Product>
     <Title>CodeBrix.Imaging.Drawing.NoSkia</Title>
     <Authors>Jeremy Ellis</Authors>
-    <Description>The fully managed, zero-native-dependency companion of CodeBrix.Imaging.Drawing: the same stroke-based drawing, painting and highlighting API, SkiaSharp-workalike drawing types (DrawingCanvas, DrawingBitmap, DrawingPaint, DrawingPath, gradients, blend modes, clipping, save-layers), and SVG rendering - all rasterized entirely in managed code on CodeBrix.Imaging pixel buffers. No SkiaSharp, no Skia native libraries, no native dependencies of any kind. Reference EITHER this package OR CodeBrix.Imaging.Drawing.ApacheLicenseForever, never both: they compile the same drawing-session sources into the same namespaces.</Description>
+    <Description>A fully managed 2D drawing library with no native dependencies of any kind - everything renders in pure managed code. Provides the same drawing, painting, and highlighting API as CodeBrix.Imaging.Drawing, plus SVG rendering, working directly on in-memory pixel data. Use this instead of CodeBrix.Imaging.Drawing when you can't or don't want to bring in SkiaSharp or any other native graphics library. Never reference both packages in the same project - they define the same types under the same namespace and will conflict.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ellisnet/CodeBrix.Imaging.Drawing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ellisnet/CodeBrix.Imaging.Drawing</RepositoryUrl>
