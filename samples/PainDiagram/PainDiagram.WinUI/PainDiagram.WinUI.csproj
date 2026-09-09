@@ -45,10 +45,10 @@
 
   <ItemGroup>
     <PackageReference Include="CodeBrix.Platform.WinUI.ApacheLicenseForever" Version="1.0.243.22" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
-    <PackageReference Include="SkiaSharp.Views.WinUI" Version="4.151.0" />
+    <PackageReference Include="SkiaSharp.Views.WinUI" Version="4.152.0" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
