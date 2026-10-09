@@ -51,9 +51,9 @@ plus the in-progress stroke (~4 ms at desktop sizes), so live drawing feels
 immediate even over a 3100 x 3100 background image.
 
 A COMPLETELY MANAGED companion package with the identical drawing-session
-API is in development in the same repository, documented in
-AGENT-README-NOSKIA.txt. It is NOT yet published on nuget.org, so it cannot
-be referenced today; see "WHICH ONE DO I REFERENCE" under INSTALLATION.
+API is published from the same repository, documented in its own
+AGENT-README.txt (AGENT-README-NOSKIA.txt in the repository); see "WHICH ONE
+DO I REFERENCE" under INSTALLATION.
 
 INSTALLATION
 ============
@@ -80,22 +80,20 @@ NuGet Package: CodeBrix.Imaging.Drawing.ApacheLicenseForever
 WHICH ONE DO I REFERENCE
 ------------------------
 Reference CodeBrix.Imaging.Drawing.ApacheLicenseForever - the package THIS
-file documents. It is the only one of the repository's two packages that is
-published on nuget.org. Apache-2.0. SkiaSharp-backed: Skia's performance and
-the full non-drawing Skia surface alongside it.
+file documents - when you want Skia. Apache-2.0. SkiaSharp-backed: Skia's
+performance and the full non-drawing Skia surface alongside it.
 
 The same repository also produces a COMPLETELY MANAGED companion package,
 CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever (Apache-2.0): the
 identical drawing-session API plus a fully managed drawing engine and a
 managed SVG renderer, with zero native dependence and slower CPU rendering.
-It is a companion package, NOT yet published - it is not on nuget.org and
-`dotnet add package` cannot restore it, so do not write project files that
-reference it. Its guide is AGENT-README-NOSKIA.txt.
+It is published on nuget.org as well; reference it instead of this package
+when the application must carry no native dependency. Its guide ships inside
+that package (AGENT-README-NOSKIA.txt in the repository).
 
-The two are EITHER/OR alternatives: once the companion ships, NEVER
-reference both packages from one application, because they compile the SAME
-drawing-session source files into the SAME CodeBrix.Imaging.Drawing
-namespaces (deliberately, so switching is a package swap).
+The two are EITHER/OR alternatives: NEVER reference both packages from one
+application, because they compile the SAME drawing-session source files into
+the SAME CodeBrix.Imaging.Drawing namespaces (deliberately, so switching is a package swap).
 
 KEY NAMESPACES / USINGS
 =======================
@@ -1134,9 +1132,8 @@ COMMON PITFALLS TO AVOID
 - Native WPF head targeting bare net10.0-windows: SkiaSharp.Views.WPF has no
   assets for it and silently restores its .NET Framework assembly (NU1701).
   Target net10.0-windows10.0.19041.0.
-- Referencing the NoSkia companion package: it is not yet published, so a
-  restore of CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever fails with
-  a package-not-found error. Once it ships, referencing it alongside this
+- Referencing the NoSkia companion package
+  (CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever) alongside this
   package in one application makes identical types in identical namespaces
   collide - pick one.
 - Missing SkiaSharp native assets in a plain .NET app (the first SkiaSharp
@@ -1163,7 +1160,7 @@ WHAT THIS PACKAGE DOES NOT DO
   DrawingLayer.GetElements()/Stroke.GetPoints() if you need replay or
   storage (StrokePoint.TimeOffsetMs is there for replay).
 - No SVG rendering and no managed rasterizer - those live in the NoSkia
-  companion package, which is not yet published (AGENT-README-NOSKIA.txt).
+  companion package (AGENT-README-NOSKIA.txt).
 - No custom exception types; standard .NET exceptions only.
 - Committed shapes are persistent marks, not animated overlays.
 
@@ -1249,5 +1246,5 @@ QUICK REFERENCE CARD
 
 Rules of thumb: match CalibrationSize to the background aspect (or derive
 it); Render once before view-coordinate PointerPressed; opaque fill for JPEG;
-one thread for Pointer* calls; the NoSkia companion package is not yet
-published, and must never be referenced alongside this one.
+one thread for Pointer* calls; the NoSkia companion package must never be
+referenced alongside this one.

@@ -69,8 +69,6 @@ NuGet Package: CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
 
     dotnet add package CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
 
-- NOT YET PUBLISHED. This package is not on nuget.org, so the command above
-  does not restore today. Consume the library from source until it ships.
 - The package ID carries the ".ApacheLicenseForever" suffix - a permanent
   guarantee that this package ID will only ever be published under the
   Apache-2.0 license. Namespaces do NOT carry the suffix.
@@ -616,7 +614,6 @@ A console app that rasterizes an SVG - no UI framework, no native assets:
         <TargetFramework>net10.0</TargetFramework>
       </PropertyGroup>
       <ItemGroup>
-        <!-- not yet published to nuget.org; consume from source until it ships -->
         <PackageReference Include="CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever" Version="..." />
       </ItemGroup>
     </Project>

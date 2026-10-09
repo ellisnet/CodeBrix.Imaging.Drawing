@@ -9,10 +9,10 @@ are changing this repository itself.
 
 This repository produces TWO packages that are EITHER/OR alternatives - they
 declare the same types in the same namespaces, so an application references
-one or the other, never both. Only
-CodeBrix.Imaging.Drawing.ApacheLicenseForever is published on nuget.org;
-CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever is a companion package,
-not yet published.
+one or the other, never both. Both
+CodeBrix.Imaging.Drawing.ApacheLicenseForever and its companion,
+CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever, are published on
+nuget.org.
 
 AGENT-README FILES (consumer documentation, one per NuGet package)
 ------------------------------------------------------------------
@@ -22,8 +22,8 @@ AGENT-README FILES (consumer documentation, one per NuGet package)
       resolution-independent strokes, layers, geometric primitives and
       PNG/JPEG export.
   AGENT-README-NOSKIA.txt
-      CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever (a companion
-      package, not yet published) — the same drawing-session API with zero
+      CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever (the companion
+      package) — the same drawing-session API with zero
       native dependencies, plus a fully managed drawing engine and a managed
       SVG renderer.
 

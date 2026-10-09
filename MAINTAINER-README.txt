@@ -31,10 +31,7 @@ other, never both.
       Backend        fully managed (no native libraries at all)
       Consumer guide AGENT-README-NOSKIA.txt
 
-Status of the NoSkia companion: it builds green with the full test battery,
-but it has NOT been published to nuget.org yet. The Skia package is
-published. Do not describe the companion package as available on nuget.org
-in consumer-facing text until it ships.
+Both packages are published on nuget.org.
 
 REPOSITORY LAYOUT
 =================
