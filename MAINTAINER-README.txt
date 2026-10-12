@@ -415,3 +415,13 @@ NOTES
   AGENT-README files.
 - The two packages must be shipped as a matched pair once the companion is
   published, since they carry the same session sources.
+- TRIMMING: all three assemblies are trim-clean. A fully trimmed publish of
+  a small console app referencing the three src projects, with a
+  <TrimmerRootAssembly> item for each so every type is analysed
+  (PublishTrimmed=true, TrimmerSingleWarn=false, -r linux-x64), reports no
+  ILLink warnings of their own. The only reflection is
+  SvgParseInternals.ParentField (SvgElement._parent looked up by a constant
+  name, which the trimmer sees and keeps); an SVG using <use> renders
+  byte-identically trimmed and untrimmed. CodeBrix.Imaging builds before
+  1.0.285.619 reported an IL2075 of their own that consumers of this package
+  inherited. Re-run that trimmed publish after adding reflection.

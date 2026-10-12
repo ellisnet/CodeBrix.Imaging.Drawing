@@ -68,6 +68,8 @@ NuGet Package: CodeBrix.Imaging.Drawing.ApacheLicenseForever
   CodeBrix.Imaging.Drawing namespace.
 - License: Apache-2.0.
 - Requires .NET 10 or later.
+- Trimming: trim-clean - a fully trimmed publish (PublishTrimmed, and
+  Android Release builds) reports no trim warnings for this package.
 - NuGet dependencies (restored automatically):
     SkiaSharp
     CodeBrix.Imaging.ApacheLicenseForever

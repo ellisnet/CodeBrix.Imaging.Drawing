@@ -75,6 +75,8 @@ NuGet Package: CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever
 - License: Apache-2.0 (the vendored SVG pipeline is MIT-licensed; notices
   ship in THIRD-PARTY-NOTICES.txt inside the package).
 - Requires .NET 10 or later.
+- Trimming: trim-clean - a fully trimmed publish (PublishTrimmed, and
+  Android Release builds) reports no trim warnings for this package.
 - NuGet dependencies (restored automatically):
     CodeBrix.Imaging.ApacheLicenseForever
     CodeBrix.SvgParse.MsplLicenseForever
