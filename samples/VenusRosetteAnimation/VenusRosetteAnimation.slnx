@@ -1,0 +1,6 @@
+<Solution>
+  <!-- VenusRosetteAnimation.slnx
+       The sample's own solution (it is deliberately NOT part of CodeBrix.Imaging.Drawing.slnx).
+       It consumes CodeBrix.Imaging.Drawing as a published NuGet package. -->
+  <Project Path="VenusRosetteAnimation.csproj" />
+</Solution>
