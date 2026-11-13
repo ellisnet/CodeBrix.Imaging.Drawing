@@ -2,10 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Runtime.InteropServices;
+using CodeBrix.Imaging.Drawing.Captions;
+using CodeBrix.Imaging.Drawing.Images;
+using CodeBrix.Imaging.Drawing.Layout;
 using CodeBrix.Imaging.Drawing.Models;
+using CodeBrix.Imaging.Drawing.Painting;
+using CodeBrix.Imaging.Drawing.Paths;
+using CodeBrix.Imaging.Drawing.Planes;
 using CodeBrix.Imaging.Drawing.Rendering;
+using CodeBrix.Imaging.Drawing.SafeAreas;
 using CodeBrix.Imaging.Drawing.Shapes;
+using CodeBrix.Imaging.Drawing.Text;
 #if NOSKIA
 using CodeBrix.Imaging.Drawing.NoSkia;
 #else
@@ -36,6 +45,11 @@ public sealed class DrawingSession : IDisposable
     private DrawingLayer _activeStrokeLayer;
 
     private SKBitmap _ownedBackgroundImage;
+
+    private readonly DrawingAnimations _animations = new DrawingAnimations();
+
+    //The session's renderer, for tests that look at its caches
+    internal DrawingRenderer Renderer => _renderer;
 
     /// <summary>
     /// The size of the calibrated drawing space that all of the session's strokes are
@@ -114,6 +128,120 @@ public sealed class DrawingSession : IDisposable
     {
         get => _renderer.ActiveStrokeOpacity;
         set => _renderer.ActiveStrokeOpacity = value;
+    }
+
+    /// <summary>
+    /// The opacity, 0..1, of the whole drawing: every layer, composited together as one
+    /// group, faded over the background fill and image (which are not faded) - a
+    /// whole-frame fade in or out. Over an opaque <see cref="BackgroundFillColor"/> that is
+    /// a fade from (or to) that color, and exported frames stay opaque. The default of 1
+    /// renders exactly as before; <see cref="LayerOpacity"/> keeps its meaning, and each
+    /// layer's own <see cref="DrawingLayer.Opacity"/> multiplies in as well. Setting it
+    /// raises <see cref="RedrawRequested"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to NaN or a value outside 0..1.</exception>
+    public float Opacity
+    {
+        get => _renderer.Opacity;
+        set
+        {
+            if (_renderer.Opacity == value) { return; }
+            _renderer.Opacity = value;
+            RaiseRedrawRequested();
+        }
+    }
+
+    /// <summary>
+    /// The fonts this session's text uses (see <see cref="DrawText(string, float, float, float, Color?, TextAlign, float, string)"/>): an empty registry of
+    /// the session's own unless <see cref="DrawingSessionOptions.Fonts"/> supplied one.
+    /// Register at least one font file before drawing text - system fonts are never used.
+    /// </summary>
+    public FontRegistry Fonts { get; }
+
+    /// <summary>
+    /// A safe-area mask drawn over the live <see cref="Render(SKCanvas, SKImageInfo, bool)"/>
+    /// output - a preview aid; or <c>null</c> (the default) for none. Exports never include
+    /// it: to bake a mask into an exported still, pass an overlay to the export overloads
+    /// that take one. Setting it raises <see cref="RedrawRequested"/>.
+    /// </summary>
+    public SafeAreaOverlay SafeAreaOverlay
+    {
+        get => _renderer.SafeAreaOverlay;
+        set
+        {
+            _renderer.SafeAreaOverlay = value;
+            RaiseRedrawRequested();
+        }
+    }
+
+    /// <summary>
+    /// A debugging read-out - timecode, frame number and (optionally) the active cue names -
+    /// drawn over the live <see cref="Render(SKCanvas, SKImageInfo, bool)"/> output on top of
+    /// everything; or <c>null</c> (the default) for none. Exports never include it: to bake
+    /// one into a still, pass it to the export overloads that take a
+    /// <see cref="Rendering.DebugOverlay"/>. Setting it raises <see cref="RedrawRequested"/>.
+    /// </summary>
+    public DebugOverlay DebugOverlay
+    {
+        get => _renderer.DebugOverlay;
+        set
+        {
+            _renderer.DebugOverlay = value;
+            RaiseRedrawRequested();
+        }
+    }
+
+    /// <summary>
+    /// The scene time, seconds (0 by default). SETTING it shows the scene at that moment: every
+    /// binding in <see cref="Animations"/> is applied (in the order bound), every
+    /// <see cref="AnimatedShape"/> on the layers (and inside groups) is rebuilt for the time,
+    /// and from then on elements exist only inside their time windows
+    /// (<see cref="DrawingElement.StartTime"/>, <see cref="DrawingElement.EndTime"/>) - in the
+    /// live render and in every export. Setting the same time again re-applies everything.
+    /// Seeking backwards needs no rebuilding. Raises <see cref="RedrawRequested"/>.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when set to a value that is not finite.</exception>
+    public double Time
+    {
+        get => _renderer.Time;
+        set
+        {
+            if (!Double.IsFinite(value)) { throw new ArgumentOutOfRangeException(nameof(value)); }
+            ThrowIfDisposed();
+            _renderer.Time = value;
+            _animations.Apply(value);
+            foreach (DrawingLayer layer in Layers)
+            {
+                foreach (DrawingElement element in layer.GetElements())
+                {
+                    UpdateAnimatedShapes(element, value, 0);
+                }
+            }
+            RaiseRedrawRequested();
+        }
+    }
+
+    /// <summary>
+    /// The keyframe tracks and time callbacks bound to this scene's elements, groups, layers
+    /// and camera; applied whenever <see cref="Time"/> is set. Empty at first.
+    /// </summary>
+    public DrawingAnimations Animations => _animations;
+
+    /// <summary>
+    /// A view over the whole scene - pan, zoom and roll, see <see cref="DrawingCamera"/> -
+    /// applied while drawing, live and in exports; or <c>null</c> (the default) for none. Each
+    /// layer follows it by its <see cref="DrawingLayer.Parallax"/> (0 = fixed to the frame).
+    /// Setting it raises <see cref="RedrawRequested"/>; changing the camera's own properties
+    /// does not (the next render picks them up).
+    /// </summary>
+    public DrawingCamera Camera
+    {
+        get => _renderer.Camera;
+        set
+        {
+            _renderer.Camera = value;
+            RaiseRedrawRequested();
+        }
     }
 
     /// <summary>
@@ -240,6 +368,7 @@ public sealed class DrawingSession : IDisposable
             SurfaceClearColor = options.SurfaceClearColor,
         };
         StrokeWidth = options.StrokeWidth;
+        Fonts = options.Fonts ?? new FontRegistry();
     }
 
     #region Image-based factory methods
@@ -575,6 +704,7 @@ public sealed class DrawingSession : IDisposable
             effective.BackgroundFillColor = options.BackgroundFillColor;
             effective.SurfaceClearColor = options.SurfaceClearColor;
             effective.StrokeWidth = options.StrokeWidth;
+            effective.Fonts = options.Fonts;
         }
         return new DrawingSession(effective);
     }
@@ -989,7 +1119,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="centerX">The horizontal position of the center.</param>
     /// <param name="centerY">The vertical position of the center.</param>
     /// <param name="radius">The radius, in calibrated drawing units; must be positive.</param>
-    /// <param name="thickness">The outline thickness, in calibrated drawing units (ignored when filled).</param>
+    /// <param name="thickness">The outline thickness, in calibrated drawing units (not used when filled, but it must still be positive).</param>
     /// <param name="color">The circle's color; or <c>null</c> (the default) to use the active layer's color.</param>
     /// <param name="filled"><c>true</c> to fill the circle solid; <c>false</c> (the default) for an outline.</param>
     /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
@@ -1007,7 +1137,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="centerY">The vertical position of the center.</param>
     /// <param name="radiusX">The horizontal radius; must be positive.</param>
     /// <param name="radiusY">The vertical radius; must be positive.</param>
-    /// <param name="thickness">The outline thickness, in calibrated drawing units (ignored when filled).</param>
+    /// <param name="thickness">The outline thickness, in calibrated drawing units (not used when filled, but it must still be positive).</param>
     /// <param name="color">The ellipse's color; or <c>null</c> (the default) to use the active layer's color.</param>
     /// <param name="filled"><c>true</c> to fill the ellipse solid; <c>false</c> (the default) for an outline.</param>
     /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
@@ -1025,7 +1155,7 @@ public sealed class DrawingSession : IDisposable
     /// <param name="y">The vertical position of the top edge.</param>
     /// <param name="width">The width; must be positive.</param>
     /// <param name="height">The height; must be positive.</param>
-    /// <param name="thickness">The outline thickness, in calibrated drawing units (ignored when filled).</param>
+    /// <param name="thickness">The outline thickness, in calibrated drawing units (not used when filled, but it must still be positive).</param>
     /// <param name="color">The rectangle's color; or <c>null</c> (the default) to use the active layer's color.</param>
     /// <param name="filled"><c>true</c> to fill the rectangle solid; <c>false</c> (the default) for an outline.</param>
     /// <param name="cornerRadius">The corner radius; zero (the default) for square corners.</param>
@@ -1041,7 +1171,7 @@ public sealed class DrawingSession : IDisposable
     /// are in calibrated drawing units.
     /// </summary>
     /// <param name="points">The points, as (X, Y) pairs; at least two are required.</param>
-    /// <param name="thickness">The outline thickness, in calibrated drawing units (ignored when filled).</param>
+    /// <param name="thickness">The outline thickness, in calibrated drawing units (not used when filled, but it must still be positive).</param>
     /// <param name="color">The polyline's color; or <c>null</c> (the default) to use the active layer's color.</param>
     /// <param name="closed"><c>true</c> to connect the last point back to the first.</param>
     /// <param name="filled"><c>true</c> to fill the resulting polygon solid (implies closed).</param>
@@ -1060,6 +1190,245 @@ public sealed class DrawingSession : IDisposable
             polylinePoints[i] = new PointF(points[i].X, points[i].Y);
         }
         return CommitShape(new PolylineShape(polylinePoints, thickness, color, closed, filled));
+    }
+
+    /// <summary>
+    /// Draws a line of text on the active layer, in a font from the session's
+    /// <see cref="Fonts"/>, as filled glyph outlines. All coordinates and sizes are in
+    /// calibrated drawing units; (<paramref name="x"/>, <paramref name="y"/>) is the anchor
+    /// on the baseline. The returned shape is a <see cref="TextShape"/> whose
+    /// <see cref="TextShape.Width"/> reports the measured line width.
+    /// </summary>
+    /// <param name="text">The text; null or empty draws nothing (but still commits a shape).</param>
+    /// <param name="x">The anchor's horizontal position (left edge, center or right edge by <paramref name="align"/>).</param>
+    /// <param name="y">The baseline's vertical position.</param>
+    /// <param name="size">The em size; must be positive.</param>
+    /// <param name="color">The text's color; or <c>null</c> (the default) to use the active layer's color.</param>
+    /// <param name="align">How the line sits about <paramref name="x"/>; <see cref="TextAlign.Left"/> by default.</param>
+    /// <param name="tracking">Extra space after every character but the last, as a fraction of <paramref name="size"/>.</param>
+    /// <param name="familyName">The family; or <c>null</c> (the default) for the first registered font.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="size"/> is not positive or <paramref name="tracking"/> is not finite.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="familyName"/> is not registered.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no font is registered, or the session has no active layer.</exception>
+    public TextShape DrawText(string text, float x, float y, float size, Color? color = null,
+        TextAlign align = TextAlign.Left, float tracking = 0f, string familyName = null)
+    {
+        ThrowIfDisposed();
+        var shape = new TextShape(text, x, y, size, Fonts, color, align, tracking, familyName);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Draws a single line of text on the active layer with the font's kerning switched on or off
+    /// (the other overload always kerns, when the font carries kerning data). Otherwise the same as
+    /// <see cref="DrawText(string, float, float, float, Color?, TextAlign, float, string)"/>.
+    /// </summary>
+    /// <param name="text">The text; null or empty draws nothing (but still commits a shape).</param>
+    /// <param name="x">The anchor's horizontal position (left edge, center or right edge by <paramref name="align"/>).</param>
+    /// <param name="y">The baseline's vertical position.</param>
+    /// <param name="size">The em size; must be positive.</param>
+    /// <param name="color">The text's color; or <c>null</c> to use the active layer's color.</param>
+    /// <param name="align">How the line sits about <paramref name="x"/>.</param>
+    /// <param name="tracking">Extra space after every character but the last, as a fraction of <paramref name="size"/>.</param>
+    /// <param name="familyName">The family; or <c>null</c> for the first registered font.</param>
+    /// <param name="kerning"><c>true</c> to apply the font's kerning; <c>false</c> to space glyphs by their plain advances.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="size"/> is not positive, <paramref name="tracking"/> is not finite, or <paramref name="align"/> is not Left, Center or Right.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="familyName"/> is not registered.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no font is registered, or the session has no active layer.</exception>
+    public TextShape DrawText(string text, float x, float y, float size, Color? color, TextAlign align, float tracking,
+        string familyName, bool kerning)
+    {
+        ThrowIfDisposed();
+        var shape = new TextShape(text, x, y, size, Fonts, color, align, tracking, familyName, kerning);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Lays out a block of text in this session's <see cref="Fonts"/> (see
+    /// <see cref="TextLayoutEngine.Layout(FontRegistry, string, float, string, TextLayoutOptions)"/>):
+    /// several lines, wrapped to a width, aligned, spaced and trimmed as the options say. Nothing is
+    /// drawn - draw the result with <see cref="DrawTextBlock"/> or a <see cref="TextBlockShape"/>.
+    /// </summary>
+    /// <param name="text">The text; null is treated as empty.</param>
+    /// <param name="size">The em size, in calibrated drawing units.</param>
+    /// <param name="familyName">The family; or <c>null</c> for the first registered font.</param>
+    /// <param name="options">The layout settings; or <c>null</c> for the defaults.</param>
+    /// <returns>The laid-out block.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the size or an option is out of range.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="familyName"/> is not registered.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no font is registered.</exception>
+    public TextLayoutResult LayoutText(string text, float size, string familyName = null, TextLayoutOptions options = null)
+    {
+        ThrowIfDisposed();
+        return TextLayoutEngine.Layout(Fonts, text, size, familyName, options);
+    }
+
+    /// <summary>
+    /// Lays out a sequence of styled runs as one block in this session's <see cref="Fonts"/> (see
+    /// <see cref="TextLayoutEngine.Layout(FontRegistry, IReadOnlyList{TextRunDescriptor}, TextLayoutOptions)"/>).
+    /// </summary>
+    /// <param name="runs">The runs; at least one.</param>
+    /// <param name="options">The layout settings; or <c>null</c> for the defaults.</param>
+    /// <returns>The laid-out block.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="runs"/> is null or holds a null run.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="runs"/> is empty or a family is not registered.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an option is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no font is registered.</exception>
+    public TextLayoutResult LayoutText(IReadOnlyList<TextRunDescriptor> runs, TextLayoutOptions options = null)
+    {
+        ThrowIfDisposed();
+        return TextLayoutEngine.Layout(Fonts, runs, options);
+    }
+
+    /// <summary>
+    /// Adds a laid-out block of text to the active layer, filled in a flat color, with its box's
+    /// top-left corner at (<paramref name="x"/>, <paramref name="y"/>). For a gradient, an outline,
+    /// a reveal or pieces, build a <see cref="TextBlockShape"/> and add it with
+    /// <see cref="DrawShape(DrawingShape)"/>.
+    /// </summary>
+    /// <param name="layout">The laid-out text (from <see cref="LayoutText(string, float, string, TextLayoutOptions)"/>).</param>
+    /// <param name="x">Where the box's left edge goes, calibrated units.</param>
+    /// <param name="y">Where the box's top edge goes, calibrated units.</param>
+    /// <param name="color">The text's color; or <c>null</c> for the active layer's.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layout"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public TextBlockShape DrawTextBlock(TextLayoutResult layout, float x, float y, Color? color = null)
+    {
+        ThrowIfDisposed();
+        var shape = new TextBlockShape(layout, x, y, color);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Adds burned-in captions to the active layer: an element that shows the cues of a
+    /// <see cref="CaptionTrack"/> active at the session's <see cref="Time"/> (see
+    /// <see cref="CaptionPresenter"/>), in this session's <see cref="Fonts"/>.
+    /// </summary>
+    /// <param name="track">The captions.</param>
+    /// <param name="layout">The frame and safe area to place them in; or <c>null</c> for the whole calibrated drawing (no safe-area guide).</param>
+    /// <param name="style">How they look; or <c>null</c> for the readable defaults.</param>
+    /// <returns>The element that was added (an <see cref="AnimatedShape"/>), which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="track"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a style value is out of range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer, or no font is registered when a cue shows.</exception>
+    public AnimatedShape DrawCaptions(CaptionTrack track, DrawingLayout layout = null, CaptionStyle style = null)
+    {
+        ThrowIfDisposed();
+        var presenter = new CaptionPresenter(track, Fonts, layout ?? new DrawingLayout(CalibrationSize), style);
+        AnimatedShape shape = presenter.CreateShape(Time);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Draws the live particles of a particle system at one moment on the active layer, as
+    /// soft round dots in each particle's own colour, size and opacity (see
+    /// <see cref="ParticlesShape"/>). Particle positions and sizes are read as calibrated
+    /// drawing units. The particles are taken once, now: draw a new shape for each frame.
+    /// </summary>
+    /// <param name="system">The particle system to draw.</param>
+    /// <param name="time">The moment, in seconds, whose particles to draw.</param>
+    /// <param name="softness">How soft each dot's edge is, 0..1 (1, the default, fades from the centre; 0 draws plain discs).</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="system"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="time"/> is not finite or <paramref name="softness"/> is outside 0..1.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public ParticlesShape DrawParticles(DrawingParticleSystem system, double time, float softness = 1f)
+    {
+        ThrowIfDisposed();
+        var shape = new ParticlesShape(system, time, softness);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Adds a general path to the active layer: outlined with round caps and joins (or filled).
+    /// For dashes, other caps and joins, a fill under an outline, a gradient, trimming (draw-on)
+    /// or morphing, build a <see cref="PathShape"/> and add it with <see cref="DrawShape(DrawingShape)"/>.
+    /// </summary>
+    /// <param name="geometry">The path, in calibrated drawing units.</param>
+    /// <param name="thickness">The outline thickness; positive for an outline. When filled it is not used, and 0 is accepted.</param>
+    /// <param name="color">The colour; or <c>null</c> for the layer's.</param>
+    /// <param name="filled"><c>true</c> to fill the path instead of outlining it.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="geometry"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public PathShape DrawPath(PathGeometry geometry, float thickness = Stroke.DefaultWidth, Color? color = null, bool filled = false)
+    {
+        ThrowIfDisposed();
+        var shape = new PathShape(geometry, thickness, color, filled);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Adds a painterly brushstroke (a tapered, bowed lozenge - see <see cref="BrushStrokeShape"/>)
+    /// to the active layer, filled in a flat colour.
+    /// </summary>
+    /// <param name="centerX">The horizontal position of the stroke's centre, calibrated units.</param>
+    /// <param name="centerY">The vertical position of the stroke's centre, calibrated units.</param>
+    /// <param name="length">Its length end to end; positive.</param>
+    /// <param name="width">Its width at the middle; positive.</param>
+    /// <param name="angle">Its direction, in degrees, clockwise on screen from +x (y points down) - the unit of a path point's angle.</param>
+    /// <param name="bend">How far it bows sideways at the middle, as a fraction of its length.</param>
+    /// <param name="color">The colour; or <c>null</c> for the layer's.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a value is not finite, or the length or width is not positive.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public BrushStrokeShape DrawBrushStroke(float centerX, float centerY, float length, float width, float angle,
+        float bend = 0f, Color? color = null)
+    {
+        ThrowIfDisposed();
+        var shape = new BrushStrokeShape(centerX, centerY, length, width, angle, bend, BrushStrokeShape.DefaultProfile, color);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Adds a picture to the active layer, stretched into a destination rectangle. The shape
+    /// refers to the source and never disposes it: keep the source alive while the session may
+    /// render it.
+    /// </summary>
+    /// <param name="source">The picture.</param>
+    /// <param name="destination">Where it is drawn, calibrated units.</param>
+    /// <param name="sampling">How pixels are sampled; bilinear by default.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public ImageShape DrawImage(ImageSource source, RectangleF destination, ImageSampling sampling = ImageSampling.Linear)
+    {
+        ThrowIfDisposed();
+        var shape = new ImageShape(source, destination, null, sampling);
+        CommitShape(shape);
+        return shape;
+    }
+
+    /// <summary>
+    /// Adds a sprite to the active layer: a sheet's frames shown one at a time in a destination
+    /// rectangle, advancing with the session's <see cref="Time"/> at a frame rate (0 for a fixed
+    /// frame chosen by the sprite's <see cref="SpriteShape.FrameIndex"/>).
+    /// </summary>
+    /// <param name="sheet">The frames.</param>
+    /// <param name="destination">Where each frame is drawn, calibrated units.</param>
+    /// <param name="framesPerSecond">How fast the frames advance; 0 for none.</param>
+    /// <param name="playback">How the frames repeat; loop by default.</param>
+    /// <param name="sampling">How the frames are resampled to the destination; bilinear by default.</param>
+    /// <returns>The shape that was added, which <see cref="UndoLastStroke"/> can remove.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sheet"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the session has no active layer.</exception>
+    public SpriteShape DrawSprite(SpriteSheet sheet, RectangleF destination, double framesPerSecond = 0,
+        SpritePlayback playback = SpritePlayback.Loop, ImageSampling sampling = ImageSampling.Linear)
+    {
+        ThrowIfDisposed();
+        var shape = new SpriteShape(sheet, destination, framesPerSecond, playback, sampling);
+        CommitShape(shape);
+        return shape;
     }
 
     /// <summary>
@@ -1333,6 +1702,568 @@ public sealed class DrawingSession : IDisposable
     public void ExportPng(Stream destination, Size outputSize, bool includeBackground = true)
         => ExportPng(destination, GraphicsInterop.ToGraphics(outputSize), includeBackground);
 
+    /// <summary>
+    /// Renders the completed drawing - exactly as <see cref="ExportImage(Size, bool)"/> would -
+    /// and writes the frame into a caller buffer as plain 8-bit RGBA bytes: four bytes per
+    /// pixel in R, G, B, A order, rows top to bottom with no padding (a stride of width x 4),
+    /// with STRAIGHT (not premultiplied) alpha - the layout of a CodeBrix.Imaging
+    /// <c>Image&lt;Rgba32&gt;</c>. The fast way to feed frames to a video encoder or a window
+    /// texture: no PNG encode and decode per frame. Reuse one buffer for every frame.
+    /// </summary>
+    /// <param name="destination">The buffer to fill; at least width x height x 4 bytes (any extra bytes are left untouched).</param>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">
+    /// When <c>true</c> (the default), the background fill and image render behind the
+    /// layers; when <c>false</c>, the layers render over transparency and the alpha bytes
+    /// carry it.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="destination"/> is too small for the frame.</exception>
+    public void ExportPixels(Span<byte> destination, Size outputSize, bool includeBackground = true)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToPixels(destination, outputSize, Layers, includeBackground);
+    }
+
+    /// <summary>
+    /// Writes the completed drawing into a caller buffer as plain, straight-alpha RGBA bytes
+    /// - the <see cref="SKSizeI"/>-typed companion of <see cref="ExportPixels(Span{byte}, Size, bool)"/>.
+    /// </summary>
+    /// <param name="destination">The buffer to fill; at least width x height x 4 bytes.</param>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="destination"/> is too small for the frame.</exception>
+    public void ExportPixels(Span<byte> destination, SKSizeI outputSize, bool includeBackground = true)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToPixels(destination, outputSize, Layers, includeBackground);
+    }
+
+    /// <summary>
+    /// Writes the completed drawing into a caller buffer as plain, straight-alpha RGBA bytes,
+    /// with a safe-area mask drawn over the finished frame - for a preview still. Apart from
+    /// the mask this is exactly <see cref="ExportPixels(Span{byte}, Size, bool)"/>.
+    /// </summary>
+    /// <param name="destination">The buffer to fill; at least width x height x 4 bytes.</param>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw over the frame; or <c>null</c> for none.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="destination"/> is too small for the frame.</exception>
+    public void ExportPixels(Span<byte> destination, Size outputSize, bool includeBackground, SafeAreaOverlay safeAreaOverlay)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToPixels(destination, outputSize, Layers, includeBackground, safeAreaOverlay);
+    }
+
+    /// <summary>
+    /// Renders the completed drawing to a new array of plain, straight-alpha RGBA bytes
+    /// (width x height x 4, laid out as described on <see cref="ExportPixels(Span{byte}, Size, bool)"/>).
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>The frame's RGBA bytes.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public byte[] ExportPixels(Size outputSize, bool includeBackground = true)
+    {
+        if (outputSize.Width < 1 || outputSize.Height < 1) { throw new ArgumentOutOfRangeException(nameof(outputSize)); }
+        var pixels = new byte[(long)outputSize.Width * outputSize.Height * 4];
+        ExportPixels(pixels, outputSize, includeBackground);
+        return pixels;
+    }
+
+    /// <summary>
+    /// Renders the completed drawing to a new array of plain, straight-alpha RGBA bytes - the
+    /// <see cref="SKSizeI"/>-typed companion of <see cref="ExportPixels(Size, bool)"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>The frame's RGBA bytes.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public byte[] ExportPixels(SKSizeI outputSize, bool includeBackground = true)
+        => ExportPixels(GraphicsInterop.ToImaging(outputSize), includeBackground);
+
+    /// <summary>
+    /// Renders the completed drawing at the <see cref="DefaultExportSize"/> to a new array of
+    /// plain, straight-alpha RGBA bytes.
+    /// </summary>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>The frame's RGBA bytes (DefaultExportSize width x height x 4).</returns>
+    public byte[] ExportPixels(bool includeBackground = true) => ExportPixels(DefaultExportSize, includeBackground);
+
+    /// <summary>
+    /// Renders the completed drawing to a new image with a safe-area mask drawn over the
+    /// finished frame - for a preview still that shows the unsafe zones. Apart from the
+    /// mask this is exactly <see cref="ExportImage(Size, bool)"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw over the frame; or <c>null</c> for none.</param>
+    /// <returns>A new <see cref="SKImage"/> that the caller must dispose.</returns>
+    public SKImage ExportImage(Size outputSize, bool includeBackground, SafeAreaOverlay safeAreaOverlay)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToImage(outputSize, Layers, includeBackground, safeAreaOverlay);
+    }
+
+    /// <summary>
+    /// Renders the completed drawing to PNG-encoded bytes with a safe-area mask drawn over
+    /// the finished frame. Apart from the mask this is exactly <see cref="ExportPng(Size, bool)"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw over the frame; or <c>null</c> for none.</param>
+    /// <returns>The PNG-encoded image bytes.</returns>
+    public byte[] ExportPng(Size outputSize, bool includeBackground, SafeAreaOverlay safeAreaOverlay)
+    {
+        using SKImage image = ExportImage(outputSize, includeBackground, safeAreaOverlay);
+        using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
+    /// <summary>
+    /// Writes the completed drawing into a caller buffer as plain, straight-alpha RGBA bytes,
+    /// with preview overlays drawn over the finished frame - a safe-area mask, a debugging
+    /// read-out, or both (either may be <c>null</c>). Apart from the overlays this is exactly
+    /// <see cref="ExportPixels(Span{byte}, Size, bool)"/>.
+    /// </summary>
+    /// <param name="destination">The buffer to fill; at least width x height x 4 bytes.</param>
+    /// <param name="outputSize">The pixel size of the frame to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw; or <c>null</c> for none.</param>
+    /// <param name="debugOverlay">The debugging read-out to draw on top; or <c>null</c> for none.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="destination"/> is too small for the frame.</exception>
+    public void ExportPixels(Span<byte> destination, Size outputSize, bool includeBackground,
+        SafeAreaOverlay safeAreaOverlay, DebugOverlay debugOverlay)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToPixels(destination, outputSize, Layers, includeBackground, safeAreaOverlay, debugOverlay);
+    }
+
+    /// <summary>
+    /// Renders the completed drawing to a new image with preview overlays drawn over the
+    /// finished frame - a safe-area mask, a debugging read-out, or both (either may be
+    /// <c>null</c>). Apart from the overlays this is exactly <see cref="ExportImage(Size, bool)"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw; or <c>null</c> for none.</param>
+    /// <param name="debugOverlay">The debugging read-out to draw on top; or <c>null</c> for none.</param>
+    /// <returns>A new <see cref="SKImage"/> that the caller must dispose.</returns>
+    public SKImage ExportImage(Size outputSize, bool includeBackground, SafeAreaOverlay safeAreaOverlay, DebugOverlay debugOverlay)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToImage(outputSize, Layers, includeBackground, safeAreaOverlay, debugOverlay);
+    }
+
+    /// <summary>
+    /// Renders the completed drawing to PNG-encoded bytes with preview overlays drawn over the
+    /// finished frame - a safe-area mask, a debugging read-out, or both (either may be
+    /// <c>null</c>). Apart from the overlays this is exactly <see cref="ExportPng(Size, bool)"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">When <c>true</c>, the background renders behind the layers.</param>
+    /// <param name="safeAreaOverlay">The safe-area mask to draw; or <c>null</c> for none.</param>
+    /// <param name="debugOverlay">The debugging read-out to draw on top; or <c>null</c> for none.</param>
+    /// <returns>The PNG-encoded image bytes.</returns>
+    public byte[] ExportPng(Size outputSize, bool includeBackground, SafeAreaOverlay safeAreaOverlay, DebugOverlay debugOverlay)
+    {
+        using SKImage image = ExportImage(outputSize, includeBackground, safeAreaOverlay, debugOverlay);
+        using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return data.ToArray();
+    }
+
+    /// <summary>
+    /// Renders the completed drawing - exactly as <see cref="ExportPixels(Span{byte}, Size, bool)"/>
+    /// would - into a new float image, ready for the pixel-plane tools (blur, bloom, tone
+    /// curves, compositing, transitions). Straight (not premultiplied) alpha, the same layout
+    /// as the byte frame: each channel is <c>byte / 255f</c>, so
+    /// <see cref="DrawingPlaneImage.ToRgba(Span{byte})"/> gives back exactly the bytes
+    /// <c>ExportPixels</c> writes.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the image to produce.</param>
+    /// <param name="includeBackground">
+    /// When <c>true</c> (the default), the background fill and image render behind the
+    /// layers; when <c>false</c>, the layers render over transparency and the image's
+    /// <see cref="DrawingPlaneImage.A"/> plane carries it.
+    /// </param>
+    /// <returns>A new image of <paramref name="outputSize"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public DrawingPlaneImage ExportPlaneImage(Size outputSize, bool includeBackground = true)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToPlaneImage(outputSize, Layers, includeBackground);
+    }
+
+    /// <summary>
+    /// Renders the completed drawing at the <see cref="DefaultExportSize"/> into a new float
+    /// image (see <see cref="ExportPlaneImage(Size, bool)"/>).
+    /// </summary>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <returns>A new image of the <see cref="DefaultExportSize"/>.</returns>
+    public DrawingPlaneImage ExportPlaneImage(bool includeBackground = true) => ExportPlaneImage(DefaultExportSize, includeBackground);
+
+    /// <summary>
+    /// Renders the completed drawing into an existing float image at that image's size,
+    /// overwriting all four of its planes - the allocation-free form of
+    /// <see cref="ExportPlaneImage(Size, bool)"/> for a frame loop (reuse one image per frame).
+    /// </summary>
+    /// <param name="destination">The image to overwrite; its size is the frame size.</param>
+    /// <param name="includeBackground">When <c>true</c> (the default), the background renders behind the layers.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> is null.</exception>
+    public void ExportPlaneImage(DrawingPlaneImage destination, bool includeBackground = true)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToPlaneImage(destination, Layers, includeBackground);
+    }
+
+    /// <summary>
+    /// Exports the COVERAGE of everything drawn as a mask - one <see cref="DrawingPlane"/>
+    /// of values 0..1 (1 = fully covered by ink, 0 = untouched), to multiply by, blend a
+    /// colour through or composite with. Each layer contributes the alpha of its own ink
+    /// as drawn (anti-aliased edges, an element color's alpha and a fill's stop alpha
+    /// count; <see cref="LayerOpacity"/>, <see cref="DrawingLayer.Opacity"/> and
+    /// <see cref="Opacity"/> do not, and the background is never part of it), and the
+    /// layers combine as a union, bottom to top: <c>m = m + a * (1 - m)</c>. The drawing
+    /// occupies its centered aspect-fit rectangle, exactly as in an export.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the mask to produce.</param>
+    /// <returns>A new plane of <paramref name="outputSize"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public DrawingPlane ExportMask(Size outputSize)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToMask(outputSize, Layers);
+    }
+
+    /// <summary>
+    /// Exports the coverage of everything drawn as a mask at the <see cref="DefaultExportSize"/>
+    /// (see <see cref="ExportMask(Size)"/>).
+    /// </summary>
+    /// <returns>A new plane of the <see cref="DefaultExportSize"/>.</returns>
+    public DrawingPlane ExportMask() => ExportMask(DefaultExportSize);
+
+    /// <summary>
+    /// Exports the coverage of ONE layer's ink as a mask (see <see cref="ExportMask(Size)"/>):
+    /// each value is that layer's alpha byte divided by 255.
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <param name="outputSize">The pixel size of the mask to produce.</param>
+    /// <returns>A new plane of <paramref name="outputSize"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public DrawingPlane ExportMask(DrawingLayer layer, Size outputSize)
+    {
+        ThrowIfDisposed();
+        if (layer == null) { throw new ArgumentNullException(nameof(layer)); }
+        bool owned;
+        lock (_layersLocker) { owned = _layers.Contains(layer); }
+        if (!owned) { throw new ArgumentException("The layer does not belong to this session.", nameof(layer)); }
+        return _renderer.RenderToMask(outputSize, new[] { layer });
+    }
+
+    /// <summary>
+    /// Exports the coverage of one layer's ink as a mask at the <see cref="DefaultExportSize"/>
+    /// (see <see cref="ExportMask(DrawingLayer, Size)"/>).
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <returns>A new plane of the <see cref="DefaultExportSize"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    public DrawingPlane ExportMask(DrawingLayer layer) => ExportMask(layer, DefaultExportSize);
+
+    /// <summary>
+    /// Exports a mask of everything drawn, with an explicit choice of what it measures (see
+    /// <see cref="MaskMeaning"/>): <see cref="MaskMeaning.Coverage"/> is exactly
+    /// <see cref="ExportMask(Size)"/> - where the ink is, the layer and session opacities ignored;
+    /// <see cref="MaskMeaning.VisibleAlpha"/> is the alpha of the frame as
+    /// <see cref="ExportPixels(Span{byte}, Size, bool)"/> writes it without the background -
+    /// everything the viewer would see, every opacity (element, group, layer,
+    /// <see cref="LayerOpacity"/>, <see cref="Opacity"/>), time window, mask and effect included -
+    /// each value that alpha byte divided by 255; <see cref="MaskMeaning.HardEdged"/> is where the
+    /// elements are, 0 or 1 per pixel by the pixel-centre rule, computed from their geometry in
+    /// shared code - the same mask, bit for bit, in both packages.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the mask to produce.</param>
+    /// <param name="meaning">Coverage, visible alpha or hard-edged coverage.</param>
+    /// <returns>A new plane of <paramref name="outputSize"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1, or <paramref name="meaning"/> is undefined.</exception>
+    public DrawingPlane ExportMask(Size outputSize, MaskMeaning meaning)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToMask(outputSize, Layers, meaning);
+    }
+
+    /// <summary>
+    /// Exports a mask of everything drawn at the <see cref="DefaultExportSize"/>, coverage or
+    /// visible alpha (see <see cref="ExportMask(Size, MaskMeaning)"/>).
+    /// </summary>
+    /// <param name="meaning">Coverage, visible alpha or hard-edged coverage.</param>
+    /// <returns>A new plane of the <see cref="DefaultExportSize"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="meaning"/> is undefined.</exception>
+    public DrawingPlane ExportMask(MaskMeaning meaning) => ExportMask(DefaultExportSize, meaning);
+
+    /// <summary>
+    /// Exports a mask of everything drawn into an existing plane at that plane's size,
+    /// overwriting every value - the allocation-free form of
+    /// <see cref="ExportMask(Size, MaskMeaning)"/> for a frame loop (reuse one plane per frame).
+    /// </summary>
+    /// <param name="destination">The plane to overwrite; its size is the frame size.</param>
+    /// <param name="meaning">Coverage (the default), visible alpha or hard-edged coverage.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="meaning"/> is undefined.</exception>
+    public void ExportMask(DrawingPlane destination, MaskMeaning meaning = MaskMeaning.Coverage)
+    {
+        ThrowIfDisposed();
+        _renderer.RenderToMask(destination, Layers, meaning);
+    }
+
+    /// <summary>
+    /// Exports a mask of ONE layer, coverage or visible alpha (see
+    /// <see cref="ExportMask(Size, MaskMeaning)"/>). Visible alpha is that layer alone exported
+    /// over transparency: its own opacity, <see cref="LayerOpacity"/> and <see cref="Opacity"/>
+    /// all count.
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <param name="outputSize">The pixel size of the mask to produce.</param>
+    /// <param name="meaning">Coverage, visible alpha or hard-edged coverage.</param>
+    /// <returns>A new plane of <paramref name="outputSize"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1, or <paramref name="meaning"/> is undefined.</exception>
+    public DrawingPlane ExportMask(DrawingLayer layer, Size outputSize, MaskMeaning meaning)
+    {
+        ThrowIfDisposed();
+        CheckOwnLayer(layer);
+        return _renderer.RenderToMask(outputSize, new[] { layer }, meaning);
+    }
+
+    /// <summary>
+    /// Exports a mask of one layer at the <see cref="DefaultExportSize"/>, coverage or visible
+    /// alpha (see <see cref="ExportMask(DrawingLayer, Size, MaskMeaning)"/>).
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <param name="meaning">Coverage, visible alpha or hard-edged coverage.</param>
+    /// <returns>A new plane of the <see cref="DefaultExportSize"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="meaning"/> is undefined.</exception>
+    public DrawingPlane ExportMask(DrawingLayer layer, MaskMeaning meaning) => ExportMask(layer, DefaultExportSize, meaning);
+
+    /// <summary>
+    /// Exports a mask of one layer into an existing plane at that plane's size, overwriting
+    /// every value (see <see cref="ExportMask(DrawingLayer, Size, MaskMeaning)"/>).
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <param name="destination">The plane to overwrite; its size is the frame size.</param>
+    /// <param name="meaning">Coverage (the default), visible alpha or hard-edged coverage.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> or <paramref name="destination"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="meaning"/> is undefined.</exception>
+    public void ExportMask(DrawingLayer layer, DrawingPlane destination, MaskMeaning meaning = MaskMeaning.Coverage)
+    {
+        ThrowIfDisposed();
+        CheckOwnLayer(layer);
+        _renderer.RenderToMask(destination, new[] { layer }, meaning);
+    }
+
+    /// <summary>
+    /// Exports the OWNERSHIP MAP of everything drawn: for each pixel, which element owns it -
+    /// the last element in painting order whose area covers the pixel's centre, under the
+    /// hard-edged rule of <see cref="MaskMeaning.HardEdged"/> (identical in both packages).
+    /// Elements are numbered across the layers, bottom layer first, each layer's elements in
+    /// order (see <see cref="DrawingOwnershipMap"/>); pixels nothing covers hold
+    /// <see cref="DrawingOwnershipMap.Nobody"/>. The drawing occupies its centered aspect-fit
+    /// rectangle, as in every export, and elements count as they stand at <see cref="Time"/>.
+    /// </summary>
+    /// <param name="outputSize">The pixel size of the map.</param>
+    /// <returns>A new map.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public DrawingOwnershipMap ExportOwnershipMap(Size outputSize)
+    {
+        ThrowIfDisposed();
+        return _renderer.RenderToOwnershipMap(outputSize, Layers);
+    }
+
+    /// <summary>
+    /// Exports the ownership map of everything drawn at the <see cref="DefaultExportSize"/> (see
+    /// <see cref="ExportOwnershipMap(Size)"/>).
+    /// </summary>
+    /// <returns>A new map.</returns>
+    public DrawingOwnershipMap ExportOwnershipMap() => ExportOwnershipMap(DefaultExportSize);
+
+    /// <summary>
+    /// Exports the ownership map of ONE layer's elements (numbered in that layer's order; see
+    /// <see cref="ExportOwnershipMap(Size)"/>).
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <param name="outputSize">The pixel size of the map.</param>
+    /// <returns>A new map.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when either dimension of <paramref name="outputSize"/> is less than 1.</exception>
+    public DrawingOwnershipMap ExportOwnershipMap(DrawingLayer layer, Size outputSize)
+    {
+        ThrowIfDisposed();
+        CheckOwnLayer(layer);
+        return _renderer.RenderToOwnershipMap(outputSize, new[] { layer });
+    }
+
+    /// <summary>
+    /// Exports the ownership map of one layer's elements at the <see cref="DefaultExportSize"/>
+    /// (see <see cref="ExportOwnershipMap(DrawingLayer, Size)"/>).
+    /// </summary>
+    /// <param name="layer">One of this session's layers.</param>
+    /// <returns>A new map.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="layer"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="layer"/> is not one of this session's layers.</exception>
+    public DrawingOwnershipMap ExportOwnershipMap(DrawingLayer layer) => ExportOwnershipMap(layer, DefaultExportSize);
+
+    private void CheckOwnLayer(DrawingLayer layer)
+    {
+        if (layer == null) { throw new ArgumentNullException(nameof(layer)); }
+        bool owned;
+        lock (_layersLocker) { owned = _layers.Contains(layer); }
+        if (!owned) { throw new ArgumentException("The layer does not belong to this session.", nameof(layer)); }
+    }
+
+    #endregion
+
+    #region Safe areas
+
+    /// <summary>
+    /// Checks the marked elements against a safe-area guide for a frame of the
+    /// <see cref="DefaultExportSize"/>; see <see cref="CheckSafeArea(SafeAreaGuide, Size, SafeAreaCheckOptions)"/>.
+    /// </summary>
+    /// <param name="guide">The guide to check against.</param>
+    /// <param name="options">Optional settings (duration, which elements); or <c>null</c> for the defaults.</param>
+    /// <returns>The findings; empty when every checked element is clear.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="guide"/> is null.</exception>
+    public IReadOnlyList<SafeAreaFinding> CheckSafeArea(SafeAreaGuide guide, SafeAreaCheckOptions options = null)
+        => CheckSafeArea(guide, DefaultExportSize, options);
+
+    /// <summary>
+    /// Checks the elements that matter against a safe-area guide, for frames of the given
+    /// size: every element whose own <see cref="DrawingElement.IsSafeAreaChecked"/> flag is
+    /// set, or that sits on a layer whose <see cref="DrawingLayer.IsSafeAreaChecked"/> flag
+    /// is set (or every element, with <see cref="SafeAreaCheckOptions.CheckAllElements"/>),
+    /// is measured by its bounds and compared with each unsafe zone the guide lays out on
+    /// the frame. The frame is the whole exported image; the drawing occupies its centered
+    /// aspect-fit rectangle, exactly as in an export. Purely advisory: the check never
+    /// changes the drawing and never throws because of what it finds. Elements whose
+    /// bounds are unknown (custom shapes that do not override
+    /// <see cref="DrawingShape.GetBounds"/>) are skipped silently unless
+    /// <see cref="SafeAreaCheckOptions.ReportUncheckedElements"/> asks for them to be listed.
+    /// <para>
+    /// "NOW" IS <see cref="Time"/>: the check looks at the session as it stands at its current
+    /// Time - that one moment decides which time-keyed elements exist, where animated and
+    /// transformed elements are, and which of the guide's time rules apply. To check another
+    /// moment, set <see cref="Time"/> first.
+    /// </para>
+    /// </summary>
+    /// <param name="guide">The guide to check against (a preset from <see cref="SafeAreaGuides"/>, a custom guide, or a combination).</param>
+    /// <param name="frameSize">The pixel size of the frames the drawing will be exported at.</param>
+    /// <param name="options">Optional settings (duration, which elements); or <c>null</c> for the defaults.</param>
+    /// <returns>
+    /// The findings, in layer order then element order - one per element per zone it
+    /// reaches into; empty when every checked element is clear.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="guide"/> is null.</exception>
+    public IReadOnlyList<SafeAreaFinding> CheckSafeArea(SafeAreaGuide guide, Size frameSize, SafeAreaCheckOptions options = null)
+    {
+        if (guide == null) { throw new ArgumentNullException(nameof(guide)); }
+        ThrowIfDisposed();
+        options ??= new SafeAreaCheckOptions();
+
+        var findings = new List<SafeAreaFinding>();
+        if (frameSize.Width < 1 || frameSize.Height < 1) { return findings; }
+
+        double time = _renderer.Time;
+        IReadOnlyList<SafeAreaZone> zones = guide.GetUnsafeZones(
+            new SizeF(frameSize.Width, frameSize.Height), time, options.Duration);
+        Size calibration = CalibrationSize;
+        RectangleF drawingRect = CanvasCalibration.GetDrawingRect(frameSize, calibration);
+        float scale = drawingRect.Width / calibration.Width;
+        if (!(scale > 0f)) { return findings; }
+
+        foreach (DrawingLayer layer in Layers)
+        {
+            if (!layer.IsVisible) { continue; }
+            Matrix3x2 view = _renderer.GetLayerViewMatrix(layer);
+            DrawingElement[] elements = layer.GetElements();
+            for (int i = 0; i < elements.Length; i++)
+            {
+                DrawingElement element = elements[i];
+                if (!options.CheckAllElements && !layer.IsSafeAreaChecked && !element.IsSafeAreaChecked) { continue; }
+                if (element.IsDynamic && !element.IsVisibleAt(time)) { continue; }
+
+                RectangleF? bounds = GetElementBounds(element, time, view);
+                if (!bounds.HasValue)
+                {
+                    if (options.ReportUncheckedElements)
+                    {
+                        findings.Add(new SafeAreaFinding(SafeAreaFindingKind.CouldNotCheck, layer, element, i, null, null, null));
+                    }
+                    continue;
+                }
+
+                RectangleF b = bounds.Value;
+                var frameBounds = new RectangleF(
+                    drawingRect.X + (b.X * scale), drawingRect.Y + (b.Y * scale), b.Width * scale, b.Height * scale);
+                foreach (SafeAreaZone zone in zones)
+                {
+                    RectangleF overlap = RectangleF.Intersect(frameBounds, zone.Bounds);
+                    if (overlap.Width <= 0f || overlap.Height <= 0f) { continue; }
+
+                    var calibratedOverlap = new RectangleF(
+                        (overlap.X - drawingRect.X) / scale, (overlap.Y - drawingRect.Y) / scale,
+                        overlap.Width / scale, overlap.Height / scale);
+                    findings.Add(new SafeAreaFinding(SafeAreaFindingKind.Overlap, layer, element, i, zone, calibratedOverlap, overlap));
+                }
+            }
+        }
+        return findings;
+    }
+
+    //An element's bounds as the frame sees them: its own bounds (for a group, of the children
+    //  that exist at the time), through its own transform, then through its layer's view
+    //  (the layer transform and the camera); plain elements on plain layers are untouched
+    private static RectangleF? GetElementBounds(DrawingElement element, double time, Matrix3x2 view)
+    {
+        try
+        {
+            RectangleF? bounds;
+            if (element is DrawingGroup group)
+            {
+                bounds = group.GetBoundsAt(time);
+                if (bounds.HasValue && !group.Transform.IsIdentity) { bounds = group.Transform.TransformBounds(bounds.Value); }
+            }
+            else
+            {
+                bounds = element.GetTransformedBounds();
+            }
+            if (bounds.HasValue && !view.IsIdentity) { bounds = DrawingTransform.TransformBounds(bounds.Value, view); }
+            if (bounds.HasValue)
+            {
+                RectangleF b = bounds.Value;
+                if (!Single.IsFinite(b.X) || !Single.IsFinite(b.Y) || !Single.IsFinite(b.Width) || !Single.IsFinite(b.Height)
+                    || b.Width < 0f || b.Height < 0f)
+                {
+                    return null;
+                }
+            }
+            return bounds;
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        {
+            //A custom shape whose bounds cannot be computed counts as "unknown", never as a failure
+            return null;
+        }
+    }
+
     #endregion
 
     #region Clearing and undo
@@ -1391,6 +2322,31 @@ public sealed class DrawingSession : IDisposable
     }
 
     #endregion
+
+    //Rebuilds animated shapes for a time - on a layer, inside groups, and inside what an
+    //  animated shape built - skipping plain elements without looking inside them
+    private static void UpdateAnimatedShapes(DrawingElement element, double seconds, int depth)
+    {
+        if (!element.IsDynamic) { return; }
+        if (depth > 64)
+        {
+            throw new InvalidOperationException("Groups and animated shapes are nested too deeply (does one contain itself?).");
+        }
+
+        if (element is AnimatedShape animated)
+        {
+            animated.Update(seconds);
+            DrawingShape current = animated.Current;
+            if (current != null) { UpdateAnimatedShapes(current, seconds, depth + 1); }
+        }
+        else if (element is DrawingGroup group)
+        {
+            foreach (DrawingElement child in group.GetChildren())
+            {
+                UpdateAnimatedShapes(child, seconds, depth + 1);
+            }
+        }
+    }
 
     private void RaiseRedrawRequested() => RedrawRequested?.Invoke(this, EventArgs.Empty);
 

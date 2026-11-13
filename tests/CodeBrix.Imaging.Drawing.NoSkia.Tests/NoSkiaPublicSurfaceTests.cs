@@ -39,13 +39,18 @@ public class NoSkiaPublicSurfaceTests
     private const string SvgDocumentationFile = "CodeBrix.Imaging.Drawing.NoSkia.Svg.xml";
 
     //The whole consumer story of the SVG assembly: the facade, its scene and warning types,
-    //  and the font registry. Nothing else is exported.
+    //  the session element with its parts, aspect and session helper, and the font registry.
+    //  Nothing else is exported.
     private static readonly string[] ExportedSvgTypes =
     {
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvg",
+        "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgAspect",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgNode",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgNodeKind",
+        "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgPart",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgScene",
+        "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgSessionExtensions",
+        "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgShape",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgTextEmission",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgWarning",
         "CodeBrix.Imaging.Drawing.NoSkia.Svg.DrawingSvgWarningKind",

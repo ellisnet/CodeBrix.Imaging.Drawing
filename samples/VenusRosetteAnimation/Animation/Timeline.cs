@@ -1,5 +1,6 @@
 using System;
 using CodeBrix.Imaging;
+using CodeBrix.Imaging.Drawing.Animation;
 
 namespace VenusRosetteAnimation.Animation;
 
@@ -7,8 +8,9 @@ namespace VenusRosetteAnimation.Animation;
 /// The animation's clock and the orbital model behind it. Everything shown is a pure function of the animation
 /// time, so the live window and the rendered frames always agree.
 /// <para>
-/// TIMING (21.0 s, 630 frames at 30 fps): the scene fades in over the first <see cref="IntroSeconds" />; the eight
-/// years are then drawn at a steady rate until <see cref="DrawEndSeconds" />, when the last thread lands; the
+/// TIMING (21.0 s, 630 frames at 30 fps) lives in <see cref="Clock" />, the library timeline, as three cues: "intro"
+/// (the fade-in over the first <see cref="IntroSeconds" />), "draw" (the eight years, drawn at a steady rate until
+/// <see cref="DrawEndSeconds" />, when the last thread lands) and "settle" (the thread being drawn fades away); the
 /// finished rosette holds for the remaining frames.
 /// </para>
 /// <para>
@@ -25,8 +27,8 @@ internal static class Timeline
     /// <summary>Frames per second of the rendered video.</summary>
     public const int Fps = 30;
 
-    /// <summary>The number of frames in the rendered video.</summary>
-    public const int FrameCount = (int)(TotalSeconds * Fps);
+    /// <summary>The fade of the thread being drawn, once the last thread has landed, seconds.</summary>
+    public const double SettleSeconds = 0.4;
 
     /// <summary>The fade-in from black, seconds (the clock of the eight years starts when it ends).</summary>
     public const double IntroSeconds = 1.0;
@@ -57,13 +59,57 @@ internal static class Timeline
 
     private const double StartAngle = Math.PI / 2;
 
+    /// <summary>
+    /// The animation's clock: 21 s at 30 fps, with the cues "intro" (eased, 0 .. <see cref="IntroSeconds" />),
+    /// "draw" (linear, <see cref="IntroSeconds" /> .. <see cref="DrawEndSeconds" />) and "settle" (eased, the
+    /// <see cref="SettleSeconds" /> after <see cref="DrawEndSeconds" />).
+    /// </summary>
+    public static readonly AnimationTimeline Clock = CreateClock();
+
+    /// <summary>The fade-in cue.</summary>
+    public static readonly TimelineCue Intro = Clock.GetCue("intro");
+
+    /// <summary>The eight years being drawn.</summary>
+    public static readonly TimelineCue Draw = Clock.GetCue("draw");
+
+    /// <summary>The fade of the thread being drawn, after the last one lands.</summary>
+    public static readonly TimelineCue Settle = Clock.GetCue("settle");
+
+    /// <summary>The number of frames in the rendered video.</summary>
+    public static int FrameCount => Clock.FrameCount;
+
     /// <summary>The simulated day shown at an animation time (0 during the intro, <see cref="TotalDays" /> after the draw).</summary>
     /// <param name="seconds">The animation time.</param>
     /// <returns>The day.</returns>
-    public static double DayAt(double seconds)
+    public static double DayAt(double seconds) => Draw.LinearProgress(seconds) * TotalDays;
+
+    /// <summary>
+    /// The first animation time at which <see cref="DayAt" /> reaches a day (to within the thread schedule's
+    /// 1e-9-day tolerance) - the moment a thread or ring of that day appears. Found exactly, double by double, so an
+    /// element keyed to it appears on precisely the frames where the day has come.
+    /// </summary>
+    /// <param name="day">The day.</param>
+    /// <returns>The time; <c>null</c> when the day has come from the start, <see cref="double.PositiveInfinity" /> when it never comes.</returns>
+    public static double? FirstTimeAt(double day)
     {
-        double f = (seconds - IntroSeconds) / (DrawEndSeconds - IntroSeconds);
-        return Math.Clamp(f, 0, 1) * TotalDays;
+        bool Reached(double seconds) => DayAt(seconds) >= day - 1e-9;
+        if (Reached(0)) return null;
+        if (!Reached(TotalSeconds)) return double.PositiveInfinity;
+
+        // DayAt only ever grows with time, so step from an estimate to the exact first time that reaches the day.
+        double seconds = Math.Clamp(IntroSeconds + (day / TotalDays * (DrawEndSeconds - IntroSeconds)), 0, TotalSeconds);
+        while (Reached(seconds)) seconds = Math.BitDecrement(seconds);
+        while (!Reached(seconds)) seconds = Math.BitIncrement(seconds);
+        return seconds;
+    }
+
+    private static AnimationTimeline CreateClock()
+    {
+        AnimationTimeline clock = new AnimationTimeline(TotalSeconds, Fps);
+        clock.AddCue("intro", 0, IntroSeconds, EasingKind.SmoothStep);
+        clock.AddCue("draw", IntroSeconds, DrawEndSeconds);
+        clock.AddCue("settle", DrawEndSeconds, DrawEndSeconds + SettleSeconds, EasingKind.SmoothStep);
+        return clock;
     }
 
     /// <summary>The number of threads drawn by a given day (the first one at day 0).</summary>
@@ -72,34 +118,11 @@ internal static class Timeline
     public static int ThreadsBy(double day) => Math.Min(TotalThreads, (int)Math.Floor((day / ThreadEveryDays) + 1e-9) + 1);
 
     /// <summary>
-    /// The thread colour at a fraction of the eight years: rose, through copper, to violet.
+    /// The thread colour across the eight years: rose, through copper, to violet (position 0 at the start, 1 at
+    /// the end; the alpha is given separately with <see cref="ColorRamp.At(double, byte)" />).
     /// </summary>
-    /// <param name="fraction">0 at the start, 1 at the end.</param>
-    /// <param name="alpha">The colour's alpha.</param>
-    /// <returns>The colour.</returns>
-    public static Color ThreadColor(double fraction, byte alpha)
-    {
-        (float r, float g, float b)[] stops = { (246, 112, 168), (232, 146, 92), (156, 122, 248) };
-        double f = Math.Clamp(fraction, 0, 1) * (stops.Length - 1);
-        int i = Math.Min((int)f, stops.Length - 2);
-        float t = (float)(f - i);
-        (float r0, float g0, float b0) = stops[i];
-        (float r1, float g1, float b1) = stops[i + 1];
-        return Color.FromRgba(
-            (byte)Math.Round(r0 + ((r1 - r0) * t)),
-            (byte)Math.Round(g0 + ((g1 - g0) * t)),
-            (byte)Math.Round(b0 + ((b1 - b0) * t)),
-            alpha);
-    }
-
-    /// <summary>The smooth 0..1 ramp used for fades.</summary>
-    /// <param name="x">The input, clamped to 0..1.</param>
-    /// <returns>The eased value.</returns>
-    public static double SmoothStep(double x)
-    {
-        x = Math.Clamp(x, 0, 1);
-        return x * x * (3 - (2 * x));
-    }
+    public static readonly ColorRamp ThreadRamp = new ColorRamp(
+        Color.FromRgb(246, 112, 168), Color.FromRgb(232, 146, 92), Color.FromRgb(156, 122, 248));
 
     /// <summary>A planet's position on a given day, frame coordinates (counter-clockwise, starting at the top).</summary>
     /// <param name="sun">The Sun, frame coordinates.</param>

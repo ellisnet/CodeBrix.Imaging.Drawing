@@ -1,0 +1,20 @@
+# Line endings: LF, everywhere, on every platform.
+#
+# The committed files are already LF. These rules only stop a checkout from
+# changing them (core.autocrlf=true on Windows would otherwise expand LF to
+# CRLF, which the tests and tooling do not expect).
+* text=auto eol=lf
+
+# Never touched: an image, a font or a native library with newline translation
+# applied to it is silently corrupt, so these are declared rather than left to
+# git's heuristic.
+*.png   binary
+*.jpg   binary
+*.ttf   binary
+*.mp4   binary
+*.npz   binary
+*.nupkg binary
+*.dylib binary
+*.so    binary
+*.dll   binary
+*.pdb   binary

@@ -1,0 +1,6 @@
+<Solution>
+  <!-- AutumnAviana.slnx
+       The sample's own solution (it is deliberately NOT part of CodeBrix.Imaging.Drawing.slnx).
+       It consumes CodeBrix.Imaging.Drawing.NoSkia as a published NuGet package. -->
+  <Project Path="AutumnAviana.csproj" />
+</Solution>

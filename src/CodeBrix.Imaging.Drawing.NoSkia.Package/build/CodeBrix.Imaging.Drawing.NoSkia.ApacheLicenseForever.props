@@ -23,8 +23,9 @@
 
       - It is per-project, not per-file, and it is a global using: an alias applies to every
         file in the project that imports it.
-      - Never combine it with a project that also references SkiaSharp. Both would define
-        the same names, and every use of one becomes ambiguous.
+      - Never combine it with a project that also references SkiaSharp. An alias takes
+        precedence over a using directive for a namespace, so the names would silently mean
+        the Drawing types, and the mistake would only show up as type mismatches.
       - It covers the drawing types only. The display-list surface (DrawingPicture aside,
         which is aliased below) is this package's own design rather than a workalike, so
         DrawingCommand, DrawingTextStyle, IDrawingCommandVisitor and the command records

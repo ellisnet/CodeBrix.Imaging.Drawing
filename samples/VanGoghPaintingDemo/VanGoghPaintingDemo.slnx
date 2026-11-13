@@ -1,0 +1,8 @@
+<Solution>
+  <!-- VanGoghPaintingDemo.slnx
+       The sample's own solution (it is deliberately NOT part of CodeBrix.Imaging.Drawing.slnx).
+       Both projects build the same painting code (Shared/): the application against the published
+       CodeBrix.Imaging.Drawing package, the NoSkia project against CodeBrix.Imaging.Drawing.NoSkia. -->
+  <Project Path="VanGoghPaintingDemo/VanGoghPaintingDemo.csproj" />
+  <Project Path="VanGoghPaintingDemo.NoSkia/VanGoghPaintingDemo.NoSkia.csproj" />
+</Solution>

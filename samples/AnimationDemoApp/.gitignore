@@ -1,0 +1,5 @@
+# Stills and other output
+Output/
+bin/
+obj/
+.DS_Store

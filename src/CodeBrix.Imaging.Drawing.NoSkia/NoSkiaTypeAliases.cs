@@ -6,13 +6,15 @@
 //assembly there is no SkiaSharp: the global using aliases below map every SK name onto
 //the managed workalike type (DrawingColor, DrawingCanvas, DrawingBitmap, ...) in the
 //CodeBrix.Imaging.Drawing.NoSkia namespace. Keeping all of the aliases in this one file -
-//instead of repeating ~28 alias directives at the top of every shared source file - is
+//instead of repeating the whole list of alias directives at the top of every shared source file - is
 //what keeps the shared sources byte-identical between the two packages.
 
 global using SKAlphaType = CodeBrix.Imaging.Drawing.NoSkia.DrawingAlphaType;
 global using SKBitmap = CodeBrix.Imaging.Drawing.NoSkia.DrawingBitmap;
+global using SKBlendMode = CodeBrix.Imaging.Drawing.NoSkia.DrawingBlendMode;
 global using SKCanvas = CodeBrix.Imaging.Drawing.NoSkia.DrawingCanvas;
 global using SKColor = CodeBrix.Imaging.Drawing.NoSkia.DrawingColor;
+global using SKColorFilter = CodeBrix.Imaging.Drawing.NoSkia.DrawingColorFilter;
 global using SKColors = CodeBrix.Imaging.Drawing.NoSkia.DrawingColors;
 global using SKColorType = CodeBrix.Imaging.Drawing.NoSkia.DrawingColorType;
 global using SKCubicResampler = CodeBrix.Imaging.Drawing.NoSkia.DrawingCubicResampler;
@@ -32,6 +34,8 @@ global using SKPoint = CodeBrix.Imaging.Drawing.NoSkia.DrawingPoint;
 global using SKPointI = CodeBrix.Imaging.Drawing.NoSkia.DrawingPointI;
 global using SKRect = CodeBrix.Imaging.Drawing.NoSkia.DrawingRect;
 global using SKSamplingOptions = CodeBrix.Imaging.Drawing.NoSkia.DrawingSamplingOptions;
+global using SKShader = CodeBrix.Imaging.Drawing.NoSkia.DrawingShader;
+global using SKShaderTileMode = CodeBrix.Imaging.Drawing.NoSkia.DrawingShaderTileMode;
 global using SKSize = CodeBrix.Imaging.Drawing.NoSkia.DrawingSize;
 global using SKSizeI = CodeBrix.Imaging.Drawing.NoSkia.DrawingSizeI;
 global using SKStrokeCap = CodeBrix.Imaging.Drawing.NoSkia.DrawingStrokeCap;

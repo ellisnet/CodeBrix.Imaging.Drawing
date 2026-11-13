@@ -97,7 +97,30 @@ internal sealed class DrawingPictureConverter
         }
     }
 
-    private List<DrawingCommand> ConvertCommands(SKPicture picture)
+    // <summary>
+    // Converts a picture WITHOUT remembering it - for pictures recorded afresh on every change
+    // (a scene re-recorded with per-part overrides), which would otherwise pile up in the
+    // identity cache. The nested pictures it draws are converted through the cache as usual,
+    // except those in <paramref name="transient"/>, which are themselves converted unremembered.
+    // </summary>
+    // <param name="picture">The picture to convert.</param>
+    // <param name="transient">Nested pictures that must not be cached either; or <c>null</c>.</param>
+    // <returns>The converted picture; or <c>null</c> when <paramref name="picture"/> is null.</returns>
+    public DrawingPicture ConvertTransient(SKPicture picture, ISet<SKPicture> transient)
+    {
+        if (picture == null) { return null; }
+        if (!_converting.Add(picture)) { return null; }
+        try
+        {
+            return new DrawingPicture(_model.ToDrawingRect(picture.CullRect), ConvertCommands(picture, transient));
+        }
+        finally
+        {
+            _converting.Remove(picture);
+        }
+    }
+
+    private List<DrawingCommand> ConvertCommands(SKPicture picture, ISet<SKPicture> transient = null)
     {
         var commands = new List<DrawingCommand>();
         if (picture.Commands == null) { return commands; }
@@ -211,7 +234,9 @@ internal sealed class DrawingPictureConverter
 
                 case DrawPictureCanvasCommand drawPictureCanvasCommand:
                 {
-                    DrawingPicture nested = Convert(drawPictureCanvasCommand.Picture);
+                    DrawingPicture nested = transient != null && drawPictureCanvasCommand.Picture != null && transient.Contains(drawPictureCanvasCommand.Picture)
+                        ? ConvertTransient(drawPictureCanvasCommand.Picture, transient)
+                        : Convert(drawPictureCanvasCommand.Picture);
                     if (nested == null) { break; }
 
                     commands.Add(new DrawPictureCommand(nested));

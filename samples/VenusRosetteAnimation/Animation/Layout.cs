@@ -1,6 +1,7 @@
 using System;
 using CodeBrix.Imaging;
-using SkiaSharp;
+using CodeBrix.Imaging.Drawing.SafeAreas;
+using CodeBrix.Imaging.Drawing.Text;
 
 namespace VenusRosetteAnimation.Animation;
 
@@ -26,23 +27,25 @@ internal sealed class Layout
         SubtitleX = 91,
         SubtitleY = 1034,
         SubtitleSize = 22,
-        TextAlign = SKTextAlign.Left,
+        TextAlign = TextAlign.Left,
         RuleY = 912,
         RuleLeft = 90,
         RuleRight = 1830,
         CounterX = new float[] { 1300, 1520, 1730 },
         CounterLabelOffset = 2,
-        CounterAlign = SKTextAlign.Left,
+        CounterAlign = TextAlign.Left,
         LabelY = 968,
         LabelSize = 15,
         ValueY = 1030,
         ValueSize = 44,
+        SafeArea = SafeAreaGuides.BroadcastActionSafe,
     };
 
     /// <summary>
-    /// The portrait frame, 1080x1920, laid out for the Instagram Reels safe zone: everything sits inside
+    /// The portrait frame, 1080x1920, laid out for an ordinary (non-ad) Instagram Reel: everything sits inside
     /// x 120..960 and y 250..1500 (clear of the status bar and header at the top, the caption and action buttons at
-    /// the bottom and right), which also keeps it inside the 4:5 grid-preview crop (y 285..1635).
+    /// the bottom and right), which also keeps it inside the 4:5 feed-preview crop (y 285..1635). Its
+    /// <see cref="SafeArea" /> guide is the library's feed-preview crop combined with its ordinary-post margins.
     /// </summary>
     public static readonly Layout Portrait = new Layout
     {
@@ -58,17 +61,19 @@ internal sealed class Layout
         SubtitleX = 540,
         SubtitleY = 1240,
         SubtitleSize = 24,
-        TextAlign = SKTextAlign.Center,
+        TextAlign = TextAlign.Center,
         RuleY = 1300,
         RuleLeft = 160,
         RuleRight = 920,
         CounterX = new float[] { 262, 540, 818 },
         CounterLabelOffset = 0,
-        CounterAlign = SKTextAlign.Center,
+        CounterAlign = TextAlign.Center,
         LabelY = 1366,
         LabelSize = 19,
         ValueY = 1448,
         ValueSize = 62,
+        SafeArea = SafeAreaGuide.Combine("Instagram Reel (ordinary post)",
+            SafeAreaGuides.InstagramFeedPreview, SafeAreaGuides.OrdinaryPortraitPost),
     };
 
     /// <summary>The format's name (used in file and folder names).</summary>
@@ -114,7 +119,7 @@ internal sealed class Layout
     public float SubtitleSize { get; private init; }
 
     /// <summary>How the title and subtitle align about their x.</summary>
-    public SKTextAlign TextAlign { get; private init; }
+    public TextAlign TextAlign { get; private init; }
 
     /// <summary>The hairline above the counters: its y.</summary>
     public float RuleY { get; private init; }
@@ -132,7 +137,7 @@ internal sealed class Layout
     public float CounterLabelOffset { get; private init; }
 
     /// <summary>How the counters align about their x.</summary>
-    public SKTextAlign CounterAlign { get; private init; }
+    public TextAlign CounterAlign { get; private init; }
 
     /// <summary>The counter labels' baseline.</summary>
     public float LabelY { get; private init; }
@@ -145,6 +150,9 @@ internal sealed class Layout
 
     /// <summary>The counter values' font size.</summary>
     public float ValueSize { get; private init; }
+
+    /// <summary>The safe-area guide the format is checked against (and shown with, on request).</summary>
+    public SafeAreaGuide SafeArea { get; private init; }
 
     /// <summary>Earth's position on a given day, frame coordinates.</summary>
     /// <param name="day">The day.</param>

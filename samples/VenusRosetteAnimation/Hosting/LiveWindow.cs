@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using CodeBrix.Imaging.Drawing.Animation;
+using CodeBrix.Imaging.Drawing.SafeAreas;
 using CodeBrix.Sdl3;
 using SkiaSharp;
 using VenusRosetteAnimation.Animation;
@@ -10,16 +12,18 @@ namespace VenusRosetteAnimation.Hosting;
 
 /// <summary>
 /// The live view: an SDL3 window showing the animation in real time. Every frame is drawn at the scene's full
-/// video size (the app shows <see cref="Layout.Landscape" />, 1920x1080) by the drawing session into a Skia raster
-/// surface, uploaded to a streaming SDL texture and scaled to fit the window (letterboxed). Keys: Space pause/play
-/// (at the end: play again), Left/Right seek 1 s (Shift: 5 s), Home restart, Esc quit.
+/// video size (landscape 1920x1080 by default, portrait 1080x1920 with --portrait) by the drawing session into a
+/// Skia raster surface, uploaded to a streaming SDL texture and scaled to fit the window (letterboxed). The play state
+/// is the library's <see cref="PlaybackController" /> over the animation's clock. Keys: Space pause/play (at the end:
+/// play again), Left/Right seek 1 s (Shift: 5 s), Home restart, S show/hide the layout's safe-area overlay, Esc quit.
 /// </summary>
 internal static unsafe class LiveWindow
 {
     /// <summary>Runs the live view until the window is closed.</summary>
     /// <param name="scene">The scene.</param>
+    /// <param name="showSafeArea">Whether the safe-area overlay starts shown (S toggles it).</param>
     /// <returns>The process exit code.</returns>
-    public static int Run(RosetteScene scene)
+    public static int Run(RosetteScene scene, bool showSafeArea)
     {
         if (!SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO))
         {
@@ -33,7 +37,9 @@ internal static unsafe class LiveWindow
         IntPtr pixels = IntPtr.Zero;
         try
         {
-            window = SDL_CreateWindow("Venus Rosette  -  Space pause/play  Left/Right seek  Home restart  Esc quit", 1280, 720,
+            int windowWidth = scene.Layout.Width >= scene.Layout.Height ? 1280 : 540;
+            int windowHeight = scene.Layout.Width >= scene.Layout.Height ? 720 : 960;
+            window = SDL_CreateWindow("Venus Rosette  -  Space pause/play  Left/Right seek  Home restart  S safe area  Esc quit", windowWidth, windowHeight,
                 SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY);
             if (window == null) return Fail("SDL_CreateWindow");
             renderer = SDL_CreateRenderer(window, (byte*)null);
@@ -48,9 +54,11 @@ internal static unsafe class LiveWindow
             pixels = Marshal.AllocHGlobal(info.BytesSize);
             using SKSurface surface = SKSurface.Create(info, pixels, info.RowBytes) ?? throw new InvalidOperationException("Could not create the frame surface.");
 
-            Console.WriteLine("Live view: Space pause/play, Left/Right seek 1 s (Shift 5 s), Home restart, Esc quit.");
-            double seconds = 0;
-            bool playing = true;
+            Console.WriteLine("Live view: Space pause/play, Left/Right seek 1 s (Shift 5 s), Home restart, S safe area, Esc quit.");
+            SafeAreaOverlay overlay = new SafeAreaOverlay(scene.Layout.SafeArea) { Duration = Timeline.TotalSeconds };
+            scene.Overlay = showSafeArea ? overlay : null;
+            PlaybackController playback = new PlaybackController(Timeline.Clock);
+            playback.Play();
             Stopwatch clock = Stopwatch.StartNew();
             double last = clock.Elapsed.TotalSeconds;
             bool running = true;
@@ -74,38 +82,31 @@ internal static unsafe class LiveWindow
                                 running = false;
                                 break;
                             case SDL_Keycode.SDLK_SPACE:
-                                if (e.key.repeat) break;
-                                if (seconds >= Timeline.TotalSeconds)
-                                {
-                                    seconds = 0;
-                                    playing = true;
-                                }
-                                else
-                                {
-                                    playing = !playing;
-                                }
-
+                                if (!e.key.repeat) playback.Toggle();
                                 break;
                             case SDL_Keycode.SDLK_LEFT:
-                                seconds = Math.Max(0, seconds - step);
+                                playback.SeekBy(-step);
                                 break;
                             case SDL_Keycode.SDLK_RIGHT:
-                                seconds = Math.Min(Timeline.TotalSeconds, seconds + step);
+                                playback.SeekBy(step);
                                 break;
                             case SDL_Keycode.SDLK_HOME:
-                                seconds = 0;
-                                playing = true;
+                                playback.Restart();
+                                break;
+                            case SDL_Keycode.SDLK_S:
+                                if (e.key.repeat) break;
+                                scene.Overlay = scene.Overlay == null ? overlay : null;
                                 break;
                         }
                     }
                 }
 
+                // A slow frame pauses the animation rather than skipping it (the controller caps each step).
                 double nowSeconds = clock.Elapsed.TotalSeconds;
-                double dt = Math.Min(0.1, nowSeconds - last);
+                playback.Advance(nowSeconds - last);
                 last = nowSeconds;
-                if (playing) seconds = Math.Min(Timeline.TotalSeconds, seconds + dt);
 
-                scene.Show(seconds);
+                scene.Show(playback.Time);
                 scene.Render(surface.Canvas, info);
                 surface.Flush();
                 SDL_UpdateTexture(texture, null, pixels, info.RowBytes);

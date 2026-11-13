@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>VanGoghPaintingDemo</RootNamespace>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <!--
+    Package references only. CodeBrix.Imaging.Drawing draws the shapes of the C# painting; CodeBrix.Python runs
+    the original Python script; CodeBrix.Sdl3 opens the live window; CodeBrix.VideoProcessing pipes finished
+    frames into ffmpeg. The SkiaSharp native assets match the SkiaSharp version CodeBrix.Imaging.Drawing
+    depends on.
+  -->
+  <ItemGroup>
+    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.317.314" />
+    <PackageReference Include="CodeBrix.Python.MitLicenseForever" Version="1.0.260.1181" />
+    <PackageReference Include="CodeBrix.Sdl3.ZlibLicenseForever" Version="1.0.275.85" />
+    <PackageReference Include="CodeBrix.VideoProcessing.MitLicenseForever" Version="1.0.312.59" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.153.1" />
+  </ItemGroup>
+
+  <!-- The painting code shared with the NoSkia project, and the Python script the Python painter runs. -->
+  <ItemGroup>
+    <Compile Include="..\Shared\**\*.cs" LinkBase="Shared" />
+    <None Include="..\assets\**\*" LinkBase="assets" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    The NoSkia painter is a separate program (one application cannot reference both drawing packages). It is
+    built with this project - without referencing its assembly - and copied into a "noskia" folder beside this
+    application, which starts it from there.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\VanGoghPaintingDemo.NoSkia\VanGoghPaintingDemo.NoSkia.csproj" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CopyNoSkiaPainter" AfterTargets="Build">
+    <ItemGroup>
+      <NoSkiaPainterFile Include="..\VanGoghPaintingDemo.NoSkia\bin\$(Configuration)\$(TargetFramework)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(NoSkiaPainterFile)" DestinationFiles="@(NoSkiaPainterFile->'$(OutDir)noskia\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

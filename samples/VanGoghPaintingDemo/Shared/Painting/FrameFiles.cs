@@ -1,0 +1,35 @@
+using System;
+using System.IO;
+using CodeBrix.Imaging;
+using CodeBrix.Imaging.Formats.Png;
+using CodeBrix.Imaging.PixelFormats;
+
+namespace VanGoghPaintingDemo.Painting;
+
+/// <summary>Saves frames as PNG files, through CodeBrix.Imaging.</summary>
+internal static class FrameFiles
+{
+    /// <summary>Saves a four-bytes-per-pixel (R, G, B, A) frame.</summary>
+    /// <param name="rgba">The pixels.</param>
+    /// <param name="width">The frame's width.</param>
+    /// <param name="height">The frame's height.</param>
+    /// <param name="path">The file to write (its folder is created if needed).</param>
+    public static void SaveRgba(ReadOnlySpan<byte> rgba, int width, int height, string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)) ?? ".");
+        using Image<Rgba32> image = Image.LoadPixelData<Rgba32>(rgba, width, height, PngFormat.Instance);
+        image.SaveAsPng(path);
+    }
+
+    /// <summary>Saves a three-bytes-per-pixel (R, G, B) painting.</summary>
+    /// <param name="rgb">The pixels.</param>
+    /// <param name="width">The painting's width.</param>
+    /// <param name="height">The painting's height.</param>
+    /// <param name="path">The file to write (its folder is created if needed).</param>
+    public static void SaveRgb(ReadOnlySpan<byte> rgb, int width, int height, string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)) ?? ".");
+        using Image<Rgb24> image = Image.LoadPixelData<Rgb24>(rgb, width, height, PngFormat.Instance);
+        image.SaveAsPng(path);
+    }
+}

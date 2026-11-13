@@ -29,6 +29,20 @@ https://github.com/ellisnet/CodeBrix.Imaging.Drawing/issues
 
 ================================================================================
 
+Both packages (CodeBrix.Imaging.Drawing.ApacheLicenseForever and
+CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever)
+
+Polygon clipping dependency. The path combining, stroke-to-outline and
+inflate features call CodeBrix.PolygonTools, consumed as the NuGet package
+CodeBrix.PolygonTools.MitLicenseForever (license expression MIT AND
+BSL-1.0, authored by Jeremy Ellis; derived from the Clipper library
+("polyclipping") by Angus Johnson, which is licensed under the Boost
+Software License 1.0 - that package carries the full notices). It is
+consumed as a package only - its source code is not incorporated into this
+repository.
+
+================================================================================
+
 The CodeBrix.Imaging.Drawing.NoSkia and CodeBrix.Imaging.Drawing.NoSkia.Svg
 assemblies (shipped together in the
 CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package)
@@ -64,6 +78,25 @@ CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever package)
    (tests/SvgAssets/Fonts/OpenSans-Regular.ttf), licensed under the SIL
    Open Font License 1.1 (see tests/SvgAssets/Fonts/OFL.txt), used solely
    to render deterministic text in SVG parity tests.
+
+   They also include the Roboto Regular font
+   (tests/SvgAssets/Fonts/Roboto-Regular.ttf, Copyright 2011 The Roboto
+   Project Authors), licensed under the SIL Open Font License 1.1 (see
+   tests/SvgAssets/Fonts/OFL-Roboto.txt). It is a TEST-ONLY asset, used
+   because it carries kerning data, to test kerning and text layout. It is
+   not shipped in either package.
+
+================================================================================
+
+Sample applications (under samples/; not shipped in either package)
+
+The VenusRosetteAnimation, AnimationDemoApp and AutumnAviana samples bundle
+the Roboto Regular font (samples/VenusRosetteAnimation/assets/Fonts/
+Roboto-Regular.ttf, samples/AnimationDemoApp/assets/Fonts/Roboto-Regular.ttf
+and samples/AutumnAviana/assets/Fonts/Roboto-Regular.ttf, Copyright 2011 The
+Roboto Project Authors), licensed under the SIL Open Font License 1.1 (see
+the OFL.txt beside each copy). The samples draw all of their text with
+it; no system font is used.
 
 ================================================================================
 

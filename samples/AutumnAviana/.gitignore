@@ -1,0 +1,5 @@
+# Rendered stills and frames
+Output/
+bin/
+obj/
+.DS_Store

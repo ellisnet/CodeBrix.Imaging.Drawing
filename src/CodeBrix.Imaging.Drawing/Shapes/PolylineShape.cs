@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using CodeBrix.Imaging.Drawing.Fills;
 using CodeBrix.Imaging.Drawing.Models;
+using CodeBrix.Imaging.Drawing.Paths;
 #if NOSKIA
 using CodeBrix.Imaging.Drawing.NoSkia;
 #else
@@ -33,7 +35,7 @@ public sealed class PolylineShape : DrawingShape
     /// Creates a polyline through the given points.
     /// </summary>
     /// <param name="points">The points, in calibrated drawing units; at least two are required.</param>
-    /// <param name="strokeThickness">The outline thickness, in calibrated drawing units (ignored when filled).</param>
+    /// <param name="strokeThickness">The outline thickness, in calibrated drawing units (not used when filled, but it must still be positive).</param>
     /// <param name="color">The polyline's color; or <c>null</c> to use the owning layer's color.</param>
     /// <param name="isClosed"><c>true</c> to connect the last point back to the first.</param>
     /// <param name="isFilled"><c>true</c> to fill the resulting polygon solid (implies closed).</param>
@@ -55,6 +57,53 @@ public sealed class PolylineShape : DrawingShape
 
         IsFilled = isFilled;
         IsClosed = isClosed || isFilled;
+    }
+
+    /// <summary>
+    /// Creates a filled polygon through the given points, painted by <paramref name="fill"/>
+    /// instead of a flat color.
+    /// </summary>
+    /// <param name="points">The points, in calibrated drawing units; at least two are required.</param>
+    /// <param name="fill">The fill that paints the polygon.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="points"/> or <paramref name="fill"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when fewer than two points are provided.</exception>
+    public PolylineShape(IReadOnlyList<PointF> points, ShapeFill fill)
+        : base(Stroke.DefaultWidth, (Color?)null, fill ?? throw new ArgumentNullException(nameof(fill)))
+    {
+        if (points == null) { throw new ArgumentNullException(nameof(points)); }
+        if (points.Count < 2) { throw new ArgumentException("A polyline requires at least two points.", nameof(points)); }
+
+        _points = new SKPoint[points.Count];
+        for (int i = 0; i < points.Count; i++)
+        {
+            _points[i] = GraphicsInterop.ToGraphics(points[i]);
+        }
+
+        IsFilled = true;
+        IsClosed = true;
+    }
+
+    /// <summary>The points as a polyline geometry, closed when the shape is.</summary>
+    /// <returns>The outline.</returns>
+    public override PathGeometry GetOutline() => PathGeometry.FromPoints(GetPoints(), IsClosed);
+
+    /// <summary>The area the polyline covers: the polygon (non-zero rule) when filled; else the band its outline's thickness covers (round caps and joins).</summary>
+    /// <param name="tolerance">How closely an outline's band is followed, calibrated units.</param>
+    /// <returns>One geometry.</returns>
+    public override IReadOnlyList<PathGeometry> GetCoverageAreas(float tolerance)
+        => IsFilled ? new[] { GetOutline() } : OutlineArea(GetOutline(), tolerance);
+
+    /// <inheritdoc />
+    public override RectangleF? GetBounds()
+    {
+        var points = new PointF[_points.Length];
+        for (int i = 0; i < _points.Length; i++)
+        {
+            points[i] = GraphicsInterop.ToImaging(_points[i]);
+        }
+        RectangleF bounds = BoundsOf(points);
+        //A miter join is never drawn (joins are round), so half the thickness bounds the outline
+        return IsFilled ? bounds : Inflate(bounds, StrokeThickness / 2f);
     }
 
     /// <summary>
@@ -100,7 +149,7 @@ public sealed class PolylineShape : DrawingShape
         }
         using SKPath path = pathBuilder.Detach();
 
-        using SKPaint paint = IsFilled ? CreateFillPaint(color) : CreateOutlinePaint(color);
+        using SKPaint paint = IsFilled ? CreateFillPaint(color, Fill) : CreateOutlinePaint(color);
         canvas.DrawPath(path, paint);
     }
 }

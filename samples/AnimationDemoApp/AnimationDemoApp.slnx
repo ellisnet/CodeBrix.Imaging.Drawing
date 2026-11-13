@@ -1,0 +1,8 @@
+<Solution>
+  <!-- AnimationDemoApp.slnx
+       The sample's own solution (it is deliberately NOT part of CodeBrix.Imaging.Drawing.slnx).
+       Both projects build the same scene code (Shared/): the application against the
+       CodeBrix.Imaging.Drawing package, the NoSkia project against CodeBrix.Imaging.Drawing.NoSkia. -->
+  <Project Path="AnimationDemoApp/AnimationDemoApp.csproj" />
+  <Project Path="AnimationDemoApp.NoSkia/AnimationDemoApp.NoSkia.csproj" />
+</Solution>

@@ -244,7 +244,33 @@ public sealed class DrawingSvg : IDisposable
     {
     }
 
+    //The compiled scene and the converter that turned it into Picture, kept so that a
+    //  DrawingSvgShape can re-record the scene with per-part overrides. The lock serializes
+    //  those re-recordings (the converter's cache is not thread-safe)
+    internal SvgSceneDocument SceneDocument { get; private set; }
+
+    internal DrawingPictureConverter Converter { get; private set; }
+
+    internal NoSkiaModel Model { get; private set; }
+
+    internal object RenderLock { get; } = new object();
+
+    //Increments on every load, so shapes can tell their cached pictures are stale
+    internal int LoadVersion { get; private set; }
+
     private bool Compile(SvgDocument document)
+    {
+        lock (RenderLock)
+        {
+            LoadVersion++;
+            SceneDocument = null;
+            Converter = null;
+            Model = null;
+            return CompileCore(document);
+        }
+    }
+
+    private bool CompileCore(SvgDocument document)
     {
         Picture = null;
         Scene = null;
@@ -291,6 +317,9 @@ public sealed class DrawingSvg : IDisposable
 
         Picture = picture;
         Scene = new DrawingSvgScene(sceneDocument);
+        SceneDocument = sceneDocument;
+        Converter = converter;
+        Model = model;
         DeclaredWidth = document.Width;
         DeclaredHeight = document.Height;
 

@@ -379,9 +379,24 @@ public sealed class DrawingCanvas : IDisposable
 
         if (paint.Style == DrawingPaintStyle.Stroke || paint.Style == DrawingPaintStyle.StrokeAndFill)
         {
-            float userTolerance = PathFlattener.DevicePixelTolerance / MaxScale();
-            List<FlattenedContour> contours = PathFlattener.Flatten(path, Matrix3x2.Identity, userTolerance);
-            StrokeContours(contours, paint);
+            //The outline in the path's own coordinates depends only on the path, the stroke and the
+            //  matrix's largest scale: a path stroked again with only its transform changed reuses it
+            float maxScale = MaxScale();
+            if (maxScale <= 0) { return; }
+            Vector2[][] outline = StrokeOutlineCache.GetOrBuild(path, paint, maxScale, () =>
+            {
+                float userTolerance = PathFlattener.DevicePixelTolerance / maxScale;
+                List<FlattenedContour> contours = PathFlattener.Flatten(path, Matrix3x2.Identity, userTolerance);
+                return BuildStrokeOutline(contours, paint, maxScale);
+            });
+            var polygons = new List<List<Vector2>>(outline.Length);
+            foreach (Vector2[] source in outline)
+            {
+                var polygon = new List<Vector2>(source.Length);
+                for (int i = 0; i < source.Length; i++) { polygon.Add(Vector2.Transform(source[i], _matrix)); }
+                polygons.Add(polygon);
+            }
+            PolygonFiller.Fill(CurrentTarget, polygons, DrawingPathFillType.Winding, CreateFillContext(paint));
         }
     }
 
@@ -734,17 +749,7 @@ public sealed class DrawingCanvas : IDisposable
         float maxScale = MaxScale();
         if (maxScale <= 0) { return; }
 
-        if (paint.PathEffect != null)
-        {
-            contours = DashSplitter.Split(contours, paint.PathEffect.Intervals, paint.PathEffect.Phase);
-        }
-
-        //A zero stroke width requests a hairline: one device pixel wide
-        float width = paint.StrokeWidth > 0 ? paint.StrokeWidth : 1f / maxScale;
-        float arcTolerance = PathFlattener.DevicePixelTolerance / maxScale;
-
-        List<List<Vector2>> outline = StrokeBuilder.BuildOutline(
-            contours, width, paint.StrokeCap, paint.StrokeJoin, paint.StrokeMiter, arcTolerance);
+        List<List<Vector2>> outline = BuildStrokeOutline(contours, paint, maxScale);
 
         foreach (List<Vector2> polygon in outline)
         {
@@ -755,6 +760,21 @@ public sealed class DrawingCanvas : IDisposable
         }
 
         PolygonFiller.Fill(CurrentTarget, outline, DrawingPathFillType.Winding, CreateFillContext(paint));
+    }
+
+    //The stroke's outline polygons in the contours' own coordinates (dashes cut first)
+    private static List<List<Vector2>> BuildStrokeOutline(List<FlattenedContour> contours, DrawingPaint paint, float maxScale)
+    {
+        if (paint.PathEffect != null)
+        {
+            contours = DashSplitter.Split(contours, paint.PathEffect.Intervals, paint.PathEffect.Phase);
+        }
+
+        //A zero stroke width requests a hairline: one device pixel wide
+        float width = paint.StrokeWidth > 0 ? paint.StrokeWidth : 1f / maxScale;
+        float arcTolerance = PathFlattener.DevicePixelTolerance / maxScale;
+
+        return StrokeBuilder.BuildOutline(contours, width, paint.StrokeCap, paint.StrokeJoin, paint.StrokeMiter, arcTolerance);
     }
 
     private static DrawingPath BuildOvalPath(float centerX, float centerY, float radiusX, float radiusY)

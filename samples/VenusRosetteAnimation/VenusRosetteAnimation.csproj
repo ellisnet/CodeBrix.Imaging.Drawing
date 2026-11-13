@@ -11,11 +11,12 @@
 
   <!--
     Package references only. CodeBrix.Imaging.Drawing draws every frame (its layers cache the threads already
-    drawn); CodeBrix.Sdl3 opens the live window; CodeBrix.VideoProcessing pipes the finished PNG frames into ffmpeg.
+    drawn) and hands each one over as raw RGBA bytes; CodeBrix.Sdl3 opens the live window; CodeBrix.VideoProcessing
+    pipes the raw frames into ffmpeg.
     The SkiaSharp native assets match the SkiaSharp version CodeBrix.Imaging.Drawing depends on.
   -->
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.295.430" />
+    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.317.314" />
     <PackageReference Include="CodeBrix.Sdl3.ZlibLicenseForever" Version="1.0.275.85" />
     <PackageReference Include="CodeBrix.VideoProcessing.MitLicenseForever" Version="1.0.312.59" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.153.1" />
@@ -23,7 +24,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.153.1" />
   </ItemGroup>
 
-  <!-- The bundled Open Sans font (SIL OFL 1.1, see assets/Fonts/OFL.txt): text never comes from a system font. -->
+  <!-- The bundled Roboto font (SIL OFL 1.1, see assets/Fonts/OFL.txt): text never comes from a system font. -->
   <ItemGroup>
     <None Include="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Remove="Output\**" />

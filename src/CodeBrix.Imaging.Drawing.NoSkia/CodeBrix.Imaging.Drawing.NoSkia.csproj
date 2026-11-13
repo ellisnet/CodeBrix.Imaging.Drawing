@@ -49,6 +49,7 @@
 
   <ItemGroup>
     <PackageReference Include="CodeBrix.Imaging.ApacheLicenseForever" Version="1.0.290.858" />
+    <PackageReference Include="CodeBrix.PolygonTools.MitLicenseForever" Version="1.0.290.843" />
   </ItemGroup>
 
 </Project>

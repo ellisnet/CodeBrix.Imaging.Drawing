@@ -1,0 +1,6 @@
+# Rendered frames, stills, videos and cached stroke layouts
+Output/
+bin/
+obj/
+__pycache__/
+.DS_Store

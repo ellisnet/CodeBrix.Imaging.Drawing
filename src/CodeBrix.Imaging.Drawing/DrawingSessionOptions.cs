@@ -4,6 +4,7 @@ using CodeBrix.Imaging.Drawing.NoSkia;
 using SkiaSharp;
 #endif
 using CodeBrix.Imaging.Drawing.Models;
+using CodeBrix.Imaging.Drawing.Text;
 
 namespace CodeBrix.Imaging.Drawing;
 
@@ -68,6 +69,13 @@ public sealed class DrawingSessionOptions
     /// The width of newly drawn strokes, in calibrated drawing units.
     /// </summary>
     public float StrokeWidth { get; set; } = Stroke.DefaultWidth;
+
+    /// <summary>
+    /// A font registry for the session to use as its <see cref="DrawingSession.Fonts"/> -
+    /// for example one registry shared by several sessions; or <c>null</c> (the default) to
+    /// give the session an empty registry of its own.
+    /// </summary>
+    public FontRegistry Fonts { get; set; }
 
     /// <summary>
     /// Sets <see cref="CalibrationSize"/> from a <see cref="SKSizeI"/>, for callers

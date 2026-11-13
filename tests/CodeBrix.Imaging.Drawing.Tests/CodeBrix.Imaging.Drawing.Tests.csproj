@@ -17,6 +17,15 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.153.1" />
   </ItemGroup>
 
+  <!--
+    The image-comparison helper is shared with the NoSkia and parity suites (tests/Shared);
+    the pinned-output test compares this package's frames with the committed references
+    through its tolerance metric.
+  -->
+  <ItemGroup>
+    <Compile Include="..\Shared\ImageComparison.cs" Link="Shared\ImageComparison.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\CodeBrix.Imaging.Drawing\CodeBrix.Imaging.Drawing.csproj" />
   </ItemGroup>

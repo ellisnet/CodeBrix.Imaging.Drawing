@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CodeBrix.Imaging.Drawing.Paths;
 
 namespace CodeBrix.Imaging.Drawing.Models;
 
@@ -111,4 +112,49 @@ public sealed class Stroke : DrawingElement
     {
         lock (_pointsLocker) { return _points.ToArray(); }
     }
+
+    /// <summary>
+    /// Reports the area the stroke covers - the box around its points grown by half its
+    /// <see cref="Width"/> on every side (strokes are round-capped, and a single point is a
+    /// dot of that width) - in calibrated drawing units. Safe-area checks measure strokes
+    /// with it.
+    /// </summary>
+    /// <returns>The stroke's bounds in calibrated drawing units; or <c>null</c> while the stroke has no points.</returns>
+    public RectangleF? GetBounds()
+    {
+        StrokePoint[] points = GetPoints();
+        if (points.Length < 1) { return null; }
+
+        int left = points[0].X, top = points[0].Y, right = left, bottom = top;
+        for (int i = 1; i < points.Length; i++)
+        {
+            left = Math.Min(left, points[i].X);
+            top = Math.Min(top, points[i].Y);
+            right = Math.Max(right, points[i].X);
+            bottom = Math.Max(bottom, points[i].Y);
+        }
+
+        float half = Width / 2f;
+        return new RectangleF(left - half, top - half, (right - left) + Width, (bottom - top) + Width);
+    }
+
+    internal override RectangleF? GetLocalBounds() => GetBounds();
+
+    /// <summary>
+    /// The stroke's geometry in calibrated drawing units: its points as an open polyline (the
+    /// centre line - the width is not included), or for a single-point stroke the circle of the
+    /// dot it draws.
+    /// </summary>
+    /// <returns>The geometry; or <c>null</c> while the stroke has no points.</returns>
+    public PathGeometry GetOutline()
+    {
+        StrokePoint[] points = GetPoints();
+        if (points.Length == 0) { return null; }
+        if (points.Length == 1) { return PathGeometry.Circle(new PointF(points[0].X, points[0].Y), Width / 2f); }
+        var line = new PointF[points.Length];
+        for (int i = 0; i < points.Length; i++) { line[i] = new PointF(points[i].X, points[i].Y); }
+        return PathGeometry.FromPoints(line, false);
+    }
+
+    internal override PathGeometry GetLocalOutline() => GetOutline();
 }

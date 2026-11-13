@@ -1,3 +1,5 @@
 # Rendered frames, stills and videos
 Output/
+bin/
+obj/
 .DS_Store

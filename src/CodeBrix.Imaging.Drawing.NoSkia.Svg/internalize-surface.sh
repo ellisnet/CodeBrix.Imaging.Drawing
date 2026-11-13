@@ -6,9 +6,12 @@
 # folders listed below). It does two things to every type this assembly does not publish:
 #
 #   1. Top-level "public" type declarations become "internal". Only the one file listed in
-#      KEEP_PUBLIC stays public - the font registry. The DrawingSvg facade and its six
-#      companion types live in the assembly root, which this pass never walks; together with
-#      the font registry they are this assembly's eight public types. Nested and
+#      KEEP_PUBLIC stays public - the font registry. The DrawingSvg facade, its companion
+#      types and the DrawingSvgShape session element live in the assembly root, which this
+#      pass never walks; together with the font registry they are this assembly's public
+#      types (NoSkiaPublicSurfaceTests lists them). Internal helpers written for this
+#      repository in Rendering/ (such as SvgPartRenderer) already use "//" comments, so the
+#      pass leaves them unchanged. Nested and
 #      member accessibility is left alone: a public member of an internal type is not
 #      exported, so there is nothing to change and the diff against upstream stays small.
 #

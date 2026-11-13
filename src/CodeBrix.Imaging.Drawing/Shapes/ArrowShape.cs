@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using CodeBrix.Imaging.Drawing.Models;
+using CodeBrix.Imaging.Drawing.Paths;
 #if NOSKIA
 using CodeBrix.Imaging.Drawing.NoSkia;
 #else
@@ -59,6 +61,31 @@ public sealed class ArrowShape : DrawingShape
         HeadLength = headLength ?? Math.Max(30f, strokeThickness * 3f);
     }
 
+    /// <summary>The shaft and the head's two strokes (from one barb through the tip to the other) as open contours.</summary>
+    /// <returns>The outline.</returns>
+    public override PathGeometry GetOutline()
+    {
+        double shaftAngle = Math.Atan2(Y1 - Y2, X1 - X2);
+        return new PathGeometryBuilder()
+            .MoveTo(new PointF(X1, Y1)).LineTo(new PointF(X2, Y2))
+            .MoveTo(HeadPoint(shaftAngle + HeadAngleRadians)).LineTo(new PointF(X2, Y2)).LineTo(HeadPoint(shaftAngle - HeadAngleRadians))
+            .Build();
+    }
+
+    /// <summary>The area the arrow's lines cover: the shaft and the head outlined with round caps and joins.</summary>
+    /// <param name="tolerance">How closely the round caps and joins are followed, calibrated units.</param>
+    /// <returns>One geometry.</returns>
+    public override IReadOnlyList<PathGeometry> GetCoverageAreas(float tolerance) => OutlineArea(GetOutline(), tolerance);
+
+    /// <inheritdoc />
+    public override RectangleF? GetBounds()
+    {
+        double shaftAngle = Math.Atan2(Y1 - Y2, X1 - X2);
+        PointF headA = HeadPoint(shaftAngle + HeadAngleRadians);
+        PointF headB = HeadPoint(shaftAngle - HeadAngleRadians);
+        return Inflate(BoundsOf(new PointF(X1, Y1), new PointF(X2, Y2), headA, headB), StrokeThickness / 2f);
+    }
+
     /// <inheritdoc />
     public override void Draw(SKCanvas canvas, SKColor color)
     {
@@ -77,4 +104,7 @@ public sealed class ArrowShape : DrawingShape
                 paint);
         }
     }
+
+    private PointF HeadPoint(double angle)
+        => new PointF(X2 + (float)(HeadLength * Math.Cos(angle)), Y2 + (float)(HeadLength * Math.Sin(angle)));
 }
