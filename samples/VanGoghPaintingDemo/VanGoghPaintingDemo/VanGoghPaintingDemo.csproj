@@ -16,7 +16,7 @@
     depends on.
   -->
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.317.314" />
+    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.323.291" />
     <PackageReference Include="CodeBrix.Python.MitLicenseForever" Version="1.0.260.1181" />
     <PackageReference Include="CodeBrix.Sdl3.ZlibLicenseForever" Version="1.0.275.85" />
     <PackageReference Include="CodeBrix.VideoProcessing.MitLicenseForever" Version="1.0.312.59" />

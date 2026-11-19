@@ -13,7 +13,7 @@
     CodeBrix.Imaging.Drawing.NoSkia package instead: no SkiaSharp, no native library, no window.
   -->
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever" Version="1.0.317.314" />
+    <PackageReference Include="CodeBrix.Imaging.Drawing.NoSkia.ApacheLicenseForever" Version="1.0.323.291" />
   </ItemGroup>
 
   <ItemGroup>

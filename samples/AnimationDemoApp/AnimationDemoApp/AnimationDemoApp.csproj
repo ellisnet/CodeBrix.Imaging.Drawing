@@ -14,7 +14,7 @@
     SkiaSharp native assets match the SkiaSharp version CodeBrix.Imaging.Drawing depends on.
   -->
   <ItemGroup>
-    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.317.314" />
+    <PackageReference Include="CodeBrix.Imaging.Drawing.ApacheLicenseForever" Version="1.0.323.291" />
     <PackageReference Include="CodeBrix.Sdl3.ZlibLicenseForever" Version="1.0.275.85" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.153.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.153.1" />
